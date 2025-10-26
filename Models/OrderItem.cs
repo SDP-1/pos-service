@@ -10,6 +10,8 @@ namespace pos_service.Models
         // --- Link to the parent Order ---
         public int OrderId { get; set; }
 
+        public virtual Order Order { get; set; }
+
         // --- Optional link to the original Item for historical analysis ---
         public int? OriginalItemId { get; set; }
         public int? OriginalItemSubId { get; set; }

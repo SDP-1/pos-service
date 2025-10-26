@@ -12,8 +12,8 @@ using pos_service.Data;
 namespace pos_service.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251020214036_v1.0.0")]
-    partial class v100
+    [Migration("20251025183902_SeedAdminUser2")]
+    partial class SeedAdminUser2
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -260,6 +260,9 @@ namespace pos_service.Migrations
                     b.Property<int?>("CustomerId")
                         .HasColumnType("int");
 
+                    b.Property<int>("CustomerId1")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("GrossAmount")
                         .HasColumnType("decimal(18, 2)");
 
@@ -308,6 +311,8 @@ namespace pos_service.Migrations
                     b.HasIndex("CashierId");
 
                     b.HasIndex("CustomerId");
+
+                    b.HasIndex("CustomerId1");
 
                     b.HasIndex("OrderNumber")
                         .IsUnique();
@@ -464,6 +469,22 @@ namespace pos_service.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2025, 10, 25, 18, 39, 1, 741, DateTimeKind.Utc).AddTicks(7995),
+                            CreatedBy = "System Seed",
+                            FirstName = "System",
+                            IsActive = true,
+                            LastName = "Admin",
+                            NIC = "000000000000",
+                            PasswordHash = "AQAAAAIAAYagAAAAEK7H8Ro9ULXE9rLzW29GsFOR4QKdBPsS7WKwLcAf1B+btUee9ZEOi9xFIFv313doLg==",
+                            Role = "SystemAdmin",
+                            UserName = "admin@pos.com",
+                            Uuid = new Guid("c69a5ced-7be4-4df0-93d6-3276a431c3f3")
+                        });
                 });
 
             modelBuilder.Entity("ItemSupplier", b =>
@@ -489,7 +510,7 @@ namespace pos_service.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
+                        .WithMany("Contacts")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade);
                 });
@@ -503,23 +524,48 @@ namespace pos_service.Migrations
                         .IsRequired();
 
                     b.HasOne("pos_service.Models.Customer", null)
-                        .WithMany()
+                        .WithMany("Orders")
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("pos_service.Models.Customer", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId1")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Cashier");
+
+                    b.Navigation("Customer");
                 });
 
             modelBuilder.Entity("pos_service.Models.OrderItem", b =>
                 {
-                    b.HasOne("pos_service.Models.Order", null)
-                        .WithMany()
+                    b.HasOne("pos_service.Models.Order", "Order")
+                        .WithMany("OrderItems")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("pos_service.Models.Customer", b =>
+                {
+                    b.Navigation("Orders");
+                });
+
+            modelBuilder.Entity("pos_service.Models.Order", b =>
+                {
+                    b.Navigation("OrderItems");
                 });
 
             modelBuilder.Entity("pos_service.Models.Supplier", b =>
+                {
+                    b.Navigation("Contacts");
+                });
+
+            modelBuilder.Entity("pos_service.Models.User", b =>
                 {
                     b.Navigation("Contacts");
                 });

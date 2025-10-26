@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using pos_service.Models.DTO;
+using pos_service.Models.DTO.Item;
 using pos_service.Services;
 
 namespace pos_service.Controllers
@@ -43,7 +43,19 @@ namespace pos_service.Controllers
             return Ok(items);
         }
 
-        // GET: api/items/barcode/5449000000996
+        // GET: api/items/barcode/5449...
+        [HttpGet("barcode/{barCode}/min")]
+        public async Task<ActionResult<IEnumerable<BaseitemResDto>>> GetItemMinDetailsByBarCode(string barCode)
+        {
+            var item = await _itemService.GetItemMinDetailsByBarCodeAsync(barCode);
+            if (item == null)
+            {
+                return NotFound();
+            }
+            return Ok(item);
+        }
+
+        // GET: api/items/barcode/5449...
         [HttpGet("barcode/{barCode}")]
         public async Task<ActionResult<IEnumerable<ItemResDto>>> GetItemByBarCode(string barCode)
         {
@@ -152,6 +164,22 @@ namespace pos_service.Controllers
                 return NotFound();
             }
             return NoContent();
+        }
+
+        /// <summary>
+        /// Retrieves all items supplied by a specific supplier ID.
+        /// </summary>
+        /// <param name="supplierId">The unique identifier of the supplier.</param>
+        /// <returns>A list of items (ItemResDto) associated with the supplier.</returns>
+        [HttpGet("supplier/{supplierId:int}")]
+        public async Task<ActionResult<IEnumerable<ItemResDto>>> GetItemsBySupplierId(int supplierId)
+        {
+            var items = await _itemService.GetItemsBySupplierIdAsync(supplierId);
+            if (items == null || !items.Any())
+            {
+                return NotFound($"No items found for supplier ID {supplierId}.");
+            }
+            return Ok(items);
         }
     }
 }

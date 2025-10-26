@@ -1,8 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using pos_service.Models.DTO.Audit;
+using System.ComponentModel.DataAnnotations;
 
-namespace pos_service.Models.DTO
+namespace pos_service.Models.DTO.Item
 {
-    public class ItemReqDto
+    public class ItemReqDto : IReqAuditDto
     {
         [Required]
         public int Id                         { get; set; }
@@ -51,5 +52,7 @@ namespace pos_service.Models.DTO
         /// A list of supplier IDs to associate with this item.
         /// </summary>
         public ICollection<int> SupplierIds   { get; set; } = new List<int>();
+
+        public bool IsActive                  { get; set; } = true;
     }
 }

@@ -77,6 +77,13 @@ namespace pos_service.Models
         /// </summary>
         public int? CustomerId { get; set; }
 
+        public virtual Customer Customer { get; set; }
+
+        /// <summary>
+        /// A collection of order irem associated with this order.
+        /// </summary>
+        public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+
         // --- Implementation of IAuditable ---
         public Guid Uuid { get; set; }
         public DateTime CreatedAt { get; set; }

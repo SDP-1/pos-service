@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using pos_service.Models;
-using pos_service.Models.DTO;
+using pos_service.Models.DTO.Item;
 using pos_service.Repositories;
 
 namespace pos_service.Services
@@ -143,6 +143,15 @@ namespace pos_service.Services
         }
 
         /// <summary>
+        /// Gets a single item by its barcode.
+        /// </summary>
+        public async Task<IEnumerable<BaseitemResDto>> GetItemMinDetailsByBarCodeAsync(string barCode)
+        {
+            var items = await _itemRepository.GetByBarCodeAsync(barCode);
+            return _mapper.Map<IEnumerable<BaseitemResDto>>(items);
+        }
+
+        /// <summary>
         /// Gets a single item by its unique Guid (Uuid).
         /// </summary>
         public async Task<ItemResDto?> GetItemByUuidAsync(Guid uuid)
@@ -202,6 +211,15 @@ namespace pos_service.Services
             // Returns the quantity, or 0 if the item is found but stock is null.
             // Returns null if the item is not found at all.
             return item?.StockQuantity ?? (item != null ? 0m : null);
+        }
+
+        /// <summary>
+        /// Gets all items associated with a given supplier ID.
+        /// </summary>
+        public async Task<IEnumerable<ItemResDto>> GetItemsBySupplierIdAsync(int supplierId)
+        {
+            var items = await _itemRepository.GetBySupplierIdAsync(supplierId);
+            return _mapper.Map<IEnumerable<ItemResDto>>(items);
         }
     }
 }

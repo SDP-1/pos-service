@@ -95,7 +95,6 @@ namespace pos_service.Models
         public virtual ICollection<Supplier> Suppliers { get; set; } = new List<Supplier>();
 
         // --- Implementation of IAuditable ---
-        [Required]
         public Guid Uuid                      { get; set; }
         public DateTime CreatedAt             { get; set; }
         public DateTime? UpdatedAt            { get; set; }

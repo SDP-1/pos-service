@@ -78,5 +78,16 @@ namespace pos_service.Repositories
             return await _context.Items
                 .FirstOrDefaultAsync(i => i.Uuid == uuid);
         }
+
+        /// <summary>
+        /// Gets all items that are supplied by the specified supplier ID.
+        /// </summary>
+        public async Task<IEnumerable<Item>> GetBySupplierIdAsync(int supplierId)
+        {
+            return await _context.Items
+                .Where(i => i.Suppliers.Any(s => s.Id == supplierId))
+                .Include(i => i.Suppliers)
+                .ToListAsync();
+        }
     }
 }

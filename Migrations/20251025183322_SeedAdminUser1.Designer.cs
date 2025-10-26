@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using pos_service.Data;
 
@@ -11,9 +12,11 @@ using pos_service.Data;
 namespace pos_service.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251025183322_SeedAdminUser1")]
+    partial class SeedAdminUser1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -257,9 +260,6 @@ namespace pos_service.Migrations
                     b.Property<int?>("CustomerId")
                         .HasColumnType("int");
 
-                    b.Property<int>("CustomerId1")
-                        .HasColumnType("int");
-
                     b.Property<decimal>("GrossAmount")
                         .HasColumnType("decimal(18, 2)");
 
@@ -309,8 +309,6 @@ namespace pos_service.Migrations
 
                     b.HasIndex("CustomerId");
 
-                    b.HasIndex("CustomerId1");
-
                     b.HasIndex("OrderNumber")
                         .IsUnique();
 
@@ -342,6 +340,9 @@ namespace pos_service.Migrations
                     b.Property<int>("OrderId")
                         .HasColumnType("int");
 
+                    b.Property<int>("OrderId1")
+                        .HasColumnType("int");
+
                     b.Property<int?>("OriginalItemId")
                         .HasColumnType("int");
 
@@ -357,6 +358,8 @@ namespace pos_service.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("OrderId");
+
+                    b.HasIndex("OrderId1");
 
                     b.ToTable("OrderItems");
                 });
@@ -471,16 +474,16 @@ namespace pos_service.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2025, 10, 25, 18, 39, 1, 741, DateTimeKind.Utc).AddTicks(7995),
+                            CreatedAt = new DateTime(2025, 10, 25, 18, 33, 22, 312, DateTimeKind.Utc).AddTicks(1810),
                             CreatedBy = "System Seed",
                             FirstName = "System",
                             IsActive = true,
                             LastName = "Admin",
                             NIC = "000000000000",
-                            PasswordHash = "AQAAAAIAAYagAAAAEK7H8Ro9ULXE9rLzW29GsFOR4QKdBPsS7WKwLcAf1B+btUee9ZEOi9xFIFv313doLg==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEFPPI1taFKsJcCZOquN20vSU09LesmnVjDhJjsCl5FJ48TjggspVkCbVRwLE3PicrQ==",
                             Role = "SystemAdmin",
                             UserName = "admin@pos.com",
-                            Uuid = new Guid("c69a5ced-7be4-4df0-93d6-3276a431c3f3")
+                            Uuid = new Guid("09ab7fb9-e1ee-47e7-8f61-04763ba822cb")
                         });
                 });
 
@@ -525,22 +528,20 @@ namespace pos_service.Migrations
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("pos_service.Models.Customer", "Customer")
-                        .WithMany()
-                        .HasForeignKey("CustomerId1")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Cashier");
-
-                    b.Navigation("Customer");
                 });
 
             modelBuilder.Entity("pos_service.Models.OrderItem", b =>
                 {
-                    b.HasOne("pos_service.Models.Order", "Order")
+                    b.HasOne("pos_service.Models.Order", null)
                         .WithMany("OrderItems")
                         .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("pos_service.Models.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId1")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

@@ -1,14 +1,18 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using pos_service.Models;
-using System.Collections.Generic;
-using System.Reflection.Emit;
+using pos_service.Models.Enums;
+using pos_service.Security;
 
 namespace pos_service.Data
 {
     public class AppDbContext : DbContext
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+        private readonly IPasswordHasher _passwordHasher;
+
+        public AppDbContext(DbContextOptions<AppDbContext> options, IPasswordHasher passwordHasher) : base(options)
         {
+            _passwordHasher = passwordHasher;
         }
 
         // Define a DbSet for each of your models.
@@ -28,6 +32,9 @@ namespace pos_service.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // Apply seeding logic (Admin User)
+            SeedUsers(modelBuilder);
 
             // --- User Configuration ---
             modelBuilder.Entity<User>(entity =>
@@ -72,7 +79,7 @@ namespace pos_service.Data
 
                 // 1. Configure the User relationship (one-way)
                 entity.HasOne<User>()
-                      .WithMany(s => s.Contacts)
+                      .WithMany(u => u.Contacts)
                       .HasForeignKey(c => c.UserId)
                       .IsRequired(false)
                       .OnDelete(DeleteBehavior.Cascade);
@@ -103,8 +110,8 @@ namespace pos_service.Data
                       .HasForeignKey(o => o.CashierId);
 
                 // Configure the optional relationship to the Customer.
-                entity.HasOne<Customer>()
-                      .WithMany()
+                entity.HasOne(o => o.Customer)
+                      .WithMany(c => c.Orders)
                       .HasForeignKey(o => o.CustomerId)
                       .IsRequired(false)
                       .OnDelete(DeleteBehavior.SetNull);
@@ -114,9 +121,11 @@ namespace pos_service.Data
             modelBuilder.Entity<OrderItem>(entity =>
             {
                 // Configure the required relationship to the parent Order.
-                entity.HasOne<Order>()
-                      .WithMany()
-                      .HasForeignKey(oi => oi.OrderId);
+                // Explicitly use the 'Order' navigation property on the OrderItem side
+                entity.HasOne(oi => oi.Order)
+                      .WithMany(o => o.OrderItems)
+                      .HasForeignKey(oi => oi.OrderId)
+                      .IsRequired();
             });
         }
 
@@ -150,6 +159,31 @@ namespace pos_service.Data
             }
 
             return base.SaveChangesAsync(cancellationToken);
+        }
+
+        private void SeedUsers(ModelBuilder modelBuilder)
+        {
+            // 1. Hash the password for the default admin user
+            string adminPasswordHash = _passwordHasher.HashPassword("AdminPass123!");
+
+            // 2. Create the initial User entity
+            var adminUser = new User
+            {
+                Id           = 1,
+                Uuid         = Guid.NewGuid(),
+                FirstName    = "System",
+                LastName     = "Admin",
+                UserName     = "admin@pos.com",
+                PasswordHash = adminPasswordHash,
+                Role         = UserRole.SystemAdmin,
+                NIC          = "000000000000",
+                IsActive     = true,
+                CreatedAt    = DateTime.UtcNow,
+                CreatedBy    = "System Seed"
+            };
+
+            // 3. Add the user data to the database seed
+            modelBuilder.Entity<User>().HasData(adminUser);
         }
     }
 }

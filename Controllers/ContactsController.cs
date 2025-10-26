@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using pos_service.Models.DTO;
+using pos_service.Models.DTO.Contact;
 using pos_service.Services;
 
 namespace pos_service.Controllers

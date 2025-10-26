@@ -46,6 +46,11 @@ namespace pos_service.Models
         /// </summary>
         public int LoyaltyPoints { get; set; } = 0;
 
+        /// <summary>
+        /// A collection of orders associated with this customer.
+        /// </summary>
+        public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
+
         // --- Implementation of IAuditable ---
         public Guid Uuid { get; set; }
         public DateTime CreatedAt { get; set; }

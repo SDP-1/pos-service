@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace pos_service.Migrations
 {
     /// <inheritdoc />
-    public partial class v100 : Migration
+    public partial class SeedAdminUser1 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -269,6 +269,7 @@ namespace pos_service.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     OrderId = table.Column<int>(type: "int", nullable: false),
+                    OrderId1 = table.Column<int>(type: "int", nullable: false),
                     OriginalItemId = table.Column<int>(type: "int", nullable: true),
                     OriginalItemSubId = table.Column<int>(type: "int", nullable: true),
                     ItemPrintName = table.Column<string>(type: "varchar(40)", maxLength: 40, nullable: false)
@@ -288,8 +289,19 @@ namespace pos_service.Migrations
                         principalTable: "Orders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_OrderItems_Orders_OrderId1",
+                        column: x => x.OrderId1,
+                        principalTable: "Orders",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.InsertData(
+                table: "Users",
+                columns: new[] { "Id", "CreatedAt", "CreatedBy", "FirstName", "IsActive", "LastName", "NIC", "PasswordHash", "ProfileImageUrl", "Role", "UpdatedAt", "UpdatedBy", "UserName", "Uuid" },
+                values: new object[] { 1, new DateTime(2025, 10, 25, 18, 33, 22, 312, DateTimeKind.Utc).AddTicks(1810), "System Seed", "System", true, "Admin", "000000000000", "AQAAAAIAAYagAAAAEFPPI1taFKsJcCZOquN20vSU09LesmnVjDhJjsCl5FJ48TjggspVkCbVRwLE3PicrQ==", null, "SystemAdmin", null, null, "admin@pos.com", new Guid("09ab7fb9-e1ee-47e7-8f61-04763ba822cb") });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Contacts_SupplierId",
@@ -316,6 +328,11 @@ namespace pos_service.Migrations
                 name: "IX_OrderItems_OrderId",
                 table: "OrderItems",
                 column: "OrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrderItems_OrderId1",
+                table: "OrderItems",
+                column: "OrderId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Orders_CashierId",

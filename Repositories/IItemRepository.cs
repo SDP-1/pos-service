@@ -30,5 +30,10 @@ namespace pos_service.Repositories
           /// Gets a single item by its unique Guid (Uuid).
           /// </summary>
           Task<Item?> GetByUuidAsync(Guid uuid);
+
+        /// <summary>
+        /// Gets all items that are supplied by the specified supplier ID.
+        /// </summary>
+        Task<IEnumerable<Item>> GetBySupplierIdAsync(int supplierId);
     }
 }

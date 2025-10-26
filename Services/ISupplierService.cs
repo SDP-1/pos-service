@@ -1,4 +1,4 @@
-﻿using pos_service.Models.DTO;
+﻿using pos_service.Models.DTO.Supplier;
 
 namespace pos_service.Services
 {

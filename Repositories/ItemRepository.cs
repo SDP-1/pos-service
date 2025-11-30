@@ -28,6 +28,7 @@ namespace pos_service.Repositories
 
         public async Task<Item> AddAsync(Item item)
         {
+            item.Uuid = Guid.NewGuid().ToString();
             _context.Items.Add(item);
             await _context.SaveChangesAsync();
             return item;
@@ -73,7 +74,7 @@ namespace pos_service.Repositories
                 .ToListAsync();
         }
 
-        public async Task<Item?> GetByUuidAsync(Guid uuid)
+        public async Task<Item?> GetByUuidAsync(string uuid)
         {
             return await _context.Items
                 .FirstOrDefaultAsync(i => i.Uuid == uuid);

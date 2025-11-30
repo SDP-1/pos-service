@@ -10,7 +10,7 @@ namespace pos_service.Models.DTO.Supplier
         public string? Address              { get; set; }
         public List<ContactResDto> contacts { get; set; }
 
-        public Guid Uuid                    { get; set; }
+        public string Uuid                    { get; set; }
         public DateTime CreatedAt           { get; set; }
         public DateTime? UpdatedAt          { get; set; }
         public string CreatedBy             { get; set; }

@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using pos_service.Controllers.Base;
+using pos_service.Models;
 using pos_service.Models.DTO.User;
 using pos_service.Models.Enums;
 using pos_service.Services;
@@ -7,23 +9,31 @@ using System.Security.Claims;
 
 namespace pos_service.Controllers
 {
+    /// <summary>
+    /// Controller for managing user authentication, profiles, and user management in the POS system.
+    /// Provides endpoints for login, user CRUD operations, and password management.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
-    public class UsersController : ControllerBase
+    [Authorize(Roles = UserRoles.AllAdmins)]
+    public class UsersController : SystemBaseController
     {
         private readonly IUserService _userService;
 
-        public UsersController(IUserService userService)
+        /// <summary>
+        /// Initializes a new instance of the UsersController class.
+        /// </summary>
+        /// <param name="userService">The user service for authentication and user management operations.</param>
+        public UsersController(IUserService userService, ICurrentUserService currentUserService) : base (currentUserService)
         {
             _userService = userService;
         }
 
-        // --- AUTHENTICATION ENDPOINTS (Public/Unsecured) ---
-
         /// <summary>
         /// Authenticates a user and returns a JWT token.
         /// </summary>
-        // POST: api/users/login
+        /// <param name="loginDto">The user login credentials containing username and password.</param>
+        /// <returns>User details and JWT token if authentication successful, otherwise returns Unauthorized.</returns>
         [HttpPost("login")]
         [AllowAnonymous]
         public async Task<ActionResult<string>> Login([FromBody] UserLoginReqDto loginDto)
@@ -37,30 +47,26 @@ namespace pos_service.Controllers
             return Ok(new { User = result.User, Token = result.Token });
         }
 
-
-        // --- USER MANAGEMENT ENDPOINTS (Secured - Requires SystemAdmin/Manager Role) ---
-
         /// <summary>
-        /// Retrieves a list of all users. (SystemAdmin access required)
+        /// Retrieves a list of all users in the system.
         /// </summary>
-        // GET: api/users
+        /// <returns>A list of all user details.</returns>
         [HttpGet]
-        [Authorize(Roles = UserRoles.AllAdmins)]
         public async Task<ActionResult<IEnumerable<UserResDto>>> GetAllUsers()
         {
-            var users = await _userService.GetAllUsersAsync();
+            var users = await _userService.GetAllUsersAsync(_currentUser);
             return Ok(users);
         }
 
         /// <summary>
-        /// Retrieves a specific user by ID.
+        /// Retrieves a specific user by their unique identifier.
         /// </summary>
-        // GET: api/users/5
+        /// <param name="id">The unique identifier of the user.</param>
+        /// <returns>The user details if found, otherwise returns NotFound.</returns>
         [HttpGet("{id:int}")]
-        [Authorize(Roles = UserRoles.DayToDayOperations)] // Allow Cashier to view their own profile (to be implemented in service)
         public async Task<ActionResult<UserResDto>> GetUserById(int id)
         {
-            var user = await _userService.GetUserByIdAsync(id);
+            var user = await _userService.GetUserByIdAsync(id, _currentUser);
             if (user == null)
             {
                 return NotFound();
@@ -69,14 +75,14 @@ namespace pos_service.Controllers
         }
 
         /// <summary>
-        /// Creates a new user. (SystemAdmin access required)
+        /// Creates a new user in the system.
         /// </summary>
-        // POST: api/users
+        /// <param name="userDto">The user data transfer object containing user information.</param>
+        /// <returns>The newly created user details with location header.</returns>
         [HttpPost]
-        [Authorize(Roles = UserRoles.AllAdmins)]
         public async Task<ActionResult<UserResDto>> CreateUser([FromBody] UserReqDto userDto)
         {
-            var newUser = await _userService.CreateUserAsync(userDto);
+            var newUser = await _userService.CreateUserAsync(userDto, _currentUser);
             if (newUser == null)
             {
                 return Conflict("A user with this username already exists.");
@@ -86,14 +92,15 @@ namespace pos_service.Controllers
         }
 
         /// <summary>
-        /// Updates an existing user's details. (SystemAdmin/Self access required)
+        /// Updates an existing user's details.
         /// </summary>
-        // PUT: api/users/5
+        /// <param name="id">The unique identifier of the user to update.</param>
+        /// <param name="userDto">The user data transfer object containing updated information.</param>
+        /// <returns>The updated user details if successful, otherwise returns NotFound.</returns>
         [HttpPut("{id:int}")]
-        [Authorize(Roles = UserRoles.AllAdmins)] // Allow managers/SystemAdmins to update users
         public async Task<IActionResult> UpdateUser(int id, [FromBody] UserReqDto userDto)
         {
-            var user = await _userService.UpdateUserAsync(id, userDto);
+            var user = await _userService.UpdateUserAsync(id, userDto, _currentUser);
             if (user == null)
             {
                 return NotFound();
@@ -102,14 +109,14 @@ namespace pos_service.Controllers
         }
 
         /// <summary>
-        /// Deactivates a user account (soft delete). (SystemAdmin access required)
+        /// Deactivates a user account (soft delete).
         /// </summary>
-        // PATCH: api/users/5/deactivate
+        /// <param name="id">The unique identifier of the user to deactivate.</param>
+        /// <returns>NoContent if successful, otherwise returns NotFound.</returns>
         [HttpPatch("{id:int}/deactivate")]
-        [Authorize(Roles = UserRoles.AllAdmins)]
         public async Task<IActionResult> DeactivateUser(int id)
         {
-            var success = await _userService.DeactivateUserAsync(id);
+            var success = await _userService.DeactivateUserAsync(id, _currentUser);
             if (!success)
             {
                 return NotFound();
@@ -118,33 +125,33 @@ namespace pos_service.Controllers
         }
 
         /// <summary>
-        /// Permanently deletes a user. (High-level SystemAdmin access required)
+        /// Permanently deletes a user from the system.
         /// </summary>
-        // DELETE: api/users/5
+        /// <param name="id">The unique identifier of the user to delete.</param>
+        /// <returns>NoContent if successful, otherwise returns NotFound.</returns>
         [HttpDelete("{id:int}")]
-        [Authorize(Roles = UserRoles.AllAdmins)]
         public async Task<IActionResult> DeleteUser(int id)
         {
-            var success = await _userService.DeleteUserAsync(id);
+            var success = await _userService.DeleteUserAsync(id, _currentUser);
             if (!success)
             {
                 return NotFound();
             }
             return NoContent();
         }
-
-        // --- PROFILE/SECURITY ENDPOINTS ---
 
         /// <summary>
         /// Allows a user to change their own password.
         /// </summary>
-        // PATCH: api/users/5/change-password
+        /// <param name="id">The unique identifier of the user changing their password.</param>
+        /// <param name="passwordDto">The password change data containing old and new passwords.</param>
+        /// <returns>NoContent if successful, otherwise returns BadRequest.</returns>
         [HttpPatch("{id:int}/change-password")]
         [Authorize] // Any logged-in user
         public async Task<IActionResult> ChangePassword(int id, [FromBody] ChangePasswordDto passwordDto)
         {
             // Assuming ChangePasswordDto contains OldPassword and NewPassword
-            var success = await _userService.ChangePasswordAsync(id, passwordDto.OldPassword, passwordDto.NewPassword);
+            var success = await _userService.ChangePasswordAsync(id, passwordDto.OldPassword, passwordDto.NewPassword, _currentUser);
             if (!success)
             {
                 return BadRequest("Invalid ID or incorrect old password.");

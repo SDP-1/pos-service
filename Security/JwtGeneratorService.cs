@@ -9,6 +9,8 @@ namespace pos_service.Security
     public class JwtGeneratorService : IJwtGenerator
     {
         private readonly string _secretKey;
+        private readonly string _issuer;
+        private readonly string _audience;
 
         public JwtGeneratorService(IConfiguration configuration)
         {
@@ -24,8 +26,11 @@ namespace pos_service.Security
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Email, user.UserName),
-                new Claim(ClaimTypes.Role, user.Role.ToString())
+                new Claim(ClaimTypes.Role, user.Role.ToString()),
+                new Claim(ClaimTypes.Name, user.FullName),
+                new Claim("user_id", user.Id.ToString()),
+                new Claim("uuid", user.Uuid.ToString()),
+                new Claim("username", user.UserName)
             };
 
             // 2. Create the token descriptor

@@ -4,6 +4,6 @@
     {
         Default    = 0,
         Reatail    = 1,
-        waholesale = 2
+        Wholesale  = 2
     }
 }

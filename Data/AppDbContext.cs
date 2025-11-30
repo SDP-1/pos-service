@@ -3,16 +3,19 @@ using Microsoft.EntityFrameworkCore;
 using pos_service.Models;
 using pos_service.Models.Enums;
 using pos_service.Security;
+using pos_service.Services;
 
 namespace pos_service.Data
 {
     public class AppDbContext : DbContext
     {
-        private readonly IPasswordHasher _passwordHasher;
+        private readonly ICurrentUserService _currentUserService;
 
-        public AppDbContext(DbContextOptions<AppDbContext> options, IPasswordHasher passwordHasher) : base(options)
+        public AppDbContext(
+            DbContextOptions<AppDbContext> options,
+            ICurrentUserService currentUserService) : base(options)
         {
-            _passwordHasher = passwordHasher;
+            _currentUserService = currentUserService;
         }
 
         // Define a DbSet for each of your models.
@@ -159,16 +162,19 @@ namespace pos_service.Data
             foreach (var entityEntry in entries)
             {
                 var auditableEntity = (IAuditable)entityEntry.Entity;
-                var user = "SYSTEM"; // Placeholder: In a real app, get the current logged-in user's ID here.
+
+                // Get current user from the service
+                var currentUser = _currentUserService.GetCurrentUser();
+                var userUuid = currentUser?.IsAuthenticated == true ? currentUser.Uuid : "SYSTEM";
 
                 auditableEntity.UpdatedAt = DateTime.UtcNow;
-                auditableEntity.UpdatedBy = user;
+                auditableEntity.UpdatedBy = userUuid;
 
                 if (entityEntry.State == EntityState.Added)
                 {
-                    auditableEntity.Uuid = Guid.NewGuid(); // Set the UUID on creation.
+                    auditableEntity.Uuid = Guid.NewGuid().ToString();
                     auditableEntity.CreatedAt = DateTime.UtcNow;
-                    auditableEntity.CreatedBy = user;
+                    auditableEntity.CreatedBy = userUuid;
                     auditableEntity.IsActive = true;
                 }
             }

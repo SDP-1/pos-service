@@ -7,9 +7,9 @@ namespace pos_service.Services
 {
     public class ItemService : IItemService
     {
-        private readonly IItemRepository _itemRepository;
+        private readonly IItemRepository     _itemRepository;
         private readonly ISupplierRepository _supplierRepository;
-        private readonly IMapper _mapper;
+        private readonly IMapper             _mapper;
 
         /// <summary>
         /// Initializes a new instance of the ItemService.
@@ -19,33 +19,42 @@ namespace pos_service.Services
             ISupplierRepository supplierRepository,
             IMapper mapper)
         {
-            _itemRepository = itemRepository;
+            _itemRepository     = itemRepository;
             _supplierRepository = supplierRepository;
-            _mapper = mapper;
+            _mapper             = mapper;
         }
 
         /// <summary>
-        /// Retrieves all items from the database.
+        /// Retrieves all items from the system.
         /// </summary>
-        public async Task<IEnumerable<ItemResDto>> GetAllItemsAsync()
+        /// <param name="currentUser">The current user requesting the items.</param>
+        /// <returns>A list of all item details.</returns>
+        public async Task<IEnumerable<ItemResDto>> GetAllItemsAsync(CurrentUser currentUser)
         {
             var items = await _itemRepository.GetAllAsync();
             return _mapper.Map<IEnumerable<ItemResDto>>(items);
         }
 
         /// <summary>
-        /// Retrieves a specific item by its composite key.
+        /// Retrieves a specific item by its composite identifier (ID and SubID).
         /// </summary>
-        public async Task<ItemResDto?> GetItemByIdAsync(int id, int subId)
+        /// <param name="id">The main identifier of the item.</param>
+        /// <param name="subId">The sub-identifier of the item.</param>
+        /// <param name="currentUser">The current user requesting the item.</param>
+        /// <returns>The item details if found, otherwise null.</returns>
+        public async Task<ItemResDto?> GetItemByIdAsync(int id, int subId, CurrentUser currentUser)
         {
             var item = await _itemRepository.GetByIdAsync(id, subId);
             return _mapper.Map<ItemResDto?>(item);
         }
 
         /// <summary>
-        /// Creates a new item in the database.
+        /// Creates a new item in the system.
         /// </summary>
-        public async Task<ItemResDto?> CreateItemAsync(ItemReqDto itemDto)
+        /// <param name="itemDto">The item data transfer object containing item information.</param>
+        /// <param name="currentUser">The current user creating the item.</param>
+        /// <returns>The newly created item details if successful, otherwise null.</returns>
+        public async Task<ItemResDto?> CreateItemAsync(ItemReqDto itemDto, CurrentUser currentUser)
         {
             if (await _itemRepository.ItemExistsAsync(itemDto.Id, itemDto.SubId))
             {
@@ -73,9 +82,14 @@ namespace pos_service.Services
         }
 
         /// <summary>
-        /// Updates an existing item.
+        /// Updates an existing item with the specified composite identifier.
         /// </summary>
-        public async Task<bool> UpdateItemAsync(int id, int subId, ItemReqDto itemDto)
+        /// <param name="id">The main identifier of the item to update.</param>
+        /// <param name="subId">The sub-identifier of the item to update.</param>
+        /// <param name="itemDto">The item data transfer object containing updated information.</param>
+        /// <param name="currentUser">The current user updating the item.</param>
+        /// <returns>True if update was successful, otherwise false.</returns>
+        public async Task<bool> UpdateItemAsync(int id, int subId, ItemReqDto itemDto, CurrentUser currentUser)
         {
             // Fetch the item with its related suppliers to update them
             var itemToUpdate = await _itemRepository.GetByIdWithSuppliersAsync(id, subId);
@@ -107,9 +121,13 @@ namespace pos_service.Services
         }
 
         /// <summary>
-        /// Deletes an item from the database.
+        /// Deletes an item with the specified composite identifier.
         /// </summary>
-        public async Task<bool> DeleteItemAsync(int id, int subId)
+        /// <param name="id">The main identifier of the item to delete.</param>
+        /// <param name="subId">The sub-identifier of the item to delete.</param>
+        /// <param name="currentUser">The current user deleting the item.</param>
+        /// <returns>True if deletion was successful, otherwise false.</returns>
+        public async Task<bool> DeleteItemAsync(int id, int subId, CurrentUser currentUser)
         {
             var itemToDelete = await _itemRepository.GetByIdAsync(id, subId);
             if (itemToDelete == null)
@@ -122,48 +140,63 @@ namespace pos_service.Services
             return true;
         }
 
-        // --- NEW METHODS ---
-
         /// <summary>
-        /// Gets all item variants under a single main ID.
+        /// Retrieves all items that share the same main identifier.
         /// </summary>
-        public async Task<IEnumerable<ItemResDto>> GetItemsByMainIdAsync(int id)
+        /// <param name="id">The main identifier to search for.</param>
+        /// <param name="currentUser">The current user requesting the items.</param>
+        /// <returns>A list of items with the specified main ID.</returns>
+        public async Task<IEnumerable<ItemResDto>> GetItemsByMainIdAsync(int id, CurrentUser currentUser)
         {
             var items = await _itemRepository.GetByMainIdAsync(id);
             return _mapper.Map<IEnumerable<ItemResDto>>(items);
         }
 
         /// <summary>
-        /// Gets a single item by its barcode.
+        /// Retrieves complete item details by barcode.
         /// </summary>
-        public async Task<IEnumerable<ItemResDto>> GetItemByBarCodeAsync(string barCode)
+        /// <param name="barCode">The barcode to search for.</param>
+        /// <param name="currentUser">The current user requesting the item.</param>
+        /// <returns>Complete item details if found, otherwise empty collection.</returns>
+        public async Task<IEnumerable<ItemResDto>> GetItemByBarCodeAsync(string barCode, CurrentUser currentUser)
         {
             var items = await _itemRepository.GetByBarCodeAsync(barCode);
             return _mapper.Map<IEnumerable<ItemResDto>>(items);
         }
 
         /// <summary>
-        /// Gets a single item by its barcode.
+        /// Retrieves minimal item details by barcode for quick lookups.
         /// </summary>
-        public async Task<IEnumerable<BaseitemResDto>> GetItemMinDetailsByBarCodeAsync(string barCode)
+        /// <param name="barCode">The barcode to search for.</param>
+        /// <param name="currentUser">The current user requesting the item.</param>
+        /// <returns>Minimal item details if found, otherwise empty collection.</returns>
+        public async Task<IEnumerable<BaseitemResDto>> GetItemMinDetailsByBarCodeAsync(string barCode, CurrentUser currentUser)
         {
             var items = await _itemRepository.GetByBarCodeAsync(barCode);
             return _mapper.Map<IEnumerable<BaseitemResDto>>(items);
         }
 
         /// <summary>
-        /// Gets a single item by its unique Guid (Uuid).
+        /// Retrieves an item by its unique UUID identifier.
         /// </summary>
-        public async Task<ItemResDto?> GetItemByUuidAsync(Guid uuid)
+        /// <param name="uuid">The UUID of the item to retrieve.</param>
+        /// <param name="currentUser">The current user requesting the item.</param>
+        /// <returns>The item details if found, otherwise null.</returns>
+        public async Task<ItemResDto?> GetItemByUuidAsync(string uuid, CurrentUser currentUser)
         {
             var item = await _itemRepository.GetByUuidAsync(uuid);
             return _mapper.Map<ItemResDto?>(item);
         }
 
         /// <summary>
-        /// Adds a specified quantity to an item's stock.
+        /// Adds stock quantity to an existing item.
         /// </summary>
-        public async Task<ItemResDto?> AddStockAsync(int id, int subId, decimal quantity)
+        /// <param name="id">The main identifier of the item.</param>
+        /// <param name="subId">The sub-identifier of the item.</param>
+        /// <param name="quantity">The quantity to add to the item's stock.</param>
+        /// <param name="currentUser">The current user adding stock.</param>
+        /// <returns>The updated item details if successful, otherwise null.</returns>
+        public async Task<ItemResDto?> AddStockAsync(int id, int subId, decimal quantity, CurrentUser currentUser)
         {
             var item = await _itemRepository.GetByIdAsync(id, subId);
             if (item == null)
@@ -179,9 +212,12 @@ namespace pos_service.Services
         }
 
         /// <summary>
-        /// Gets the stock quantity for all variants of a main item.
+        /// Retrieves quantity information for all items with the specified main ID.
         /// </summary>
-        public async Task<Dictionary<string, decimal>> GetQuantitiesByMainIdAsync(int id)
+        /// <param name="id">The main identifier to search for.</param>
+        /// <param name="currentUser">The current user requesting the quantities.</param>
+        /// <returns>A dictionary containing quantity information for the items.</returns>
+        public async Task<Dictionary<string, decimal>> GetQuantitiesByMainIdAsync(int id, CurrentUser currentUser)
         {
             var items = await _itemRepository.GetByMainIdAsync(id);
             // Creates a dictionary like: { "1001/0": 50, "1001/1": 25 }
@@ -192,9 +228,12 @@ namespace pos_service.Services
         }
 
         /// <summary>
-        /// Gets the stock quantity for an item by its UUID.
+        /// Retrieves the current quantity of an item by its UUID.
         /// </summary>
-        public async Task<decimal?> GetQuantityByUuidAsync(Guid uuid)
+        /// <param name="uuid">The UUID of the item.</param>
+        /// <param name="currentUser">The current user requesting the quantity.</param>
+        /// <returns>The quantity value if found, otherwise null.</returns>
+        public async Task<decimal?> GetQuantityByUuidAsync(string uuid, CurrentUser currentUser)
         {
             var item = await _itemRepository.GetByUuidAsync(uuid);
             // Returns the quantity, or 0 if the item is found but stock is null.
@@ -203,9 +242,13 @@ namespace pos_service.Services
         }
 
         /// <summary>
-        /// Gets the stock quantity for an item by its composite key.
+        /// Retrieves the current quantity of an item by its composite identifier.
         /// </summary>
-        public async Task<decimal?> GetQuantityByIdAsync(int id, int subId)
+        /// <param name="id">The main identifier of the item.</param>
+        /// <param name="subId">The sub-identifier of the item.</param>
+        /// <param name="currentUser">The current user requesting the quantity.</param>
+        /// <returns>The quantity value if found, otherwise null.</returns>
+        public async Task<decimal?> GetQuantityByIdAsync(int id, int subId, CurrentUser currentUser)
         {
             var item = await _itemRepository.GetByIdAsync(id, subId);
             // Returns the quantity, or 0 if the item is found but stock is null.
@@ -216,7 +259,10 @@ namespace pos_service.Services
         /// <summary>
         /// Gets all items associated with a given supplier ID.
         /// </summary>
-        public async Task<IEnumerable<ItemResDto>> GetItemsBySupplierIdAsync(int supplierId)
+        /// <param name="supplierId">The unique identifier of the supplier.</param>
+        /// <param name="currentUser">The current user requesting the items.</param>
+        /// <returns>A list of items associated with the specified supplier.</returns>
+        public async Task<IEnumerable<ItemResDto>> GetItemsBySupplierIdAsync(int supplierId, CurrentUser currentUser)
         {
             var items = await _itemRepository.GetBySupplierIdAsync(supplierId);
             return _mapper.Map<IEnumerable<ItemResDto>>(items);

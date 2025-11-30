@@ -19,17 +19,6 @@ var jwtKey = builder.Configuration["JwtSettings:SecretKey"];
 // 1. Get the connection string from appsettings.json
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-// Add services to the container.
-builder.Services.AddScoped<IItemRepository    , ItemRepository>();
-builder.Services.AddScoped<IItemService       , ItemService>();
-builder.Services.AddScoped<IContactRepository , ContactRepository>();
-builder.Services.AddScoped<IContactService    , ContactService>();
-builder.Services.AddScoped<ISupplierService   , SupplierService>();
-builder.Services.AddScoped<ISupplierRepository, SupplierRepository>();
-builder.Services.AddScoped<IUserRepository    , UserRepository>();
-builder.Services.AddScoped<IUserService       , UserService>();
-builder.Services.AddScoped<IFileStorageService,LocalFileStorageService>();
-
 //----Security Registration----//
 // Register the Hashing Service
 builder.Services.AddScoped<IPasswordHasher, PasswordHasherService>();
@@ -42,18 +31,38 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         var key = Encoding.ASCII.GetBytes(jwtKey);
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer           = false,
-            ValidateAudience         = false,
-            ValidateLifetime         = true,
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey         = new SymmetricSecurityKey(key)
+            ClockSkew = TimeSpan.Zero,
+            IssuerSigningKey = new SymmetricSecurityKey(key)
         };
     });
 
-// 2. Add your AppDbContext to the services container (Dependency Injection)
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
-);
+builder.Services.AddHttpContextAccessor();
+
+// Add services to the container.
+builder.Services.AddScoped<IItemService, ItemService>();
+builder.Services.AddScoped<IContactService, ContactService>();
+builder.Services.AddScoped<ISupplierService, SupplierService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
+
+builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+
+builder.Services.AddScoped<IItemRepository, ItemRepository>();
+builder.Services.AddScoped<IContactRepository, ContactRepository>();
+builder.Services.AddScoped<ISupplierRepository, SupplierRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+
+// FIXED: DbContext registration with all dependencies
+builder.Services.AddDbContext<AppDbContext>((provider, options) =>
+{
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+});
 
 // This scans your project for classes that inherit from AutoMapper.Profile
 // and registers their mapping configurations.
@@ -62,7 +71,6 @@ builder.Services.AddAutoMapper(typeof(Program));
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
-
 
 var app = builder.Build();
 

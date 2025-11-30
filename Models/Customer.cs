@@ -52,7 +52,7 @@ namespace pos_service.Models
         public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 
         // --- Implementation of IAuditable ---
-        public Guid Uuid { get; set; }
+        public string Uuid { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public string CreatedBy { get; set; }

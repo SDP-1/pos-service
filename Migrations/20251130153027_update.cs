@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace pos_service.Migrations
 {
     /// <inheritdoc />
-    public partial class SeedAdminUser1 : Migration
+    public partial class update : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -32,7 +32,8 @@ namespace pos_service.Migrations
                     Address = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     LoyaltyPoints = table.Column<int>(type: "int", nullable: false),
-                    Uuid = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Uuid = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     CreatedBy = table.Column<string>(type: "longtext", nullable: false)
@@ -68,7 +69,8 @@ namespace pos_service.Migrations
                     WholesalePrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     RetailDiscountRatio = table.Column<decimal>(type: "decimal(5,2)", nullable: false),
                     WholesaleDiscountRatio = table.Column<decimal>(type: "decimal(5,2)", nullable: false),
-                    Uuid = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Uuid = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     CreatedBy = table.Column<string>(type: "longtext", nullable: false)
@@ -80,6 +82,7 @@ namespace pos_service.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Items", x => new { x.Id, x.SubId });
+                    table.UniqueConstraint("AK_Items_Uuid", x => x.Uuid);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -93,7 +96,8 @@ namespace pos_service.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Address = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Uuid = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Uuid = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     CreatedBy = table.Column<string>(type: "longtext", nullable: false)
@@ -105,6 +109,7 @@ namespace pos_service.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Suppliers", x => x.Id);
+                    table.UniqueConstraint("AK_Suppliers_Uuid", x => x.Uuid);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -128,7 +133,8 @@ namespace pos_service.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     NIC = table.Column<string>(type: "varchar(12)", maxLength: 12, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Uuid = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Uuid = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     CreatedBy = table.Column<string>(type: "longtext", nullable: false)
@@ -186,7 +192,8 @@ namespace pos_service.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     UserId = table.Column<int>(type: "int", nullable: true),
                     SupplierId = table.Column<int>(type: "int", nullable: true),
-                    Uuid = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Uuid = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     CreatedBy = table.Column<string>(type: "longtext", nullable: false)
@@ -198,6 +205,7 @@ namespace pos_service.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Contacts", x => x.Id);
+                    table.UniqueConstraint("AK_Contacts_Uuid", x => x.Uuid);
                     table.ForeignKey(
                         name: "FK_Contacts_Suppliers_SupplierId",
                         column: x => x.SupplierId,
@@ -225,7 +233,7 @@ namespace pos_service.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     PaymentMethod = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    IsRetailSale = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    SaleType = table.Column<int>(type: "int", nullable: false),
                     ItemCount = table.Column<int>(type: "int", nullable: false),
                     GrossAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     TotalDiscount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
@@ -235,7 +243,8 @@ namespace pos_service.Migrations
                     Balance = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     CashierId = table.Column<int>(type: "int", nullable: false),
                     CustomerId = table.Column<int>(type: "int", nullable: true),
-                    Uuid = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Uuid = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     CreatedBy = table.Column<string>(type: "longtext", nullable: false)
@@ -247,6 +256,7 @@ namespace pos_service.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Orders", x => x.Id);
+                    table.UniqueConstraint("AK_Orders_Uuid", x => x.Uuid);
                     table.ForeignKey(
                         name: "FK_Orders_Customers_CustomerId",
                         column: x => x.CustomerId,
@@ -269,39 +279,44 @@ namespace pos_service.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     OrderId = table.Column<int>(type: "int", nullable: false),
-                    OrderId1 = table.Column<int>(type: "int", nullable: false),
-                    OriginalItemId = table.Column<int>(type: "int", nullable: true),
-                    OriginalItemSubId = table.Column<int>(type: "int", nullable: true),
+                    OriginalItemUuid = table.Column<string>(type: "varchar(255)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    AllowsDecimalQuantities = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     ItemPrintName = table.Column<string>(type: "varchar(40)", maxLength: 40, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Quantity = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
                     PriceAtSale = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     DiscountRatioAtSale = table.Column<decimal>(type: "decimal(5,2)", nullable: false),
                     CostAtSale = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    LineTotal = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
+                    LineTotal = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Uuid = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedBy = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    UpdatedBy = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_OrderItems", x => x.Id);
+                    table.UniqueConstraint("AK_OrderItems_Uuid", x => x.Uuid);
+                    table.ForeignKey(
+                        name: "FK_OrderItems_Items_OriginalItemUuid",
+                        column: x => x.OriginalItemUuid,
+                        principalTable: "Items",
+                        principalColumn: "Uuid",
+                        onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
                         name: "FK_OrderItems_Orders_OrderId",
                         column: x => x.OrderId,
                         principalTable: "Orders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_OrderItems_Orders_OrderId1",
-                        column: x => x.OrderId1,
-                        principalTable: "Orders",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.InsertData(
-                table: "Users",
-                columns: new[] { "Id", "CreatedAt", "CreatedBy", "FirstName", "IsActive", "LastName", "NIC", "PasswordHash", "ProfileImageUrl", "Role", "UpdatedAt", "UpdatedBy", "UserName", "Uuid" },
-                values: new object[] { 1, new DateTime(2025, 10, 25, 18, 33, 22, 312, DateTimeKind.Utc).AddTicks(1810), "System Seed", "System", true, "Admin", "000000000000", "AQAAAAIAAYagAAAAEFPPI1taFKsJcCZOquN20vSU09LesmnVjDhJjsCl5FJ48TjggspVkCbVRwLE3PicrQ==", null, "SystemAdmin", null, null, "admin@pos.com", new Guid("09ab7fb9-e1ee-47e7-8f61-04763ba822cb") });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Contacts_SupplierId",
@@ -330,9 +345,9 @@ namespace pos_service.Migrations
                 column: "OrderId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_OrderItems_OrderId1",
+                name: "IX_OrderItems_OriginalItemUuid",
                 table: "OrderItems",
-                column: "OrderId1");
+                column: "OriginalItemUuid");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Orders_CashierId",
@@ -370,10 +385,10 @@ namespace pos_service.Migrations
                 name: "OrderItems");
 
             migrationBuilder.DropTable(
-                name: "Items");
+                name: "Suppliers");
 
             migrationBuilder.DropTable(
-                name: "Suppliers");
+                name: "Items");
 
             migrationBuilder.DropTable(
                 name: "Orders");

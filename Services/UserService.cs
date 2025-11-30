@@ -10,33 +10,33 @@ namespace pos_service.Services
 {
     public class UserService : IUserService
     {
-        private readonly IUserRepository _userRepository;
-        private readonly IMapper _mapper;
-        private readonly IPasswordHasher _passwordHasher;
-        private readonly IJwtGenerator _jwtGenerator;
+        private readonly IUserRepository     _userRepository;
+        private readonly IMapper             _mapper;
+        private readonly IPasswordHasher     _passwordHasher;
+        private readonly IJwtGenerator       _jwtGenerator;
         private readonly IFileStorageService _fileStorageService;
         public UserService(IUserRepository repo, IMapper mapper, IPasswordHasher hasher, IJwtGenerator jwt, IFileStorageService fileStorageService)
         {
-            _userRepository = repo;
-            _mapper = mapper;
-            _passwordHasher = hasher;
-            _jwtGenerator = jwt;
+            _userRepository     = repo;
+            _mapper             = mapper;
+            _passwordHasher     = hasher;
+            _jwtGenerator       = jwt;
             _fileStorageService = fileStorageService;
         }
 
-        public async Task<IEnumerable<UserResDto>> GetAllUsersAsync()
+        public async Task<IEnumerable<UserResDto>> GetAllUsersAsync(CurrentUser currentUser)
         {
             var users = await _userRepository.GetAllAsync();
             return _mapper.Map<IEnumerable<UserResDto>>(users);
         }
 
-        public async Task<UserResDto?> GetUserByIdAsync(int id)
+        public async Task<UserResDto?> GetUserByIdAsync(int id, CurrentUser currentUser)
         {
             var user = await _userRepository.GetByIdWithContactsAsync(id);
             return _mapper.Map<UserResDto?>(user);
         }
 
-        public async Task<UserResDto?> CreateUserAsync(UserReqDto userDto)
+        public async Task<UserResDto?> CreateUserAsync(UserReqDto userDto, CurrentUser currentUser)
         {
             // 1. Check for existing user by UserName
             if (await _userRepository.GetByUserNameAsync(userDto.UserName) != null)
@@ -76,7 +76,7 @@ namespace pos_service.Services
             user.ProfileImageUrl = savedPath;
 
             // Set Auditable properties (e.g., Uuid, CreatedAt, CreatedBy)
-            user.Uuid = Guid.NewGuid();
+            user.Uuid = Guid.NewGuid().ToString();
             user.CreatedAt = DateTime.UtcNow;
             user.CreatedBy = "System/InitialUser"; // Placeholder for actual logged-in user
 
@@ -85,7 +85,7 @@ namespace pos_service.Services
             return _mapper.Map<UserResDto>(newUser);
         }
 
-        public async Task<bool> DeactivateUserAsync(int id)
+        public async Task<bool> DeactivateUserAsync(int id, CurrentUser currentUser)
         {
             var userToUpdate = await _userRepository.GetByIdAsync(id);
             if (userToUpdate == null) return false;
@@ -98,7 +98,7 @@ namespace pos_service.Services
         /// <summary>
         /// Sets a user account's IsActive status to true.
         /// </summary>
-        public async Task<bool> ActivateUserAsync(int id)
+        public async Task<bool> ActivateUserAsync(int id, CurrentUser currentUser)
         {
             var userToUpdate = await _userRepository.GetByIdAsync(id);
             if (userToUpdate == null)
@@ -142,7 +142,7 @@ namespace pos_service.Services
         /// <summary>
         /// Changes a user's password after verifying the old password.
         /// </summary>
-        public async Task<bool> ChangePasswordAsync(int id, string oldPassword, string newPassword)
+        public async Task<bool> ChangePasswordAsync(int id, string oldPassword, string newPassword, CurrentUser currentUser)
         {
             var user = await _userRepository.GetByIdAsync(id);
             if (user == null)
@@ -170,7 +170,7 @@ namespace pos_service.Services
         /// <summary>
         /// Updates an existing user's details, including mapping contacts and handling the password/profile image path.
         /// </summary>
-        public async Task<UserResDto?> UpdateUserAsync(int id, UserReqDto userDto)
+        public async Task<UserResDto?> UpdateUserAsync(int id, UserReqDto userDto, CurrentUser currentUser)
         {
             // Fetch the user with related contacts for comprehensive update
             var userToUpdate = await _userRepository.GetByIdWithContactsAsync(id);
@@ -240,7 +240,7 @@ namespace pos_service.Services
         /// </summary>
         /// <param name="id">The ID of the user to delete.</param>
         /// <returns>True if the user was successfully deleted, false if the user was not found.</returns>
-        public async Task<bool> DeleteUserAsync(int id)
+        public async Task<bool> DeleteUserAsync(int id, CurrentUser currentUser)
         {
             var userToDelete = await _userRepository.GetByIdAsync(id);
             if (userToDelete == null)

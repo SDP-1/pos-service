@@ -13,6 +13,7 @@ namespace pos_service.Repositories
         public async Task<IEnumerable<Contact>> GetAllAsync() => await _context.Contacts.ToListAsync();
         public async Task<Contact> AddAsync(Contact contact)
         {
+            contact.Uuid = Guid.NewGuid().ToString();
             _context.Contacts.Add(contact);
             await _context.SaveChangesAsync();
             return contact;

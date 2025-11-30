@@ -25,6 +25,7 @@ namespace pos_service.Repositories
         }
         public async Task<Supplier> AddAsync(Supplier supplier)
         {
+            supplier.Uuid = Guid.NewGuid().ToString();
             _context.Suppliers.Add(supplier);
             await _context.SaveChangesAsync();
             return supplier;

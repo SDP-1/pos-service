@@ -8,21 +8,29 @@ namespace pos_service.Models
         /// <summary>
         /// Primary key for the user.
         /// </summary>
-        public int Id                  { get; set; }
+        public int Id { get; set; }
 
         /// <summary>
         /// User's first name.
         /// </summary>
         [Required]
         [MaxLength(50)]
-        public string FirstName        { get; set; }
+        public string FirstName { get; set; }
 
         /// <summary>
         /// User's last name.
         /// </summary>
         [Required]
         [MaxLength(50)]
-        public string LastName         { get; set; }
+        public string LastName { get; set; }
+
+        /// <summary>
+        /// User's full name.
+        /// </summary>
+        public string FullName
+        {
+            get { return $"{FirstName} {LastName}"; }
+        }
 
         /// <summary>
         /// User's unique username, used for login.
@@ -59,7 +67,7 @@ namespace pos_service.Models
         public virtual ICollection<Contact> Contacts { get; set; } = new List<Contact>();
 
         // --- Implementation of IAuditable ---
-        public Guid Uuid               { get; set; }
+        public string Uuid             { get; set; }
         public DateTime CreatedAt      { get; set; }
         public DateTime? UpdatedAt     { get; set; }
         public string CreatedBy        { get; set; }

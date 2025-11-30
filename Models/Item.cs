@@ -10,27 +10,27 @@ namespace pos_service.Models
         /// The main identifier or code for a product group.
         /// </summary>
         [Required]
-        public int Id               { get; set; }
+        public int Id                          { get; set; }
 
         /// <summary>
         /// PART 2 of the Composite Key.
         /// The sub-identifier for a variant.
         /// </summary>
-        public int SubId                    { get; set; } = 0;
+        public int SubId                       { get; set; } = 0;
 
         /// <summary>
         /// The full name of the item for internal use (e.g., "Coca-Cola 500ml Bottle").
         /// </summary>
         [Required]
         [MaxLength(200)]
-        public string Name                    { get; set; }
+        public string Name                     { get; set; }
 
         /// <summary>
         /// The shorter name to be printed on customer receipts (e.g., "Coke 500ml").
         /// </summary>
         [Required]
         [MaxLength(40)]
-        public string PrintName               { get; set; }
+        public string PrintName                { get; set; }
 
         /// <summary>
         /// The EAN or UPC barcode associated with the item.
@@ -48,7 +48,7 @@ namespace pos_service.Models
         /// If true, allows the item to be sold in fractional quantities (e.g., fruits, vegetables).
         /// This is your 'decimal' field, renamed for clarity.
         /// </summary>
-        public bool AllowsDecimalQuantities   { get; set; } = false;
+        public bool AllowsDecimalQuantities    { get; set; } = false;
 
         // --- Pricing Information ---
 
@@ -56,7 +56,7 @@ namespace pos_service.Models
         /// The cost price of the item from the supplier.
         /// </summary>
         [Column(TypeName = "decimal(18, 2)")]
-        public decimal BuyingPrice            { get; set; }
+        public decimal BuyingPrice             { get; set; }
 
         /// <summary>
         /// The marked retail price (MRP) printed on the product label.
@@ -95,7 +95,7 @@ namespace pos_service.Models
         public virtual ICollection<Supplier> Suppliers { get; set; } = new List<Supplier>();
 
         // --- Implementation of IAuditable ---
-        public Guid Uuid                      { get; set; }
+        public string Uuid                    { get; set; }
         public DateTime CreatedAt             { get; set; }
         public DateTime? UpdatedAt            { get; set; }
         public string CreatedBy               { get; set; }

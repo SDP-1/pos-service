@@ -12,7 +12,7 @@ using pos_service.Data;
 namespace pos_service.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251130073229_update")]
+    [Migration("20251130153027_update")]
     partial class update
     {
         /// <inheritdoc />
@@ -90,8 +90,9 @@ namespace pos_service.Migrations
                     b.Property<int?>("UserId")
                         .HasColumnType("int");
 
-                    b.Property<Guid>("Uuid")
-                        .HasColumnType("char(36)");
+                    b.Property<string>("Uuid")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
 
                     b.HasKey("Id");
 
@@ -152,8 +153,9 @@ namespace pos_service.Migrations
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("longtext");
 
-                    b.Property<Guid>("Uuid")
-                        .HasColumnType("char(36)");
+                    b.Property<string>("Uuid")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
 
                     b.HasKey("Id");
 
@@ -221,8 +223,9 @@ namespace pos_service.Migrations
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("longtext");
 
-                    b.Property<Guid>("Uuid")
-                        .HasColumnType("char(36)");
+                    b.Property<string>("Uuid")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
 
                     b.Property<decimal>("WholesaleDiscountRatio")
                         .HasColumnType("decimal(5, 2)");
@@ -302,8 +305,9 @@ namespace pos_service.Migrations
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("longtext");
 
-                    b.Property<Guid>("Uuid")
-                        .HasColumnType("char(36)");
+                    b.Property<string>("Uuid")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
 
                     b.HasKey("Id");
 
@@ -326,6 +330,9 @@ namespace pos_service.Migrations
                         .HasColumnType("int");
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("AllowsDecimalQuantities")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<decimal>("CostAtSale")
                         .HasColumnType("decimal(18, 2)");
@@ -354,8 +361,8 @@ namespace pos_service.Migrations
                     b.Property<int>("OrderId")
                         .HasColumnType("int");
 
-                    b.Property<Guid?>("OriginalItemUuid")
-                        .HasColumnType("char(36)");
+                    b.Property<string>("OriginalItemUuid")
+                        .HasColumnType("varchar(255)");
 
                     b.Property<decimal>("PriceAtSale")
                         .HasColumnType("decimal(18, 2)");
@@ -369,8 +376,9 @@ namespace pos_service.Migrations
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("longtext");
 
-                    b.Property<Guid>("Uuid")
-                        .HasColumnType("char(36)");
+                    b.Property<string>("Uuid")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
 
                     b.HasKey("Id");
 
@@ -415,8 +423,9 @@ namespace pos_service.Migrations
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("longtext");
 
-                    b.Property<Guid>("Uuid")
-                        .HasColumnType("char(36)");
+                    b.Property<string>("Uuid")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
 
                     b.HasKey("Id");
 
@@ -479,8 +488,9 @@ namespace pos_service.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
-                    b.Property<Guid>("Uuid")
-                        .HasColumnType("char(36)");
+                    b.Property<string>("Uuid")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
 
                     b.HasKey("Id");
 

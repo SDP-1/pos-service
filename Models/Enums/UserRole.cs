@@ -35,6 +35,7 @@
         public const string Cashier             = nameof(UserRole.Cashier);
         public const string StockKeeper         = nameof(UserRole.StockKeeper);
         public const string Auditor             = nameof(UserRole.Auditor);
+        public const string Non                 = nameof(UserRole.Default);
 
         // Helper constants for common role groups, also using nameof()
         public const string AllAdmins           = SystemAdmin + "," + ShopAdmin;

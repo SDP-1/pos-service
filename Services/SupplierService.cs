@@ -8,29 +8,27 @@ namespace pos_service.Services
     public class SupplierService : ISupplierService
     {
         private readonly ISupplierRepository _supplierRepo;
-        private readonly IContactRepository _contactRepo; // To fetch contacts
-        private readonly IMapper _mapper;
+        private readonly IMapper             _mapper;
 
-        public SupplierService(ISupplierRepository supplierRepo, IContactRepository contactRepo, IMapper mapper)
+        public SupplierService(ISupplierRepository supplierRepo, IMapper mapper)
         {
             _supplierRepo = supplierRepo;
-            _contactRepo = contactRepo;
-            _mapper = mapper;
+            _mapper       = mapper;
         }
 
-        public async Task<IEnumerable<SupplierResDto>> GetAllSuppliersAsync()
+        public async Task<IEnumerable<SupplierResDto>> GetAllSuppliersAsync(CurrentUser currentUser)
         {
             var suppliers = await _supplierRepo.GetAllAsync();
             return _mapper.Map<IEnumerable<SupplierResDto>>(suppliers);
         }
 
-        public async Task<SupplierResDto?> GetSupplierByIdAsync(int id)
+        public async Task<SupplierResDto?> GetSupplierByIdAsync(int id, CurrentUser currentUser)
         {
             var supplier = await _supplierRepo.GetByIdWithDetailsAsync(id);
             return _mapper.Map<SupplierResDto?>(supplier);
         }
 
-        public async Task<SupplierResDto> CreateSupplierAsync(SupplierReqDto dto)
+        public async Task<SupplierResDto> CreateSupplierAsync(SupplierReqDto dto, CurrentUser currentUser)
         {
             var supplier = _mapper.Map<Supplier>(dto);
 
@@ -38,7 +36,7 @@ namespace pos_service.Services
             return _mapper.Map<SupplierResDto>(newSupplier);
         }
 
-        public async Task<bool> UpdateSupplierAsync(int id, SupplierReqDto dto)
+        public async Task<bool> UpdateSupplierAsync(int id, SupplierReqDto dto, CurrentUser currentUser)
         {
             var supplierToUpdate = await _supplierRepo.GetByIdWithDetailsAsync(id);
             if (supplierToUpdate == null) return false;
@@ -49,7 +47,7 @@ namespace pos_service.Services
             return true;
         }
 
-        public async Task<bool> DeleteSupplierAsync(int id)
+        public async Task<bool> DeleteSupplierAsync(int id, CurrentUser currentUser)
         {
             var supplier = await _supplierRepo.GetByIdAsync(id);
             if (supplier == null) return false;

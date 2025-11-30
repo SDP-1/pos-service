@@ -20,7 +20,7 @@ namespace pos_service.Models.DTO.Item
         public List<SupplierResDto> Suppliers { get; set; }
 
 
-        public Guid Uuid                      { get; set; }
+        public string Uuid                    { get; set; }
         public DateTime CreatedAt             { get; set; }
         public DateTime? UpdatedAt            { get; set; }
         public string CreatedBy               { get; set; }

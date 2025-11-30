@@ -25,7 +25,7 @@
 
             // 2. Generate a unique file name
             var extension = Path.GetExtension(file.FileName);
-            var fileName = $"{Guid.NewGuid()}{extension}";
+            var fileName = $"{Guid.NewGuid().ToString()}{extension}";
             var filePath = Path.Combine(folderPath, fileName);
 
             // 3. Save the file
@@ -63,7 +63,7 @@
 
             // 3. Generate unique file name and final path
             var extension = Path.GetExtension(sourceFilePath);
-            var fileName = $"{Guid.NewGuid()}{extension}";
+            var fileName = $"{Guid.NewGuid().ToString()}{extension}";
             var filePath = Path.Combine(folderPath, fileName);
 
             // 4. Copy the file (synchronous operation often fine for file copies)

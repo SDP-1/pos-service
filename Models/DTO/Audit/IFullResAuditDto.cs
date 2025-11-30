@@ -2,7 +2,7 @@
 {
     public interface IFullResAuditDto
     {
-        Guid Uuid           { get; set; }
+        string Uuid           { get; set; }
         DateTime CreatedAt  { get; set; }
         DateTime? UpdatedAt { get; set; }
         string CreatedBy    { get; set; }

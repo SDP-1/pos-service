@@ -170,13 +170,13 @@ namespace pos_service.Services
         /// <summary>
         /// Updates an existing user's details, including mapping contacts and handling the password/profile image path.
         /// </summary>
-        public async Task<bool> UpdateUserAsync(int id, UserReqDto userDto)
+        public async Task<UserResDto?> UpdateUserAsync(int id, UserReqDto userDto)
         {
             // Fetch the user with related contacts for comprehensive update
             var userToUpdate = await _userRepository.GetByIdWithContactsAsync(id);
             if (userToUpdate == null)
             {
-                return false; // User not found
+                return null; // User not found
             }
 
             // 1. Check if the new username is already taken by another user
@@ -184,7 +184,7 @@ namespace pos_service.Services
             if (userByUserName != null && userByUserName.Id != id)
             {
                 // Conflict: Another user already has this username (email)
-                return false;
+                return null;
             }
 
             // Handle File Copy/Replacement using local path string
@@ -208,12 +208,12 @@ namespace pos_service.Services
                 {
                     // You should handle this in the controller by throwing an exception, 
                     // but for simplicity here, we can return false.
-                    return false;
+                    return null;
                 }
                 catch (Exception)
                 {
                     // Handle other file system errors (e.g., permission denied)
-                    return false;
+                    return null;
                 }
             }
 
@@ -231,8 +231,8 @@ namespace pos_service.Services
             userToUpdate.UpdatedAt = DateTime.UtcNow;
             // userToUpdate.UpdatedBy = GetCurrentUserName();
 
-            await _userRepository.UpdateAsync(userToUpdate);
-            return true;
+            var data = await _userRepository.UpdateAsync(userToUpdate);
+            return _mapper.Map<UserResDto>(data);
         }
 
         /// <summary>

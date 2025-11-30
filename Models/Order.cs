@@ -21,7 +21,7 @@ namespace pos_service.Models
         /// <summary>
         /// True if it's a retail sale, false if it's a wholesale transaction.
         /// </summary>
-        public bool IsRetailSale { get; set; } = true;
+        public SaleType SaleType { get; set; } = SaleType.Reatail;
 
         /// <summary>
         /// The total number of unique items in the order.
@@ -32,39 +32,39 @@ namespace pos_service.Models
         /// The sum of (Price * Quantity) for all items before any discounts.
         /// </summary>
         [Column(TypeName = "decimal(18, 2)")]
-        public decimal GrossAmount { get; set; }
+        public decimal GrossAmount { get; set; } = 0.0m;
 
         /// <summary>
         /// The total discount amount applied to the entire order.
         /// </summary>
         [Column(TypeName = "decimal(18, 2)")]
-        public decimal TotalDiscount { get; set; }
+        public decimal TotalDiscount { get; set; } = 0.0m;
 
         /// <summary>
         /// The final payable amount (GrossAmount - TotalDiscount).
         /// </summary>
         [Required]
         [Column(TypeName = "decimal(18, 2)")]
-        public decimal NetAmount { get; set; }
+        public decimal NetAmount { get; set; } = 0.0m;
 
         /// <summary>
         /// The total cost of all goods sold in this order (sum of BuyingPrice).
         /// Used to calculate profit.
         /// </summary>
         [Column(TypeName = "decimal(18, 2)")]
-        public decimal TotalCost { get; set; }
+        public decimal TotalCost { get; set; } = 0.0m;
 
         /// <summary>
         /// The amount of money received from the customer.
         /// </summary>
         [Column(TypeName = "decimal(18, 2)")]
-        public decimal AmountPaid { get; set; }
+        public decimal AmountPaid { get; set; } = 0.0m;
 
         /// <summary>
         /// The balance to be paid or returned to the customer (change).
         /// </summary>
         [Column(TypeName = "decimal(18, 2)")]
-        public decimal Balance { get; set; }
+        public decimal Balance { get; set; } = 0.0m;
 
         // --- Foreign Key to User (Cashier) ---
         public int CashierId { get; set; }

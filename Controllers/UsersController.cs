@@ -93,12 +93,12 @@ namespace pos_service.Controllers
         [Authorize(Roles = UserRoles.AllAdmins)] // Allow managers/SystemAdmins to update users
         public async Task<IActionResult> UpdateUser(int id, [FromBody] UserReqDto userDto)
         {
-            var success = await _userService.UpdateUserAsync(id, userDto);
-            if (!success)
+            var user = await _userService.UpdateUserAsync(id, userDto);
+            if (user == null)
             {
                 return NotFound();
             }
-            return NoContent();
+            return Ok(user);
         }
 
         /// <summary>

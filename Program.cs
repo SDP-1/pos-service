@@ -72,6 +72,16 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+// --- Runtime DB Seeding ---
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+
+    // Apply migrations and seed initial data
+    await DbInitializer.SeedAsync(context, passwordHasher);
+}
+
 // Enable Static File Serving 
 // This middleware is essential for serving files from the designated WebRootPath.
 app.UseStaticFiles();

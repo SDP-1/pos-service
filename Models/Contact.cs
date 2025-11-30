@@ -35,11 +35,13 @@ namespace pos_service.Models
         [MaxLength(100)]
         public string? Email       { get; set; }
 
-        // 🔹 Relationship: (optional) - Foreign key for the User
-        public virtual int? UserId { get; set; }
+        // --- Optional User Relationship ---
+        public int? UserId { get; set; }   // Nullable FK
+        public virtual User? User { get; set; }    // Nav property
 
-        // 🔹 Relationship: (optional) - Foreign key for the Supplier
-        public virtual int? SupplierId { get; set; }
+        // --- Optional Supplier Relationship ---
+        public int? SupplierId { get; set; } // Nullable FK
+        public virtual Supplier? Supplier { get; set; } // Nav property
 
         // --- Implementation of IAuditable ---
         [Required]

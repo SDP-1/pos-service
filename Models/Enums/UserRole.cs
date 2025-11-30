@@ -2,6 +2,7 @@
 {
     public enum UserRole
     {
+        Default     = 0,
         // System-level role, can manage everything across all shops
         SystemAdmin = 1,
 

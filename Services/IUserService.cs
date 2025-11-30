@@ -7,7 +7,7 @@ namespace pos_service.Services
         Task<IEnumerable<UserResDto>> GetAllUsersAsync();
         Task<UserResDto?> GetUserByIdAsync(int id);
         Task<UserResDto?> CreateUserAsync(UserReqDto userDto);
-        Task<bool> UpdateUserAsync(int id, UserReqDto userDto);
+        Task<UserResDto?> UpdateUserAsync(int id, UserReqDto userDto);
         Task<bool> DeleteUserAsync(int id);
         Task<bool> DeactivateUserAsync(int id);
         Task<bool> ActivateUserAsync(int id);

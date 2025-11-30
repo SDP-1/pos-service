@@ -3,18 +3,17 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace pos_service.Models
 {
-    public class OrderItem
+    public class OrderItem : IAuditable
     {
         public int Id { get; set; }
 
         // --- Link to the parent Order ---
         public int OrderId { get; set; }
-
         public virtual Order Order { get; set; }
 
         // --- Optional link to the original Item for historical analysis ---
-        public int? OriginalItemId { get; set; }
-        public int? OriginalItemSubId { get; set; }
+        public Guid? OriginalItemUuid { get; set; }
+        public virtual Item? Item { get; set; }
 
         // --- SNAPSHOTTED DATA ---
         // These fields are copied from the Item table at the time of sale.
@@ -57,5 +56,13 @@ namespace pos_service.Models
         /// </summary>
         [Column(TypeName = "decimal(18, 2)")]
         public decimal LineTotal { get; set; }
+
+        // --- Implementation of IAuditable ---
+        public Guid Uuid { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public string CreatedBy { get; set; }
+        public string? UpdatedBy { get; set; }
+        public bool IsActive { get; set; } = true;
     }
 }

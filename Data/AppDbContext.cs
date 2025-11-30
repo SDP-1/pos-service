@@ -33,9 +33,6 @@ namespace pos_service.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Apply seeding logic (Admin User)
-            SeedUsers(modelBuilder);
-
             // --- User Configuration ---
             modelBuilder.Entity<User>(entity =>
             {
@@ -45,9 +42,30 @@ namespace pos_service.Data
                 // Store the UserRole enum as a string in the database for readability.
                 entity.Property(u => u.Role).HasConversion<string>();
 
-                // 1. Define Uuid as a unique, alternate key.
-                // This is REQUIRED to use it as a foreign key target.
-                entity.HasAlternateKey(u => u.Uuid);
+                // User -> Contacts (cascade)
+                entity.HasMany(s => s.Contacts)
+                      .WithOne(c => c.User)
+                      .HasForeignKey(c => c.UserId)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+            // 1. Define Uuid as a unique, alternate key.
+            // This is REQUIRED to use it as a foreign key target.
+            entity.HasAlternateKey(u => u.Uuid);
+            });
+
+            // --- Supplier Configuration ---
+            modelBuilder.Entity<Supplier>(entity =>
+            {
+                // UUID must be unique
+                entity.HasAlternateKey(s => s.Uuid);
+
+                // Supplier -> Contacts (cascade)
+                entity.HasMany(s => s.Contacts)
+                      .WithOne(c => c.Supplier)
+                      .HasForeignKey(c => c.SupplierId)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
 
             // --- Customer Configuration ---
@@ -71,27 +89,14 @@ namespace pos_service.Data
                 // EF Core will create a junction table automatically.
                 entity.HasMany(i => i.Suppliers)
                       .WithMany(s => s.Items);
+
+                entity.HasAlternateKey(i => i.Uuid);   // creates unique constraint
             });
 
-            // --- Contact Configuration ---
             modelBuilder.Entity<Contact>(entity =>
             {
-
-                // 1. Configure the User relationship (one-way)
-                entity.HasOne<User>()
-                      .WithMany(u => u.Contacts)
-                      .HasForeignKey(c => c.UserId)
-                      .IsRequired(false)
-                      .OnDelete(DeleteBehavior.Cascade);
-
-                // 2. Configure the Supplier relationship (one-way)
-                entity.HasOne<Supplier>()
-                      .WithMany(s => s.Contacts)
-                      .HasForeignKey(c => c.SupplierId)
-                      .IsRequired(false)
-                      .OnDelete(DeleteBehavior.Cascade); // Deletes contact if supplier is deleted
-
-
+                // UUID must be unique
+                entity.HasAlternateKey(c => c.Uuid);
             });
 
             // --- Order Configuration ---
@@ -114,7 +119,9 @@ namespace pos_service.Data
                       .WithMany(c => c.Orders)
                       .HasForeignKey(o => o.CustomerId)
                       .IsRequired(false)
-                      .OnDelete(DeleteBehavior.SetNull);
+                      .OnDelete(DeleteBehavior.SetNull); // do not delete set as null
+
+                entity.HasAlternateKey(i => i.Uuid);   // creates unique constraint
             });
 
             // --- OrderItem Configuration ---
@@ -126,6 +133,14 @@ namespace pos_service.Data
                       .WithMany(o => o.OrderItems)
                       .HasForeignKey(oi => oi.OrderId)
                       .IsRequired();
+
+                entity.HasOne(oi => oi.Item)
+                      .WithMany()
+                      .HasForeignKey(oi => oi.OriginalItemUuid)
+                      .HasPrincipalKey(i => i.Uuid)
+                      .OnDelete(DeleteBehavior.SetNull); // do not delete set as null
+
+                entity.HasAlternateKey(i => i.Uuid);   // creates unique constraint
             });
         }
 
@@ -159,31 +174,6 @@ namespace pos_service.Data
             }
 
             return base.SaveChangesAsync(cancellationToken);
-        }
-
-        private void SeedUsers(ModelBuilder modelBuilder)
-        {
-            // 1. Hash the password for the default admin user
-            string adminPasswordHash = _passwordHasher.HashPassword("AdminPass123!");
-
-            // 2. Create the initial User entity
-            var adminUser = new User
-            {
-                Id           = 1,
-                Uuid         = Guid.NewGuid(),
-                FirstName    = "System",
-                LastName     = "Admin",
-                UserName     = "admin@pos.com",
-                PasswordHash = adminPasswordHash,
-                Role         = UserRole.SystemAdmin,
-                NIC          = "000000000000",
-                IsActive     = true,
-                CreatedAt    = DateTime.UtcNow,
-                CreatedBy    = "System Seed"
-            };
-
-            // 3. Add the user data to the database seed
-            modelBuilder.Entity<User>().HasData(adminUser);
         }
     }
 }

@@ -18,7 +18,7 @@ namespace pos_service.Models.DTO.Order
         public int? CashierId { get; set; }
 
         // Search term
-        public string SearchTerm { get; set; }
+        public string? SearchTerm { get; set; }
 
         // Pagination
         public int PageNumber { get; set; } = 1;

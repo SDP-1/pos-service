@@ -1,34 +1,60 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using pos_service.Data;
 using pos_service.Models;
 using pos_service.Models.DTO.Order;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace pos_service.Repositories
 {
     public class OrderRepository : IOrderRepository
     {
         private readonly AppDbContext _context;
+        private readonly ILogger<OrderRepository> _logger;
 
-        public OrderRepository(AppDbContext context)
+        public OrderRepository(AppDbContext context, ILogger<OrderRepository> logger)
         {
+            _logger = logger;
             _context = context;
         }
 
         public async Task<Order> CreateAsync(Order order)
         {
-            order.Uuid = Guid.NewGuid().ToString();
-            _context.Orders.Add(order);
-            await _context.SaveChangesAsync();
-            return order;
+            try { 
+                order.Uuid = Guid.NewGuid().ToString();
+                _context.Orders.Add(order);
+                await _context.SaveChangesAsync();
+                return order;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error while creating order: {@Order}", order);
+                return null;
+            }
         }
 
-        public async Task<Order?> GetByIdAsync(int id)
+        public async Task<Order?> GetByIdAsync(int id, bool isActiveOnly = true)
         {
-            return await _context.Orders
-                .Include(o => o.OrderItems)
-                .Include(o => o.Cashier)
-                .Include(o => o.Customer)
-                .FirstOrDefaultAsync(o => o.Id == id && o.IsActive);
+            try
+            {
+                IQueryable<Order> query = _context.Orders
+                                                    .Include(o => o.OrderItems)
+                                                    .Include(o => o.Cashier)
+                                                    .Include(o => o.Customer);
+
+                // Apply active filter only when requested
+                if (isActiveOnly)
+                {
+                    query = query.Where(o => o.IsActive);
+                }
+
+                return await query.FirstOrDefaultAsync(o => o.Id == id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error while Get order");
+                return null;
+            }
         }
         public async Task<Order?> GetByOrderNumberAsync(string orderNumber)
         {
@@ -119,13 +145,9 @@ namespace pos_service.Repositories
             return order;
         }
 
-        public async Task<bool> DeleteAsync(int id)
+        public async Task<bool> DeleteAsync(Order order)
         {
-            var order = await _context.Orders.FindAsync(id);
-            if (order == null) return false;
-
-            order.IsActive = false;
-            order.UpdatedAt = DateTime.UtcNow;
+            _context.Orders.Remove(order);
             await _context.SaveChangesAsync();
             return true;
         }

@@ -66,7 +66,7 @@ namespace pos_service.Controllers
         {
             var order = await _orderService.GetOrderAsync(id, _currentUser);
             if (order == null)
-                return NotFound();
+                return Ok("Order not found");
 
             return Ok(order);
         }
@@ -81,7 +81,7 @@ namespace pos_service.Controllers
         {
             var order = await _orderService.GetOrderByUuidAsync(uuid, _currentUser);
             if (order == null)
-                return NotFound();
+                return Ok("Order not found");
 
             return Ok(order);
         }
@@ -96,7 +96,7 @@ namespace pos_service.Controllers
         {
             var order = await _orderService.GetOrderByOrderNumberAsync(number, _currentUser);
             if (order == null)
-                return NotFound();
+                return Ok("Order not found");
 
             return Ok(order);
         }
@@ -147,14 +147,14 @@ namespace pos_service.Controllers
         /// </summary>
         /// <param name="id">The unique identifier of the order to delete.</param>
         /// <returns>NoContent if successful, otherwise returns NotFound.</returns>
-        [HttpDelete("{id:int}")]
-        public async Task<ActionResult> DeleteOrder(int id)
+        [HttpDelete("{id:int}/{permanent:bool?}}")]
+        public async Task<ActionResult> DeleteOrder(int id , bool permanent = false)
         {
-            var result = await _orderService.DeleteOrderAsync(id, _currentUser);
+            var result = await _orderService.DeleteOrderAsync(id, _currentUser, permanent);
             if (!result)
-                return NotFound();
+                return NotFound("Order not found");
 
-            return NoContent();
+            return Ok("Succes fully deleted");
         }
 
         /// <summary>

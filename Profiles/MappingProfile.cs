@@ -2,6 +2,8 @@
 using pos_service.Models;
 using pos_service.Models.DTO.Contact;
 using pos_service.Models.DTO.Item;
+using pos_service.Models.DTO.Order;
+using pos_service.Models.DTO.OrderItem;
 using pos_service.Models.DTO.Supplier;
 using pos_service.Models.DTO.User;
 using pos_service.Repositories;
@@ -29,6 +31,15 @@ namespace pos_service.Profiles
             CreateMap<User, UserResDto>();
             CreateMap<UserReqDto, User>();
             CreateMap<UserLoginReqDto, User>();
+
+            // Order Maper
+            CreateMap<Order, OrderResDto>();
+            CreateMap<OrderReqDto, Order>();
+            CreateMap<Order, OrderSummaryResDto>();
+
+            // Order Maper
+            CreateMap<OrderItem, OrderItemResDto>();
+            CreateMap<OrderItemReqDto, OrderItem>();
         }
     }
 }

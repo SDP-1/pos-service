@@ -16,8 +16,9 @@ namespace pos_service.Repositories
         /// Retrieves a specific order by its unique identifier.
         /// </summary>
         /// <param name="id">The unique identifier of the order.</param>
+        /// <param name="isActiveOnly">only get active recodes - default true.</param>
         /// <returns>The order entity if found, otherwise null.</returns>
-        Task<Order?> GetByIdAsync(int id);
+        Task<Order?> GetByIdAsync(int id, bool isActiveOnly = true);
 
         /// <summary>
         /// Retrieves an order by its order number.
@@ -50,9 +51,9 @@ namespace pos_service.Repositories
         /// <summary>
         /// Deletes an order from the data store.
         /// </summary>
-        /// <param name="id">The unique identifier of the order to delete.</param>
+        /// <param name="order">The order entity with updated information.</param>
         /// <returns>True if deletion was successful, otherwise false.</returns>
-        Task<bool> DeleteAsync(int id);
+        Task<bool> DeleteAsync(Order order);
 
         /// <summary>
         /// Gets the count of orders matching the specified query parameters.

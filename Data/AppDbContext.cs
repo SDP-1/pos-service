@@ -156,8 +156,8 @@ namespace pos_service.Data
             var entries = ChangeTracker
                 .Entries()
                 .Where(e => e.Entity is IAuditable && (
-                        e.State == EntityState.Added
-                        || e.State == EntityState.Modified));
+                            e.State == EntityState.Added || 
+                            e.State == EntityState.Modified));
 
             foreach (var entityEntry in entries)
             {
@@ -165,17 +165,16 @@ namespace pos_service.Data
 
                 // Get current user from the service
                 var currentUser = _currentUserService.GetCurrentUser();
-                var userUuid = currentUser?.IsAuthenticated == true ? currentUser.Uuid : "SYSTEM";
+                var userUuid    = currentUser?.IsAuthenticated == true ? currentUser.Uuid : "SYSTEM";
 
                 auditableEntity.UpdatedAt = DateTime.UtcNow;
                 auditableEntity.UpdatedBy = userUuid;
 
                 if (entityEntry.State == EntityState.Added)
                 {
-                    auditableEntity.Uuid = Guid.NewGuid().ToString();
+                    if(auditableEntity.Uuid == null) auditableEntity.Uuid = Guid.NewGuid().ToString();
                     auditableEntity.CreatedAt = DateTime.UtcNow;
                     auditableEntity.CreatedBy = userUuid;
-                    auditableEntity.IsActive = true;
                 }
             }
 

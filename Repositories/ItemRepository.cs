@@ -63,6 +63,7 @@ namespace pos_service.Repositories
         public async Task<IEnumerable<Item>> GetByMainIdAsync(int id)
         {
             return await _context.Items
+                .Include(i => i.Suppliers)
                 .Where(i => i.Id == id)
                 .ToListAsync();
         }
@@ -70,6 +71,7 @@ namespace pos_service.Repositories
         public async Task<IEnumerable<Item>> GetByBarCodeAsync(string barCode)
         {
             return await _context.Items
+                .Include(i => i.Suppliers)
                 .Where(i => i.BarCode == barCode)
                 .ToListAsync();
         }
@@ -77,6 +79,7 @@ namespace pos_service.Repositories
         public async Task<Item?> GetByUuidAsync(string uuid)
         {
             return await _context.Items
+                .Include(i => i.Suppliers)
                 .FirstOrDefaultAsync(i => i.Uuid == uuid);
         }
 

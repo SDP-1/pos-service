@@ -64,8 +64,9 @@ namespace pos_service.Services
         /// </summary>
         /// <param name="id">The unique identifier of the order to delete.</param>
         /// <param name="currentUser">The current user deleting the order.</param>
+        /// <param name="isPermanent">permanent delete - Default false.</param>
         /// <returns>True if deletion was successful, otherwise false.</returns>
-        Task<bool> DeleteOrderAsync(int id, CurrentUser currentUser);
+        Task<bool> DeleteOrderAsync(int id, CurrentUser currentUser, bool isPermanent = false);
 
         /// <summary>
         /// Updates the status of an existing order.

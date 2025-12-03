@@ -173,7 +173,11 @@ namespace pos_service.Services
         public async Task<IEnumerable<BaseitemResDto>> GetItemMinDetailsByBarCodeAsync(string barCode, CurrentUser currentUser)
         {
             var items = await _itemRepository.GetByBarCodeAsync(barCode);
-            return _mapper.Map<IEnumerable<BaseitemResDto>>(items);
+
+            //Filter active items 
+            var activeItems = items.Where(x => x.IsActive == true);
+
+            return _mapper.Map<IEnumerable<BaseitemResDto>>(activeItems);
         }
 
         /// <summary>

@@ -6,6 +6,7 @@ using pos_service.Repositories;
 using pos_service.Security;
 using pos_service.Services;
 using pos_service.Services.Common;
+using pos_service.Services.Permissions;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 
@@ -57,6 +58,9 @@ builder.Services.AddScoped<IContactRepository, ContactRepository>();
 builder.Services.AddScoped<ISupplierRepository, SupplierRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+
+// Permission service
+builder.Services.AddScoped<IPermissionService, PermissionService>();
 
 // FIXED: DbContext registration with all dependencies
 builder.Services.AddDbContext<AppDbContext>((provider, options) =>

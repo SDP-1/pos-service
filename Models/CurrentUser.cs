@@ -13,6 +13,9 @@ namespace pos_service.Models
             public UserRole Role        { get; set; }
             public bool IsAuthenticated { get; set; }
 
+            // populated at runtime
+            public ICollection<string> Permissions { get; set; } = new List<string>();
+
             public static CurrentUser FromClaimsPrincipal(ClaimsPrincipal principal)
             {
                 if (principal == null || principal.Identity?.IsAuthenticated != true)
@@ -78,7 +81,7 @@ namespace pos_service.Models
                 => IsAuthenticated && roles.Contains(Role);
 
             public bool HasPermission(string permission)
-                => IsAuthenticated; // Add your permission logic here
+                => IsAuthenticated && Permissions.Contains(permission);
 
             public bool CanManageUsers()
                 => IsInRole(UserRole.SystemAdmin, UserRole.Manager);

@@ -5,18 +5,20 @@ using pos_service.Models.Audit;
 using pos_service.Models.Enums;
 using pos_service.Security;
 using pos_service.Services;
+using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
 
 namespace pos_service.Data
 {
     public class AppDbContext : DbContext
     {
-        private readonly ICurrentUserService _currentUserService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
         public AppDbContext(
             DbContextOptions<AppDbContext> options,
-            ICurrentUserService currentUserService) : base(options)
+            IHttpContextAccessor httpContextAccessor) : base(options)
         {
-            _currentUserService = currentUserService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         // Define a DbSet for each of your models.
@@ -28,6 +30,8 @@ namespace pos_service.Data
         public DbSet<Item> Items           { get; set; }
         public DbSet<Order> Orders         { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
+        public DbSet<Permission> Permissions { get; set; }
+        public DbSet<RolePermission> RolePermissions { get; set; }
 
         /// <summary>
         /// This method is used to configure the database model using the Fluent API.
@@ -36,6 +40,23 @@ namespace pos_service.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // --- Permission configuration ---
+            modelBuilder.Entity<Permission>(entity =>
+            {
+                entity.HasIndex(p => p.Name).IsUnique();
+                entity.HasAlternateKey(p => p.Uuid);
+            });
+
+            modelBuilder.Entity<RolePermission>(entity =>
+            {
+                entity.HasOne(rp => rp.Permission)
+                      .WithMany()
+                      .HasForeignKey(rp => rp.PermissionId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasAlternateKey(rp => rp.Uuid);
+            });
 
             // --- User Configuration ---
             modelBuilder.Entity<User>(entity =>
@@ -164,9 +185,24 @@ namespace pos_service.Data
             {
                 var auditableEntity = (IAuditable)entityEntry.Entity;
 
-                // Get current user from the service
-                var currentUser = _currentUserService.GetCurrentUser();
-                var userUuid    = currentUser?.IsAuthenticated == true ? currentUser.Uuid : "SYSTEM";
+                // Get current user from the HttpContext accessor
+                string userUuid = "SYSTEM";
+                try
+                {
+                    var principal = _httpContextAccessor?.HttpContext?.User;
+                    if (principal?.Identity?.IsAuthenticated == true)
+                    {
+                        var uuidClaim = principal.FindFirst("uuid") ?? principal.FindFirst(ClaimTypes.NameIdentifier);
+                        if (uuidClaim != null && !string.IsNullOrEmpty(uuidClaim.Value))
+                        {
+                            userUuid = uuidClaim.Value;
+                        }
+                    }
+                }
+                catch
+                {
+                    // ignore and use SYSTEM
+                }
 
                 auditableEntity.UpdatedAt = DateTime.UtcNow;
                 auditableEntity.UpdatedBy = userUuid;

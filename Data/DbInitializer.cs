@@ -30,6 +30,9 @@ namespace pos_service.Data
 
             // Seed default items
             await SeedItemsAsync(context);
+
+            // Seed permissions and role mappings
+            await SeedPermissionsAsync(context);
         }
 
         /// <summary>
@@ -97,6 +100,53 @@ namespace pos_service.Data
                     new Item { Id = 1, SubId = 0, Name = "Item 1", PrintName = "Item 1", RetailPrice = 100, Uuid = Guid.NewGuid().ToString(), Suppliers = new List<Supplier>() { supplier } },
                     new Item { Id = 2, SubId = 0, Name = "Item 2", PrintName = "Item 2", RetailPrice = 200, Uuid = Guid.NewGuid().ToString(), Suppliers = suppliers }
                 );
+                await context.SaveChangesAsync();
+            }
+        }
+
+        /// <summary>
+        /// Seed default permissions and role mappings
+        /// </summary>
+        private static async Task SeedPermissionsAsync(AppDbContext context)
+        {
+            if (!await context.Permissions.AnyAsync())
+            {
+                var perms = new List<Permission>
+                {
+                    new Permission { Name = "VIEW_ORDER", Description = "Can view orders", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Name = "ADD_ORDER", Description = "Can create orders", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Name = "UPDATE_ORDER", Description = "Can update orders", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Name = "DELETE_ORDER", Description = "Can delete orders", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Name = "MANAGE_USERS", Description = "Can manage user accounts and roles", Uuid = Guid.NewGuid().ToString() }
+                };
+
+                context.Permissions.AddRange(perms);
+                await context.SaveChangesAsync();
+
+                var viewer      = perms.Single(p => p.Name == "VIEW_ORDER");
+                var adder       = perms.Single(p => p.Name == "ADD_ORDER");
+                var updater     = perms.Single(p => p.Name == "UPDATE_ORDER");
+                var deleter     = perms.Single(p => p.Name == "DELETE_ORDER");
+                var manageUsers = perms.Single(p => p.Name == "MANAGE_USERS");
+
+                // Default mapping for roles
+                var mappings = new List<RolePermission>
+                {
+                    new RolePermission { Role = UserRole.Cashier, PermissionId = viewer.Id, Uuid = Guid.NewGuid().ToString() },
+                    new RolePermission { Role = UserRole.Cashier, PermissionId = adder.Id, Uuid = Guid.NewGuid().ToString() },
+                    new RolePermission { Role = UserRole.Manager, PermissionId = viewer.Id, Uuid = Guid.NewGuid().ToString() },
+                    new RolePermission { Role = UserRole.Manager, PermissionId = adder.Id, Uuid = Guid.NewGuid().ToString() },
+                    new RolePermission { Role = UserRole.Manager, PermissionId = updater.Id, Uuid = Guid.NewGuid().ToString() },
+                    new RolePermission { Role = UserRole.Manager, PermissionId = deleter.Id, Uuid = Guid.NewGuid().ToString() },
+
+                    new RolePermission { Role = UserRole.SystemAdmin, PermissionId = viewer.Id, Uuid = Guid.NewGuid().ToString() },
+                    new RolePermission { Role = UserRole.SystemAdmin, PermissionId = adder.Id, Uuid = Guid.NewGuid().ToString() },
+                    new RolePermission { Role = UserRole.SystemAdmin, PermissionId = updater.Id, Uuid = Guid.NewGuid().ToString() },
+                    new RolePermission { Role = UserRole.SystemAdmin, PermissionId = deleter.Id, Uuid = Guid.NewGuid().ToString() },
+                    new RolePermission { Role = UserRole.SystemAdmin, PermissionId = manageUsers.Id, Uuid = Guid.NewGuid().ToString() }
+                };
+
+                context.RolePermissions.AddRange(mappings);
                 await context.SaveChangesAsync();
             }
         }

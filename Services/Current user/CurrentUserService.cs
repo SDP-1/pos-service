@@ -1,5 +1,6 @@
 ﻿using pos_service.Models;
 using pos_service.Models.Enums;
+using pos_service.Services.Permissions;
 
 namespace pos_service.Services
 {
@@ -7,16 +8,19 @@ namespace pos_service.Services
     {
         private readonly IHttpContextAccessor        _httpContextAccessor;
         private readonly ILogger<CurrentUserService> _logger;
+        private readonly IPermissionService          _permissionService;
         private CurrentUser                          _currentUser;
         private bool                                 _initialized = false;
         private readonly object                      _lock = new object();
 
         public CurrentUserService(
             IHttpContextAccessor httpContextAccessor,
-            ILogger<CurrentUserService> logger)
+            ILogger<CurrentUserService> logger,
+            IPermissionService permissionService)
         {
             _httpContextAccessor = httpContextAccessor;
             _logger              = logger;
+            _permissionService   = permissionService;
         }
 
         /// <summary>
@@ -54,6 +58,19 @@ namespace pos_service.Services
 
                     _currentUser = CurrentUser.FromClaimsPrincipal(principal);
 
+                    // populate permissions
+                    try
+                    {
+                        var perms = _permissionService.GetPermissionsForRoleAsync(_currentUser.Role).GetAwaiter().GetResult();
+                        // store as simple names in claims-like list
+                        _currentUserPermissions = perms.Select(p => p.Name).ToList();
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to load permissions for role {Role}", _currentUser.Role);
+                        _currentUserPermissions = new List<string>();
+                    }
+
                     _logger.LogDebug("Current user retrieved: UserId={UserId}, Uuid={Uuid}, UserName={UserName}",
                         _currentUser.Id, _currentUser.Uuid, _currentUser.UserName);
 
@@ -70,6 +87,9 @@ namespace pos_service.Services
             }
         }
 
+        // hold permissions locally
+        private List<string> _currentUserPermissions = new List<string>();
+
         // Quick access methods
 
         /// <summary>
@@ -84,7 +104,7 @@ namespace pos_service.Services
         /// </summary>
         /// <param name="permission">The permission to check.</param>
         /// <returns>True if the current user has the specified permission, otherwise false.</returns>
-        public bool HasPermission(string permission) => GetCurrentUser().HasPermission(permission);
+        public bool HasPermission(string permission) => GetCurrentUser().IsAuthenticated && _currentUserPermissions.Contains(permission);
 
         /// <summary>
         /// Checks if the current user has permission to manage other users.

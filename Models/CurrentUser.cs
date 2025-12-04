@@ -25,23 +25,23 @@ namespace pos_service.Models
                     var currentUser = new CurrentUser
                     {
                         IsAuthenticated = true,
-                        Id = GetClaimValue<int>(principal, ClaimTypes.NameIdentifier, "user_id"),
-                        Uuid = GetClaimValue<string>(principal, "uuid"),
-                        Name = GetClaimValue<string>(principal, ClaimTypes.Name),
-                        UserName = GetClaimValue<string>(principal, "username"),
-                        Role = GetRoleFromClaims(principal)
+                        Id              = GetClaimValue<int>(principal, ClaimTypes.NameIdentifier, "user_id"),
+                        Uuid            = GetClaimValue<string>(principal, "uuid") ?? string.Empty,
+                        Name            = GetClaimValue<string>(principal, ClaimTypes.Name) ?? string.Empty,
+                        UserName        = GetClaimValue<string>(principal, "username") ?? string.Empty,
+                        Role            = GetRoleFromClaims(principal)
                     };
 
                     return currentUser;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     // In production, you might want to log this
                     return new CurrentUser { IsAuthenticated = false };
                 }
             }
 
-            private static T GetClaimValue<T>(ClaimsPrincipal principal, params string[] claimTypes)
+            private static T? GetClaimValue<T>(ClaimsPrincipal principal, params string[] claimTypes)
             {
                 foreach (var claimType in claimTypes)
                 {
@@ -61,7 +61,7 @@ namespace pos_service.Models
                         }
                     }
                 }
-                return default(T);
+                return default;
             }
 
             private static UserRole GetRoleFromClaims(ClaimsPrincipal principal)

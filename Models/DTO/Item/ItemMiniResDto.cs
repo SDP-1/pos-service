@@ -2,7 +2,7 @@
 
 namespace pos_service.Models.DTO.Item
 {
-    public class BaseitemResDto
+    public class ItemMiniResDto
     {
         public int Id { get; set; }
         public int SubId { get; set; }

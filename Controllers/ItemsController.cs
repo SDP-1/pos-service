@@ -75,7 +75,7 @@ namespace pos_service.Controllers
         /// <param name="barCode">The barcode to search for.</param>
         /// <returns>Minimal item details if found, otherwise returns NotFound.</returns>
         [HttpGet("barcode/{barCode}/min")]
-        public async Task<ActionResult<IEnumerable<BaseitemResDto>>> GetItemMinDetailsByBarCode(string barCode)
+        public async Task<ActionResult<IEnumerable<ItemMiniResDto>>> GetItemMinDetailsByBarCode(string barCode)
         {
             var items = await _itemService.GetItemMinDetailsByBarCodeAsync(barCode, _currentUser);
             if (items == null)

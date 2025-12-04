@@ -72,7 +72,7 @@ namespace pos_service.Services
                         Uuid                    = Guid.NewGuid().ToString(),
                         OriginalItemUuid        = item.Uuid,
                         AllowsDecimalQuantities = item.AllowsDecimalQuantities,
-                        ItemPrintName           = item.PrintName,
+                        PrintName           = item.PrintName,
                         Quantity                = itemDto.Quantity,
                         PriceAtSale             = basePrice,
                         DiscountRatioAtSale     = discountRatio,
@@ -233,14 +233,15 @@ namespace pos_service.Services
 
                     var orderItem = new OrderItem
                     {
-                        OriginalItemUuid = item.Uuid,
+                        Uuid                    = Guid.NewGuid().ToString(),
+                        OriginalItemUuid        = item.Uuid,
                         AllowsDecimalQuantities = item.AllowsDecimalQuantities,
-                        ItemPrintName = item.PrintName,
-                        Quantity = itemDto.Quantity,
-                        PriceAtSale = basePrice,
-                        DiscountRatioAtSale = discountRatio,
-                        CostAtSale = item.BuyingPrice,
-                        LineTotal = lineTotal
+                        PrintName               = item.PrintName,
+                        Quantity                = itemDto.Quantity,
+                        PriceAtSale             = basePrice,
+                        DiscountRatioAtSale     = discountRatio,
+                        CostAtSale              = item.BuyingPrice,
+                        LineTotal               = lineTotal
                     };
 
                     existingOrder.OrderItems.Add(orderItem);
@@ -255,7 +256,7 @@ namespace pos_service.Services
                 foreach (var (item, quantity) in itemsToUpdate)
                 {
                     item.StockQuantity -= quantity;
-                    item.UpdatedAt = DateTime.UtcNow;
+                    //item.UpdatedAt = DateTime.UtcNow;
                     _context.Items.Update(item);
                 }
 
@@ -375,8 +376,6 @@ namespace pos_service.Services
                 }
 
                 order.Status = status;
-                //order.UpdatedAt = DateTime.UtcNow;
-                //order.UpdatedBy = currentUser.Uuid;
 
                 var updatedOrder = await _orderRepository.UpdateAsync(order);
                 await _context.SaveChangesAsync();

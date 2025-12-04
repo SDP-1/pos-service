@@ -9,13 +9,13 @@ namespace pos_service.Controllers.Base
     [Route("api/[controller]")]
     public class SystemBaseController : ControllerBase
     {
-        protected readonly CurrentUser _currentUser;
+        protected readonly CurrentUser       _currentUser;
         private readonly ICurrentUserService _currentUserService;
 
         public SystemBaseController(ICurrentUserService currentUserService)
         {
             _currentUserService = currentUserService;
-            _currentUser = _currentUserService.GetCurrentUser();
+            _currentUser        = _currentUserService.GetCurrentUser();
         }
 
         // Helper methods for common authorization checks
@@ -40,14 +40,14 @@ namespace pos_service.Controllers.Base
         }
 
         // Quick access properties for convenience
-        protected int CurrentUserId => _currentUser.Id;
-        protected string CurrentUserUuid => _currentUser.Uuid;
-        protected string CurrentUserName => _currentUser.UserName;
-        protected UserRole CurrentUserRole => _currentUser.Role;
-        protected bool IsUserAuthenticated => _currentUser.IsAuthenticated;
+        protected int CurrentUserId         => _currentUser.Id;
+        protected string CurrentUserUuid    => _currentUser.Uuid;
+        protected string CurrentUserName    => _currentUser.UserName;
+        protected UserRole CurrentUserRole  => _currentUser.Role;
+        protected bool IsUserAuthenticated  => _currentUser.IsAuthenticated;
 
         // Common authorization checks
-        protected bool CanManageUsers => _currentUser.CanManageUsers();
+        protected bool CanManageUsers       => _currentUser.CanManageUsers();
         protected bool CanViewSensitiveData => _currentUser.CanViewSensitiveData();
     }
 }

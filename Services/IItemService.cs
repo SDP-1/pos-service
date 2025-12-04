@@ -72,7 +72,7 @@ namespace pos_service.Services
         /// <param name="barCode">The barcode to search for.</param>
         /// <param name="currentUser">The current user requesting the item.</param>
         /// <returns>Minimal item details if found, otherwise empty collection.</returns>
-        Task<IEnumerable<BaseitemResDto>> GetItemMinDetailsByBarCodeAsync(string barCode, CurrentUser currentUser);
+        Task<IEnumerable<ItemMiniResDto>> GetItemMinDetailsByBarCodeAsync(string barCode, CurrentUser currentUser);
 
         /// <summary>
         /// Retrieves complete item details by barcode.

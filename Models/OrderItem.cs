@@ -30,7 +30,7 @@ namespace pos_service.Models
         /// </summary>
         [Required]
         [MaxLength(40)]
-        public string ItemPrintName         { get; set; }
+        public string PrintName             { get; set; }
 
         /// <summary>
         /// The quantity sold (can be fractional).

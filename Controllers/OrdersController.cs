@@ -5,6 +5,7 @@ using pos_service.Models;
 using pos_service.Models.DTO.Order;
 using pos_service.Models.Enums;
 using pos_service.Services;
+using System.Net.NetworkInformation;
 
 namespace pos_service.Controllers
 {
@@ -18,8 +19,6 @@ namespace pos_service.Controllers
     public class OrdersController : SystemBaseController
     {
         private readonly IOrderService _orderService;
-        private readonly ICurrentUserService _currentUserService;
-        private CurrentUser _currentUser;
 
         /// <summary>
         /// Initializes a new instance of the OrdersController class.
@@ -29,8 +28,6 @@ namespace pos_service.Controllers
         public OrdersController(IOrderService orderService, ICurrentUserService currentUserService) : base(currentUserService)
         {
             _orderService = orderService;
-            _currentUserService = currentUserService;
-            _currentUser = _currentUserService.GetCurrentUser();
         }
 
         /// <summary>
@@ -91,7 +88,7 @@ namespace pos_service.Controllers
         /// </summary>
         /// <param name="number">The order number to search for.</param>
         /// <returns>The order details if found, otherwise returns NotFound.</returns>
-        [HttpGet("number/{uuid}")]
+        [HttpGet("number/{number}")]
         public async Task<ActionResult<OrderResDto>> GetOrderByOrderNumber(string number)
         {
             var order = await _orderService.GetOrderByOrderNumberAsync(number, _currentUser);
@@ -124,7 +121,6 @@ namespace pos_service.Controllers
         {
             try
             {
-                var username = "system"; // Get from claims
                 var order = await _orderService.UpdateOrderAsync(id, orderDto, _currentUser);
                 return Ok(order);
             }
@@ -161,14 +157,16 @@ namespace pos_service.Controllers
         /// Updates the status of an existing order.
         /// </summary>
         /// <param name="id">The unique identifier of the order to update.</param>
-        /// <param name="status">The new status to set for the order.</param>
+        /// <param name="status"> New status.</param>
         /// <returns>The updated order details if successful.</returns>
-        [HttpPatch("{id:int}/status")]
-        public async Task<ActionResult<OrderResDto>> UpdateOrderStatus(int id, [FromBody] OrderStatus status)
+        [HttpPatch("{id:int}/status/{status:int}")]
+        public async Task<ActionResult<OrderResDto>> UpdateOrderStatus(int id, OrderStatus status)
         {
+            if (status == OrderStatus.Default)
+                return BadRequest("status is required.");
+
             try
             {
-                var username = "system"; // Get from claims
                 var order = await _orderService.UpdateOrderStatusAsync(id, status, _currentUser);
                 return Ok(order);
             }

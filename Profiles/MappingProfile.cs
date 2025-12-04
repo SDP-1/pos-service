@@ -16,7 +16,7 @@ namespace pos_service.Profiles
         {
             // Item Mappings
             CreateMap<Item, ItemResDto>();
-            CreateMap<Item, BaseitemResDto>();
+            CreateMap<Item, ItemMiniResDto>();
             CreateMap<ItemReqDto, Item>();
 
             // Contact Mappings
@@ -39,6 +39,7 @@ namespace pos_service.Profiles
 
             // Order Maper
             CreateMap<OrderItem, OrderItemResDto>();
+            CreateMap<OrderItem, OrderItemMiniResDto>();
             CreateMap<OrderItemReqDto, OrderItem>();
         }
     }

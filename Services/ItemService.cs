@@ -170,14 +170,14 @@ namespace pos_service.Services
         /// <param name="barCode">The barcode to search for.</param>
         /// <param name="currentUser">The current user requesting the item.</param>
         /// <returns>Minimal item details if found, otherwise empty collection.</returns>
-        public async Task<IEnumerable<BaseitemResDto>> GetItemMinDetailsByBarCodeAsync(string barCode, CurrentUser currentUser)
+        public async Task<IEnumerable<ItemMiniResDto>> GetItemMinDetailsByBarCodeAsync(string barCode, CurrentUser currentUser)
         {
             var items = await _itemRepository.GetByBarCodeAsync(barCode);
 
             //Filter active items 
             var activeItems = items.Where(x => x.IsActive == true);
 
-            return _mapper.Map<IEnumerable<BaseitemResDto>>(activeItems);
+            return _mapper.Map<IEnumerable<ItemMiniResDto>>(activeItems);
         }
 
         /// <summary>

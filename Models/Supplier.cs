@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using pos_service.Models.Audit;
+using System.ComponentModel.DataAnnotations;
 
 namespace pos_service.Models
 {

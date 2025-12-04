@@ -1,4 +1,5 @@
-﻿using pos_service.Models.Enums;
+﻿using pos_service.Models.Audit;
+using pos_service.Models.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 

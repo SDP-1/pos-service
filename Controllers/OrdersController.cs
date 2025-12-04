@@ -147,7 +147,7 @@ namespace pos_service.Controllers
         /// </summary>
         /// <param name="id">The unique identifier of the order to delete.</param>
         /// <returns>NoContent if successful, otherwise returns NotFound.</returns>
-        [HttpDelete("{id:int}/{permanent:bool?}}")]
+        [HttpDelete("{id:int}/{permanent:bool?}")]
         public async Task<ActionResult> DeleteOrder(int id , bool permanent = false)
         {
             var result = await _orderService.DeleteOrderAsync(id, _currentUser, permanent);

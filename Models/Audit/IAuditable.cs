@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace pos_service.Models
+namespace pos_service.Models.Audit
 {
     public interface IAuditable
     {

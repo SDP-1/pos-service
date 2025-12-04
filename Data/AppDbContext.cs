@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using pos_service.Models;
+using pos_service.Models.Audit;
 using pos_service.Models.Enums;
 using pos_service.Security;
 using pos_service.Services;

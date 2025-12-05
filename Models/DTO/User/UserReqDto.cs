@@ -23,6 +23,7 @@ namespace pos_service.Models.DTO.User
         [Required]
         public int RoleId { get; set; }
 
+        // The client provides a URL to the profile image; may be null if no image.
         public string? ProfileImageUrl { get; set; }
 
         [MaxLength(12)]

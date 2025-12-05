@@ -47,19 +47,35 @@ namespace pos_service.Repositories
 
         public async Task<User> AddAsync(User user)
         {
-            user.Uuid = Guid.NewGuid().ToString();
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
+            try { 
+                user.Uuid = Guid.NewGuid().ToString();
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
 
-            return user;
+                return user;
+            }
+            catch (Exception e) 
+            { 
+            
+            }
+
+            return null;
         }
 
         public async Task<User> UpdateAsync(User user)
         {
-            _context.Entry(user).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
+            try
+            {
+                _context.Entry(user).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
 
-            return user;
+                return user;
+            }
+            catch (Exception e) 
+            { 
+            
+            }
+            return null;
         }
 
         public async Task DeleteAsync(User user)

@@ -22,7 +22,7 @@ namespace pos_service.Controllers
         /// Initializes a new instance of the UsersController class.
         /// </summary>
         /// <param name="userService">The user service for authentication and user management operations.</param>
-        public UsersController(IUserService userService, ICurrentUserService currentUserService) : base (currentUserService)
+        public UsersController(IUserService userService, ICurrentUserService currentUserService) : base(currentUserService)
         {
             _userService = userService;
         }
@@ -80,13 +80,27 @@ namespace pos_service.Controllers
         [HttpPost]
         public async Task<ActionResult<UserResDto>> CreateUser([FromBody] UserReqDto userDto)
         {
-            var newUser = await _userService.CreateUserAsync(userDto, _currentUser);
-            if (newUser == null)
+            try
             {
-                return Conflict("A user with this username already exists.");
+                var newUser = await _userService.CreateUserAsync(userDto, _currentUser);
+                if (newUser == null)
+                {
+                    return Conflict("A user with this username already exists.");
+                }
+
+                // Use the User's Id as the route parameter
+                return CreatedAtAction(nameof(GetUserById), new { id = newUser.Id }, newUser);
             }
-            // Use the User's Id as the route parameter
-            return CreatedAtAction(nameof(GetUserById), new { id = newUser.Id }, newUser);
+            catch (FileNotFoundException ex)
+            {
+                // Missing source file provided by client
+                return BadRequest($"Profile image not found: {ex.FileName}");
+            }
+            catch (Exception ex)
+            {
+                // Generic server error when saving/copying images
+                return StatusCode(500, $"Error saving profile image: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -98,12 +112,23 @@ namespace pos_service.Controllers
         [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdateUser(int id, [FromBody] UserReqDto userDto)
         {
-            var user = await _userService.UpdateUserAsync(id, userDto, _currentUser);
-            if (user == null)
+            try
             {
-                return NotFound();
+                var user = await _userService.UpdateUserAsync(id, userDto, _currentUser);
+                if (user == null)
+                {
+                    return NotFound();
+                }
+                return Ok(user);
             }
-            return Ok(user);
+            catch (FileNotFoundException ex)
+            {
+                return BadRequest($"Profile image not found: {ex.FileName}");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error saving profile image: {ex.Message}");
+            }
         }
 
         /// <summary>

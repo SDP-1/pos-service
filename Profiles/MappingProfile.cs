@@ -29,8 +29,6 @@ namespace pos_service.Profiles
 
             // User Mappings
             CreateMap<User, UserResDto>();
-                //.ForMember(dest => dest.RoleId, opt => opt.MapFrom(src => src.RoleId))
-                //.ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role));
 
             CreateMap<UserReqDto, User>();
             CreateMap<UserLoginReqDto, User>();

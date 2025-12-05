@@ -10,17 +10,18 @@ namespace pos_service.Services
 {
     public class UserService : IUserService
     {
-        private readonly IUserRepository     _userRepository;
-        private readonly IMapper             _mapper;
-        private readonly IPasswordHasher     _passwordHasher;
-        private readonly IJwtGenerator       _jwtGenerator;
+        private readonly IUserRepository _userRepository;
+        private readonly IMapper _mapper;
+        private readonly IPasswordHasher _passwordHasher;
+        private readonly IJwtGenerator _jwtGenerator;
         private readonly IFileStorageService _fileStorageService;
+
         public UserService(IUserRepository repo, IMapper mapper, IPasswordHasher hasher, IJwtGenerator jwt, IFileStorageService fileStorageService)
         {
-            _userRepository     = repo;
-            _mapper             = mapper;
-            _passwordHasher     = hasher;
-            _jwtGenerator       = jwt;
+            _userRepository = repo;
+            _mapper = mapper;
+            _passwordHasher = hasher;
+            _jwtGenerator = jwt;
             _fileStorageService = fileStorageService;
         }
 
@@ -55,16 +56,13 @@ namespace pos_service.Services
                 }
                 catch (FileNotFoundException)
                 {
-                    // You may decide to ignore the file and continue, or return a BadRequest
-                    // For now, let's treat it as an error
-                    // To handle this properly, the Controller should catch a custom exception and return 400
-                    return null;
+                    // Let the controller decide how to respond to missing files
+                    throw;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    // Log the error (e.g., permission denied)
-                    // To handle this properly, the Controller should catch a custom exception and return 500
-                    return null;
+                    // Rethrow so controller can return 500
+                    throw;
                 }
             }
 
@@ -72,8 +70,15 @@ namespace pos_service.Services
             var user = _mapper.Map<User>(userDto);
             user.PasswordHash = _passwordHasher.HashPassword(userDto.Password);
 
-            // Set the saved path on the model
-            user.ProfileImageUrl = savedPath;
+            // Set the saved path on the model only when available, otherwise prefer DTO URL, otherwise default
+            if (!string.IsNullOrEmpty(savedPath))
+            {
+                user.ProfileImageUrl = savedPath;
+            }
+            else
+            {
+                user.ProfileImageUrl = null;
+            }
 
             var newUser = await _userRepository.AddAsync(user);
             return _mapper.Map<UserResDto>(newUser);
@@ -193,27 +198,33 @@ namespace pos_service.Services
                     }
 
                     // Copy the file from the local path and save the new path
-                    userToUpdate.ProfileImageUrl = await _fileStorageService.CopyAndSaveFileAsync(
+                    var copied = await _fileStorageService.CopyAndSaveFileAsync(
                         userDto.ProfileImageUrl,
                         "users/profiles"
                     );
+
+                    if (!string.IsNullOrEmpty(copied))
+                    {
+                        userDto.ProfileImageUrl = copied;
+                    }
                 }
                 catch (FileNotFoundException)
                 {
-                    // You should handle this in the controller by throwing an exception, 
-                    // but for simplicity here, we can return false.
-                    return null;
+                    // Let controller decide how to respond
+                    throw;
                 }
                 catch (Exception)
                 {
-                    // Handle other file system errors (e.g., permission denied)
-                    return null;
+                    throw;
                 }
             }
+            else 
+            {
+                userToUpdate.ProfileImageUrl = null;
+            }
 
-            // 2. Map flat properties (FirstName, LastName, Role, NIC, ImageUrl)
-            // NOTE: The ProfileImageUrl is set above, but other properties are mapped here.
-            _mapper.Map(userDto, userToUpdate);
+                // Map incoming DTO into existing entity (this will set flat properties)
+                _mapper.Map(userDto, userToUpdate);
 
             // 3. Handle password change
             if (!string.IsNullOrEmpty(userDto.Password))
@@ -222,7 +233,7 @@ namespace pos_service.Services
             }
 
             // 4. Handle Auditable properties
-            userToUpdate.UpdatedAt = DateTime.UtcNow;
+            //userToUpdate.UpdatedAt = DateTime.UtcNow;
             // userToUpdate.UpdatedBy = GetCurrentUserName();
 
             var data = await _userRepository.UpdateAsync(userToUpdate);

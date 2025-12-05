@@ -1,5 +1,4 @@
-﻿using pos_service.Models.Enums;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace pos_service.Models.DTO.User
 {
@@ -22,9 +21,9 @@ namespace pos_service.Models.DTO.User
         public string Password { get; set; } // Note: This will be HASHED in the Service layer
 
         [Required]
-        public UserRole Role { get; set; }
+        public int RoleId { get; set; }
 
-        public string? ProfileImagePath { get; set; }
+        public string? ProfileImageUrl { get; set; }
 
         [MaxLength(12)]
         public string? NIC { get; set; }

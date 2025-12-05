@@ -5,7 +5,6 @@ using pos_service.Models;
 using pos_service.Models.DTO.Order;
 using pos_service.Models.Enums;
 using pos_service.Services;
-using System.Net.NetworkInformation;
 
 namespace pos_service.Controllers
 {
@@ -15,7 +14,7 @@ namespace pos_service.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = UserRoles.AllAdmins)]
+    [Authorize]
     public class OrdersController : SystemBaseController
     {
         private readonly IOrderService _orderService;
@@ -36,7 +35,7 @@ namespace pos_service.Controllers
         /// <param name="orderDto">The order data transfer object containing order information.</param>
         /// <returns>The newly created order details with location header.</returns>
         [HttpPost]
-        public async Task<ActionResult<OrderResDto>> CreateOrder(OrderReqDto orderDto)
+        public async Task<ActionResult<OrderResDto>> CreateOrder([FromBody] OrderReqDto orderDto)
         {
             try
             {
@@ -117,7 +116,7 @@ namespace pos_service.Controllers
         /// <param name="orderDto">The order data transfer object containing updated information.</param>
         /// <returns>The updated order details if successful.</returns>
         [HttpPut("{id:int}")]
-        public async Task<ActionResult<OrderResDto>> UpdateOrder(int id, OrderReqDto orderDto)
+        public async Task<ActionResult<OrderResDto>> UpdateOrder(int id, [FromBody] OrderReqDto orderDto)
         {
             try
             {
@@ -144,13 +143,13 @@ namespace pos_service.Controllers
         /// <param name="id">The unique identifier of the order to delete.</param>
         /// <returns>NoContent if successful, otherwise returns NotFound.</returns>
         [HttpDelete("{id:int}/{permanent:bool?}")]
-        public async Task<ActionResult> DeleteOrder(int id , bool permanent = false)
+        public async Task<ActionResult> DeleteOrder(int id, bool permanent = false)
         {
             var result = await _orderService.DeleteOrderAsync(id, _currentUser, permanent);
             if (!result)
                 return NotFound("Order not found");
 
-            return Ok("Succes fully deleted");
+            return Ok("Successfully deleted");
         }
 
         /// <summary>

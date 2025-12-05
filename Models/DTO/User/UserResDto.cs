@@ -1,6 +1,6 @@
 ﻿using pos_service.Models.DTO.Audit;
 using pos_service.Models.DTO.Contact;
-using pos_service.Models.Enums;
+using pos_service.Models;
 
 namespace pos_service.Models.DTO.User
 {
@@ -10,7 +10,11 @@ namespace pos_service.Models.DTO.User
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string UserName { get; set; } // Email is exposed for display
-        public UserRole Role { get; set; }
+
+        // replaced enum role with RoleId and Role object
+        public int RoleId { get; set; }
+        public Role Role { get; set; }
+
         public string? ProfileImageUrl { get; set; }
         public string? NIC { get; set; }
         public bool IsActive { get; set; }

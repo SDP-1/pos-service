@@ -6,8 +6,8 @@ namespace pos_service.Services.Permissions
     public interface IPermissionService
     {
         Task<IEnumerable<Permission>> GetAllPermissionsAsync();
-        Task<IEnumerable<Permission>> GetPermissionsForRoleAsync(UserRole role);
-        Task<bool> AddPermissionToRoleAsync(UserRole role, string permissionName);
-        Task<bool> RemovePermissionFromRoleAsync(UserRole role, string permissionName);
+        Task<IEnumerable<Permission>> GetPermissionsForRoleAsync(int roleId);
+        Task<bool> AddPermissionToRoleAsync(int roleId, string permissionName);
+        Task<bool> RemovePermissionFromRoleAsync(int roleId, string permissionName);
     }
 }

@@ -13,7 +13,6 @@ namespace pos_service.Controllers
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = UserRoles.AllAdmins)]
     public class ContactsController : SystemBaseController
     {
         private readonly IContactService _service;

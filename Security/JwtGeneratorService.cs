@@ -1,8 +1,8 @@
-﻿using Microsoft.IdentityModel.Tokens;
-using pos_service.Models;
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.IdentityModel.Tokens;
+using pos_service.Models;
 
 namespace pos_service.Security
 {
@@ -19,18 +19,25 @@ namespace pos_service.Security
 
         public string GenerateToken(User user)
         {
+            if (user == null) throw new ArgumentNullException(nameof(user));
+            if (string.IsNullOrEmpty(_secretKey)) throw new InvalidOperationException("JWT secret key is not configured.");
+
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_secretKey);
+
+            // safe role retrieval: prefer Role.Name if available, fallback to RoleId
+            var roleName = user.Role?.Name ?? ($"role:{user.RoleId}");
 
             // 1. Define the claims (user data stored in the token)
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Role, user.Role.ToString()),
-                new Claim(ClaimTypes.Name, user.FullName),
+                new Claim("role_id", user.RoleId.ToString()),
+                new Claim(ClaimTypes.Role, roleName),
+                new Claim(ClaimTypes.Name, user.FullName ?? string.Empty),
                 new Claim("user_id", user.Id.ToString()),
-                new Claim("uuid", user.Uuid.ToString()),
-                new Claim("username", user.UserName)
+                new Claim("uuid", user.Uuid ?? string.Empty),
+                new Claim("username", user.UserName ?? string.Empty)
             };
 
             // 2. Create the token descriptor

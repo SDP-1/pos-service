@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using pos_service.Models;
 using pos_service.Models.Audit;
-using pos_service.Models.Enums;
 using pos_service.Security;
 using pos_service.Services;
 using Microsoft.AspNetCore.Http;
@@ -32,6 +31,7 @@ namespace pos_service.Data
         public DbSet<OrderItem> OrderItems { get; set; }
         public DbSet<Permission> Permissions { get; set; }
         public DbSet<RolePermission> RolePermissions { get; set; }
+        public DbSet<Role> Roles { get; set; }
 
         /// <summary>
         /// This method is used to configure the database model using the Fluent API.
@@ -41,10 +41,19 @@ namespace pos_service.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            // --- Role configuration ---
+            modelBuilder.Entity<Role>(entity =>
+            {
+                entity.HasIndex(r => r.Name).IsUnique();
+
+                entity.HasAlternateKey(r => r.Uuid);
+            });
+
             // --- Permission configuration ---
             modelBuilder.Entity<Permission>(entity =>
             {
                 entity.HasIndex(p => p.Name).IsUnique();
+
                 entity.HasAlternateKey(p => p.Uuid);
             });
 
@@ -53,6 +62,11 @@ namespace pos_service.Data
                 entity.HasOne(rp => rp.Permission)
                       .WithMany()
                       .HasForeignKey(rp => rp.PermissionId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(rp => rp.Role)
+                      .WithMany(r => r.RolePermissions)
+                      .HasForeignKey(rp => rp.RoleId)
                       .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasAlternateKey(rp => rp.Uuid);
@@ -64,8 +78,12 @@ namespace pos_service.Data
                 // Make the UserName field a unique index to prevent duplicate usernames.
                 entity.HasIndex(u => u.UserName).IsUnique();
 
-                // Store the UserRole enum as a string in the database for readability.
-                entity.Property(u => u.Role).HasConversion<string>();
+                // relationship between User and Role
+                entity.HasOne(u => u.Role)
+                      .WithMany() // removed inverse Users navigation
+                      .HasForeignKey(u => u.RoleId)
+                      .IsRequired()
+                      .OnDelete(DeleteBehavior.Restrict);
 
                 // User -> Contacts (cascade)
                 entity.HasMany(s => s.Contacts)
@@ -74,9 +92,9 @@ namespace pos_service.Data
                       .IsRequired(false)
                       .OnDelete(DeleteBehavior.Cascade);
 
-            // 1. Define Uuid as a unique, alternate key.
-            // This is REQUIRED to use it as a foreign key target.
-            entity.HasAlternateKey(u => u.Uuid);
+                // 1. Define Uuid as a unique, alternate key.
+                // This is REQUIRED to use it as a foreign key target.
+                entity.HasAlternateKey(u => u.Uuid);
             });
 
             // --- Supplier Configuration ---

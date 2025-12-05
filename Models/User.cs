@@ -1,6 +1,6 @@
 ﻿using pos_service.Models.Audit;
-using pos_service.Models.Enums;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace pos_service.Models
 {
@@ -48,8 +48,11 @@ namespace pos_service.Models
 
         /// <summary>
         /// The user's role, which determines their permissions.
+        /// RoleId is required. Role navigation may be null until loaded.
         /// </summary>
-        public UserRole Role           { get; set; }
+        public int RoleId { get; set; }
+
+        public virtual Role? Role { get; set; }
 
         /// <summary>
         /// The URL or file path to the user's profile picture.

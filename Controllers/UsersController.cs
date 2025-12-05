@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using pos_service.Controllers.Base;
 using pos_service.Models;
 using pos_service.Models.DTO.User;
-using pos_service.Models.Enums;
 using pos_service.Services;
 using System.Security.Claims;
 
@@ -15,7 +14,6 @@ namespace pos_service.Controllers
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = UserRoles.AllAdmins)]
     public class UsersController : SystemBaseController
     {
         private readonly IUserService _userService;
@@ -121,7 +119,7 @@ namespace pos_service.Controllers
             {
                 return NotFound();
             }
-            return NoContent();
+            return Ok("User deactivation successfull.");
         }
 
         /// <summary>
@@ -137,7 +135,7 @@ namespace pos_service.Controllers
             {
                 return NotFound();
             }
-            return NoContent();
+            return Ok("User Delete Successfull.");
         }
 
         /// <summary>
@@ -156,7 +154,7 @@ namespace pos_service.Controllers
             {
                 return BadRequest("Invalid ID or incorrect old password.");
             }
-            return NoContent();
+            return Ok("Change passwrd succesfull");
         }
     }
 }

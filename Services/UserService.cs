@@ -46,12 +46,12 @@ namespace pos_service.Services
 
             // 1.5 Handle File Upload
             string? savedPath = null;
-            if (!string.IsNullOrEmpty(userDto.ProfileImagePath)) // Check the new DTO property
+            if (!string.IsNullOrEmpty(userDto.ProfileImageUrl)) // Check the new DTO property
             {
                 try
                 {
                     // Copy the file from the local path and get the relative path
-                    savedPath = await _fileStorageService.CopyAndSaveFileAsync(userDto.ProfileImagePath, "users/profiles");
+                    savedPath = await _fileStorageService.CopyAndSaveFileAsync(userDto.ProfileImageUrl, "users/profiles");
                 }
                 catch (FileNotFoundException)
                 {
@@ -75,12 +75,6 @@ namespace pos_service.Services
             // Set the saved path on the model
             user.ProfileImageUrl = savedPath;
 
-            // Set Auditable properties (e.g., Uuid, CreatedAt, CreatedBy)
-            user.Uuid = Guid.NewGuid().ToString();
-            user.CreatedAt = DateTime.UtcNow;
-            user.CreatedBy = "System/InitialUser"; // Placeholder for actual logged-in user
-
-            // 3. Add to DB
             var newUser = await _userRepository.AddAsync(user);
             return _mapper.Map<UserResDto>(newUser);
         }
@@ -188,7 +182,7 @@ namespace pos_service.Services
             }
 
             // Handle File Copy/Replacement using local path string
-            if (!string.IsNullOrEmpty(userDto.ProfileImagePath))
+            if (!string.IsNullOrEmpty(userDto.ProfileImageUrl))
             {
                 try
                 {
@@ -200,7 +194,7 @@ namespace pos_service.Services
 
                     // Copy the file from the local path and save the new path
                     userToUpdate.ProfileImageUrl = await _fileStorageService.CopyAndSaveFileAsync(
-                        userDto.ProfileImagePath,
+                        userDto.ProfileImageUrl,
                         "users/profiles"
                     );
                 }

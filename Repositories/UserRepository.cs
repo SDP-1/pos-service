@@ -15,7 +15,10 @@ namespace pos_service.Repositories
 
         public async Task<IEnumerable<User>> GetAllAsync()
         {
-            return await _context.Users.Include(u => u.Contacts).ToListAsync();
+            return await _context.Users
+                .Include(u => u.Contacts)
+                .Include(u => u.Role)
+                .ToListAsync();
         }
 
         public async Task<User?> GetByIdAsync(int id)
@@ -30,6 +33,7 @@ namespace pos_service.Repositories
         {
             return await _context.Users
                 .Include(u => u.Contacts)
+                .Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.UserName == userName);
         }
 
@@ -37,13 +41,16 @@ namespace pos_service.Repositories
         {
             return await _context.Users
                 .Include(u => u.Contacts)
+                .Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.Id == id);
         }
 
         public async Task<User> AddAsync(User user)
         {
+            user.Uuid = Guid.NewGuid().ToString();
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
+
             return user;
         }
 
@@ -51,6 +58,7 @@ namespace pos_service.Repositories
         {
             _context.Entry(user).State = EntityState.Modified;
             await _context.SaveChangesAsync();
+
             return user;
         }
 

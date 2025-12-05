@@ -1,5 +1,4 @@
-﻿using pos_service.Models.Enums;
-using System;
+﻿using System;
 using System.Security.Claims;
 
 namespace pos_service.Models
@@ -10,7 +9,11 @@ namespace pos_service.Models
             public string Uuid          { get; set; } = string.Empty;
             public string Name          { get; set; } = string.Empty;
             public string UserName      { get; set; } = string.Empty;
-            public UserRole Role        { get; set; }
+
+            // role from DB
+            public int RoleId           { get; set; }
+            public string RoleName      { get; set; } = string.Empty;
+
             public bool IsAuthenticated { get; set; }
 
             // populated at runtime
@@ -32,7 +35,8 @@ namespace pos_service.Models
                         Uuid            = GetClaimValue<string>(principal, "uuid") ?? string.Empty,
                         Name            = GetClaimValue<string>(principal, ClaimTypes.Name) ?? string.Empty,
                         UserName        = GetClaimValue<string>(principal, "username") ?? string.Empty,
-                        Role            = GetRoleFromClaims(principal)
+                        RoleId          = GetClaimValue<int>(principal, "role_id"),
+                        RoleName        = GetClaimValue<string>(principal, ClaimTypes.Role, "role") ?? string.Empty
                     };
 
                     return currentUser;
@@ -67,26 +71,16 @@ namespace pos_service.Models
                 return default;
             }
 
-            private static UserRole GetRoleFromClaims(ClaimsPrincipal principal)
-            {
-                var roleClaim = principal.FindFirst(ClaimTypes.Role) ?? principal.FindFirst("role");
-                if (roleClaim != null && Enum.TryParse<UserRole>(roleClaim.Value, out var role))
-                {
-                    return role;
-                }
-                return UserRole.Cashier;
-            }
-
-            public bool IsInRole(params UserRole[] roles)
-                => IsAuthenticated && roles.Contains(Role);
+            public bool IsInRole(params int[] roleIds)
+                => IsAuthenticated && roleIds.Contains(RoleId);
 
             public bool HasPermission(string permission)
                 => IsAuthenticated && Permissions.Contains(permission);
 
             public bool CanManageUsers()
-                => IsInRole(UserRole.SystemAdmin, UserRole.Manager);
+                => IsInRole(1, 3); // default SystemAdmin role id 1 and Manager id 3 - keep legacy semantics if seeded that way
 
             public bool CanViewSensitiveData()
-                => IsInRole(UserRole.SystemAdmin, UserRole.Manager);
+                => IsInRole(1, 3);
         }
     }

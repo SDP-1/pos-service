@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using pos_service.Controllers.Base;
 using pos_service.Models;
 using pos_service.Models.DTO.Item;
-using pos_service.Models.Enums;
 using pos_service.Services;
 
 namespace pos_service.Controllers
@@ -14,7 +13,6 @@ namespace pos_service.Controllers
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = UserRoles.AllAdmins)]
     public class ItemsController : SystemBaseController
     {
         private readonly IItemService _itemService;
@@ -186,7 +184,6 @@ namespace pos_service.Controllers
         /// <param name="quantity">The quantity to add to the item's stock.</param>
         /// <returns>The updated item details if successful, otherwise returns NotFound.</returns>
         [HttpPost("{id:int}/{subId:int}/add-stock")]
-        [Authorize(Roles = UserRoles.Non)]
         public async Task<ActionResult<ItemResDto>> AddStock(int id, int subId, [FromQuery] decimal quantity = 0)
         {
             var updatedItem = await _itemService.AddStockAsync(id, subId, quantity, _currentUser);

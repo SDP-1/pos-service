@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using pos_service.Models;
-using pos_service.Models.Enums;
 using pos_service.Services;
 
 namespace pos_service.Controllers.Base
@@ -25,7 +24,7 @@ namespace pos_service.Controllers.Base
                 throw new UnauthorizedAccessException("User is not authenticated");
         }
 
-        protected void EnsureRole(params UserRole[] roles)
+        protected void EnsureRole(params int[] roles)
         {
             EnsureAuthenticated();
             if (!_currentUser.IsInRole(roles))
@@ -43,7 +42,8 @@ namespace pos_service.Controllers.Base
         protected int CurrentUserId         => _currentUser.Id;
         protected string CurrentUserUuid    => _currentUser.Uuid;
         protected string CurrentUserName    => _currentUser.UserName;
-        protected UserRole CurrentUserRole  => _currentUser.Role;
+        protected int CurrentUserRoleId     => _currentUser.RoleId;
+        protected string CurrentUserRoleName=> _currentUser.RoleName;
         protected bool IsUserAuthenticated  => _currentUser.IsAuthenticated;
 
         // Common authorization checks

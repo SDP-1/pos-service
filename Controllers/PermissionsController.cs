@@ -1,14 +1,13 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using pos_service.Controllers.Base;
-using pos_service.Models.Enums;
-using pos_service.Services;
 using pos_service.Services.Permissions;
+using pos_service.Services;
 
 namespace pos_service.Controllers
 {
     [Route("api/[controller]")]
-    [Authorize(Roles = UserRoles.SystemAdmin)]
+    [Authorize] // Only authenticated users; permission checks are done in service or controller
     public class PermissionsController : SystemBaseController
     {
         private readonly IPermissionService _permissionService;
@@ -21,20 +20,20 @@ namespace pos_service.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll() => Ok(await _permissionService.GetAllPermissionsAsync());
 
-        [HttpGet("role/{role}")]
-        public async Task<IActionResult> GetForRole(UserRole role) => Ok(await _permissionService.GetPermissionsForRoleAsync(role));
+        [HttpGet("role/{roleId:int}")]
+        public async Task<IActionResult> GetForRole(int roleId) => Ok(await _permissionService.GetPermissionsForRoleAsync(roleId));
 
-        [HttpPost("role/{role}/add/{permission}")]
-        public async Task<IActionResult> AddPermission(UserRole role, string permission)
+        [HttpPost("role/{roleId:int}/add/{permission}")]
+        public async Task<IActionResult> AddPermission(int roleId, string permission)
         {
-            var success = await _permissionService.AddPermissionToRoleAsync(role, permission);
+            var success = await _permissionService.AddPermissionToRoleAsync(roleId, permission);
             return success ? Ok() : Conflict("Permission already exists for role");
         }
 
-        [HttpDelete("role/{role}/remove/{permission}")]
-        public async Task<IActionResult> RemovePermission(UserRole role, string permission)
+        [HttpDelete("role/{roleId:int}/remove/{permission}")]
+        public async Task<IActionResult> RemovePermission(int roleId, string permission)
         {
-            var success = await _permissionService.RemovePermissionFromRoleAsync(role, permission);
+            var success = await _permissionService.RemovePermissionFromRoleAsync(roleId, permission);
             return success ? Ok() : NotFound();
         }
     }

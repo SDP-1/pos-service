@@ -5,6 +5,7 @@ using pos_service.Models;
 using pos_service.Models.DTO.Order;
 using pos_service.Models.Enums;
 using pos_service.Services;
+using pos_service.Authorization;
 
 namespace pos_service.Controllers
 {
@@ -35,6 +36,7 @@ namespace pos_service.Controllers
         /// <param name="orderDto">The order data transfer object containing order information.</param>
         /// <returns>The newly created order details with location header.</returns>
         [HttpPost]
+        [Permission(PermissionType.ORDER_ADD)]
         public async Task<ActionResult<OrderResDto>> CreateOrder([FromBody] OrderReqDto orderDto)
         {
             try
@@ -58,13 +60,21 @@ namespace pos_service.Controllers
         /// <param name="id">The unique identifier of the order.</param>
         /// <returns>The order details if found, otherwise returns NotFound.</returns>
         [HttpGet("{id:int}")]
+        [Permission(PermissionType.ORDER_VIEW)]
         public async Task<ActionResult<OrderResDto>> GetOrder(int id)
         {
-            var order = await _orderService.GetOrderAsync(id, _currentUser);
-            if (order == null)
-                return Ok("Order not found");
+            try
+            {
+                var order = await _orderService.GetOrderAsync(id, _currentUser);
+                if (order == null)
+                    return Ok("Order not found");
 
-            return Ok(order);
+                return Ok(order);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -73,13 +83,21 @@ namespace pos_service.Controllers
         /// <param name="uuid">The UUID of the order to retrieve.</param>
         /// <returns>The order details if found, otherwise returns NotFound.</returns>
         [HttpGet("uuid/{uuid}")]
+        [Permission(PermissionType.ORDER_VIEW)]
         public async Task<ActionResult<OrderResDto>> GetOrderByUuid(string uuid)
         {
-            var order = await _orderService.GetOrderByUuidAsync(uuid, _currentUser);
-            if (order == null)
-                return Ok("Order not found");
+            try
+            {
+                var order = await _orderService.GetOrderByUuidAsync(uuid, _currentUser);
+                if (order == null)
+                    return Ok("Order not found");
 
-            return Ok(order);
+                return Ok(order);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -88,13 +106,21 @@ namespace pos_service.Controllers
         /// <param name="number">The order number to search for.</param>
         /// <returns>The order details if found, otherwise returns NotFound.</returns>
         [HttpGet("number/{number}")]
+        [Permission(PermissionType.ORDER_VIEW)]
         public async Task<ActionResult<OrderResDto>> GetOrderByOrderNumber(string number)
         {
-            var order = await _orderService.GetOrderByOrderNumberAsync(number, _currentUser);
-            if (order == null)
-                return Ok("Order not found");
+            try
+            {
+                var order = await _orderService.GetOrderByOrderNumberAsync(number, _currentUser);
+                if (order == null)
+                    return Ok("Order not found");
 
-            return Ok(order);
+                return Ok(order);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -103,10 +129,18 @@ namespace pos_service.Controllers
         /// <param name="query">The query parameters for filtering and paginating orders.</param>
         /// <returns>A paginated list of orders matching the query criteria.</returns>
         [HttpGet]
+        [Permission(PermissionType.ORDER_VIEW)]
         public async Task<ActionResult<OrderListResDto>> GetOrders([FromQuery] OrderQueryDto query)
         {
-            var orders = await _orderService.GetOrdersAsync(query, _currentUser);
-            return Ok(orders);
+            try
+            {
+                var orders = await _orderService.GetOrdersAsync(query, _currentUser);
+                return Ok(orders);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -116,6 +150,7 @@ namespace pos_service.Controllers
         /// <param name="orderDto">The order data transfer object containing updated information.</param>
         /// <returns>The updated order details if successful.</returns>
         [HttpPut("{id:int}")]
+        [Permission(PermissionType.ORDER_UPDATE)]
         public async Task<ActionResult<OrderResDto>> UpdateOrder(int id, [FromBody] OrderReqDto orderDto)
         {
             try
@@ -143,13 +178,26 @@ namespace pos_service.Controllers
         /// <param name="id">The unique identifier of the order to delete.</param>
         /// <returns>NoContent if successful, otherwise returns NotFound.</returns>
         [HttpDelete("{id:int}/{permanent:bool?}")]
+        [Permission(PermissionType.ORDER_DELETE)]
         public async Task<ActionResult> DeleteOrder(int id, bool permanent = false)
         {
-            var result = await _orderService.DeleteOrderAsync(id, _currentUser, permanent);
-            if (!result)
-                return NotFound("Order not found");
+            try
+            {
+                if (permanent)
+                {
+                    try { EnsurePermission(PermissionType.ORDER_DELETE_PERMANENTLY); } catch (UnauthorizedAccessException) { return Forbid(); }
+                }
 
-            return Ok("Successfully deleted");
+                var result = await _orderService.DeleteOrderAsync(id, _currentUser, permanent);
+                if (!result)
+                    return NotFound("Order not found");
+
+                return Ok("Successfully deleted");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -159,6 +207,7 @@ namespace pos_service.Controllers
         /// <param name="status"> New status.</param>
         /// <returns>The updated order details if successful.</returns>
         [HttpPatch("{id:int}/status/{status:int}")]
+        [Permission(PermissionType.ORDER_UPDATE_STATUS)]
         public async Task<ActionResult<OrderResDto>> UpdateOrderStatus(int id, OrderStatus status)
         {
             if (status == OrderStatus.Default)

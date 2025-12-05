@@ -1,5 +1,6 @@
 ﻿using pos_service.Models;
 using pos_service.Services.Permissions;
+using pos_service.Models.Enums;
 
 namespace pos_service.Services
 {
@@ -8,9 +9,6 @@ namespace pos_service.Services
         private readonly IHttpContextAccessor        _httpContextAccessor;
         private readonly ILogger<CurrentUserService> _logger;
         private readonly IPermissionService          _permissionService;
-        private CurrentUser                          _currentUser;
-        private bool                                 _initialized = false;
-        private readonly object                      _lock = new object();
 
         public CurrentUserService(
             IHttpContextAccessor httpContextAccessor,
@@ -24,70 +22,54 @@ namespace pos_service.Services
 
         /// <summary>
         /// Retrieves the current authenticated user's information.
+        /// This method does not cache results across requests to avoid leaking data between requests.
         /// </summary>
         /// <returns>The current user details including identity and role information.</returns>
         public CurrentUser GetCurrentUser()
         {
-            if (_initialized)
-                return _currentUser;
-
-            lock (_lock)
+            try
             {
-                if (_initialized)
-                    return _currentUser;
+                if (_httpContextAccessor?.HttpContext == null)
+                {
+                    _logger.LogDebug("HttpContext or HttpContextAccessor is null");
+                    return new CurrentUser { IsAuthenticated = false };
+                }
 
+                var principal = _httpContextAccessor.HttpContext.User;
+
+                if (principal?.Identity?.IsAuthenticated != true)
+                {
+                    return new CurrentUser { IsAuthenticated = false };
+                }
+
+                var currentUser = CurrentUser.FromClaimsPrincipal(principal);
+
+                // populate permissions from role service
                 try
                 {
-                    if (_httpContextAccessor?.HttpContext == null)
-                    {
-                        _logger.LogDebug("HttpContext or HttpContextAccessor is null");
-                        _currentUser = new CurrentUser { IsAuthenticated = false };
-                        _initialized = true;
-                        return _currentUser;
-                    }
+                    var perms = _permissionService.GetPermissionsForRoleAsync(currentUser.RoleId).GetAwaiter().GetResult();
+                    var permNames = perms.Select(p => p.Name).ToList();
 
-                    var principal = _httpContextAccessor.HttpContext.User;
-
-                    if (principal?.Identity?.IsAuthenticated != true)
-                    {
-                        _currentUser = new CurrentUser { IsAuthenticated = false };
-                        _initialized = true;
-                        return _currentUser;
-                    }
-
-                    _currentUser = CurrentUser.FromClaimsPrincipal(principal);
-
-                    // populate permissions
-                    try
-                    {
-                        var perms = _permissionService.GetPermissionsForRoleAsync(_currentUser.RoleId).GetAwaiter().GetResult();
-                        // store as simple names in claims-like list
-                        _currentUserPermissions = perms.Select(p => p.Name).ToList();
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogWarning(ex, "Failed to load permissions for role {RoleId}", _currentUser.RoleId);
-                        _currentUserPermissions = new List<string>();
-                    }
-
-                    _logger.LogDebug("Current user retrieved: UserId={UserId}, Uuid={Uuid}, UserName={UserName}",
-                        _currentUser.Id, _currentUser.Uuid, _currentUser.UserName);
-
-                    _initialized = true;
-                    return _currentUser;
+                    // store in the CurrentUser.Permissions collection for direct use
+                    currentUser.Permissions = permNames;
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error retrieving current user");
-                    _currentUser = new CurrentUser { IsAuthenticated = false };
-                    _initialized = true;
-                    return _currentUser;
+                    _logger.LogWarning(ex, "Failed to load permissions for role {RoleId}", currentUser.RoleId);
+                    currentUser.Permissions = new List<string>();
                 }
+
+                _logger.LogDebug("Current user retrieved: UserId={UserId}, Uuid={Uuid}, UserName={UserName}",
+                    currentUser.Id, currentUser.Uuid, currentUser.UserName);
+
+                return currentUser;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving current user");
+                return new CurrentUser { IsAuthenticated = false };
             }
         }
-
-        // hold permissions locally
-        private List<string> _currentUserPermissions = new List<string>();
 
         // Quick access methods
 
@@ -99,7 +81,7 @@ namespace pos_service.Services
         /// <summary>
         /// Checks if the current user has the specified permission.
         /// </summary>
-        public bool HasPermission(string permission) => GetCurrentUser().IsAuthenticated && _currentUserPermissions.Contains(permission);
+        public bool HasPermission(PermissionType permission) => GetCurrentUser().HasPermission(permission);
 
         /// <summary>
         /// Checks if the current user has permission to manage other users.
@@ -138,7 +120,7 @@ namespace pos_service.Services
         /// Ensures that the current user has the specified permission.
         /// Throws an exception if the user does not have the required permission.
         /// </summary>
-        public void EnsurePermission(string permission)
+        public void EnsurePermission(PermissionType permission)
         {
             EnsureAuthenticated();
             if (!HasPermission(permission))

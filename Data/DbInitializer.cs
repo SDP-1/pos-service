@@ -122,8 +122,8 @@ namespace pos_service.Data
                     throw new Exception("Supplier not found");
 
                 context.Items.AddRange(
-                    new Item { Id = 1, SubId = 0, Name = "Item 1", PrintName = "Item 1", RetailPrice = 100, Uuid = Guid.NewGuid().ToString(), Suppliers = new List<Supplier>() { supplier } },
-                    new Item { Id = 2, SubId = 0, Name = "Item 2", PrintName = "Item 2", RetailPrice = 200, Uuid = Guid.NewGuid().ToString(), Suppliers = suppliers }
+                    new Item { Id = 1, SubId = 0, Name = "Item 1", StockQuantity = 200, PrintName = "Item 1", RetailPrice = 100, BuyingPrice = 90, MarkedPrice = 100, Uuid = Guid.NewGuid().ToString(), Suppliers = new List<Supplier>() { supplier } },
+                    new Item { Id = 2, SubId = 0, Name = "Item 2", StockQuantity = 200, PrintName = "Item 2", RetailPrice = 200, BuyingPrice = 90, MarkedPrice = 100, Uuid = Guid.NewGuid().ToString(), Suppliers = suppliers }
                 );
                 await context.SaveChangesAsync();
             }
@@ -194,15 +194,15 @@ namespace pos_service.Data
             {
                 // SystemAdmin (roleId 1) gets all permissions
                 var allPerms = await context.Permissions.ToListAsync();
-                var mappings = allPerms.Select(p => new RolePermission { RoleId = 1, PermissionId = p.Id, Uuid = Guid.NewGuid().ToString() }).ToList();
+                var mappings = allPerms.Select(p => new RolePermission { RoleId = 1, PermissionId = p.Id, Uuid = Guid.NewGuid().ToString() }).ToList(); //SystemAdmin
 
                 // Manager gets a subset
                 var managerPermIds = new[] { (int)PermissionType.ORDER_VIEW, (int)PermissionType.ORDER_ADD, (int)PermissionType.ORDER_UPDATE, (int)PermissionType.ORDER_DELETE };
-                mappings.AddRange(managerPermIds.Select(id => new RolePermission { RoleId = 3, PermissionId = id, Uuid = Guid.NewGuid().ToString() }));
+                mappings.AddRange(managerPermIds.Select(id => new RolePermission { RoleId = 3, PermissionId = id, Uuid = Guid.NewGuid().ToString() })); //Manager
 
                 // Cashier gets view & add
                 var cashierPermIds = new[] { (int)PermissionType.ORDER_VIEW, (int)PermissionType.ORDER_ADD };
-                mappings.AddRange(cashierPermIds.Select(id => new RolePermission { RoleId = 4, PermissionId = id, Uuid = Guid.NewGuid().ToString() }));
+                mappings.AddRange(cashierPermIds.Select(id => new RolePermission { RoleId = 4, PermissionId = id, Uuid = Guid.NewGuid().ToString() })); //Cashier
 
                 context.RolePermissions.AddRange(mappings);
                 await context.SaveChangesAsync();

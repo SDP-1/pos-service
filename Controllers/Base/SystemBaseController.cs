@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using pos_service.Models;
+using pos_service.Models.Enums;
 using pos_service.Services;
 
 namespace pos_service.Controllers.Base
@@ -31,7 +32,7 @@ namespace pos_service.Controllers.Base
                 throw new UnauthorizedAccessException($"User does not have required role. Required: {string.Join(", ", roles)}");
         }
 
-        protected void EnsurePermission(string permission)
+        protected void EnsurePermission(PermissionType permission)
         {
             EnsureAuthenticated();
             if (!_currentUser.HasPermission(permission))

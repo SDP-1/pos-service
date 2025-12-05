@@ -1,4 +1,5 @@
-﻿using System;
+﻿using pos_service.Models.Enums;
+using System;
 using System.Security.Claims;
 
 namespace pos_service.Models
@@ -74,8 +75,8 @@ namespace pos_service.Models
             public bool IsInRole(params int[] roleIds)
                 => IsAuthenticated && roleIds.Contains(RoleId);
 
-            public bool HasPermission(string permission)
-                => IsAuthenticated && Permissions.Contains(permission);
+            public bool HasPermission(PermissionType permission)
+                => IsAuthenticated && Permissions.Contains(permission.ToString());
 
             public bool CanManageUsers()
                 => IsInRole(1, 3); // default SystemAdmin role id 1 and Manager id 3 - keep legacy semantics if seeded that way

@@ -50,9 +50,9 @@ namespace pos_service.Models
         /// The user's role, which determines their permissions.
         /// RoleId is required. Role navigation may be null until loaded.
         /// </summary>
-        public int RoleId { get; set; }
+        public int RoleId              { get; set; }
 
-        public virtual Role? Role { get; set; }
+        public virtual Role? Role      { get; set; }
 
         /// <summary>
         /// The URL or file path to the user's profile picture.

@@ -1,4 +1,5 @@
 ﻿using pos_service.Models;
+using pos_service.Models.Enums;
 
 namespace pos_service.Services
 {
@@ -22,7 +23,7 @@ namespace pos_service.Services
         /// </summary>
         /// <param name="permission">The permission to check.</param>
         /// <returns>True if the current user has the specified permission, otherwise false.</returns>
-        bool HasPermission(string permission);
+        bool HasPermission(PermissionType permission);
 
         /// <summary>
         /// Checks if the current user has permission to manage other users.
@@ -54,6 +55,6 @@ namespace pos_service.Services
         /// Throws an exception if the user does not have the required permission.
         /// </summary>
         /// <param name="permission">The required permission.</param>
-        void EnsurePermission(string permission);
+        void EnsurePermission(PermissionType permission);
     }
 }

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using pos_service.Data;
 using pos_service.Repositories;
+using pos_service.Repositories.Permissions;
 using pos_service.Security;
 using pos_service.Services;
 using pos_service.Services.Common;
@@ -49,6 +50,7 @@ builder.Services.AddScoped<IContactService, ContactService>();
 builder.Services.AddScoped<ISupplierService, SupplierService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IPermissionService, PermissionService>();
 
 builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
@@ -58,9 +60,7 @@ builder.Services.AddScoped<IContactRepository, ContactRepository>();
 builder.Services.AddScoped<ISupplierRepository, SupplierRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
-
-// Permission service
-builder.Services.AddScoped<IPermissionService, PermissionService>();
+builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();
 
 // FIXED: DbContext registration with all dependencies
 builder.Services.AddDbContext<AppDbContext>((provider, options) =>

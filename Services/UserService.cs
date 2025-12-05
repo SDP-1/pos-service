@@ -111,8 +111,6 @@ namespace pos_service.Services
             }
 
             userToUpdate.IsActive = true;
-            userToUpdate.UpdatedAt = DateTime.UtcNow;
-            // userToUpdate.UpdatedBy = GetCurrentUserName(); // The user who performed the activation
 
             await _userRepository.UpdateAsync(userToUpdate);
             return true;
@@ -159,7 +157,6 @@ namespace pos_service.Services
             user.PasswordHash = _passwordHasher.HashPassword(newPassword);
 
             // Update Auditable property
-            user.UpdatedAt = DateTime.UtcNow;
             user.UpdatedBy = user.UserName; // Assuming the user changes their own password
 
             await _userRepository.UpdateAsync(user);
@@ -231,10 +228,6 @@ namespace pos_service.Services
             {
                 userToUpdate.PasswordHash = _passwordHasher.HashPassword(userDto.Password);
             }
-
-            // 4. Handle Auditable properties
-            //userToUpdate.UpdatedAt = DateTime.UtcNow;
-            // userToUpdate.UpdatedBy = GetCurrentUserName();
 
             var data = await _userRepository.UpdateAsync(userToUpdate);
             return _mapper.Map<UserResDto>(data);

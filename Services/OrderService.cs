@@ -117,7 +117,6 @@ namespace pos_service.Services
                 foreach (var (item, quantity) in itemsToUpdate)
                 {
                     item.StockQuantity -= quantity;
-                    item.UpdatedAt = DateTime.UtcNow;
                     _context.Items.Update(item);
                 }
 
@@ -188,7 +187,6 @@ namespace pos_service.Services
                     if (item != null)
                     {
                         item.StockQuantity += oldItem.Quantity;
-                        item.UpdatedAt = DateTime.UtcNow;
                         _context.Items.Update(item);
                     }
                 }
@@ -256,7 +254,6 @@ namespace pos_service.Services
                 foreach (var (item, quantity) in itemsToUpdate)
                 {
                     item.StockQuantity -= quantity;
-                    //item.UpdatedAt = DateTime.UtcNow;
                     _context.Items.Update(item);
                 }
 
@@ -350,7 +347,6 @@ namespace pos_service.Services
                         if (item != null)
                         {
                             item.StockQuantity += orderItem.Quantity;
-                            item.UpdatedAt = DateTime.UtcNow;
                             _context.Items.Update(item);
                         }
                     }
@@ -369,7 +365,6 @@ namespace pos_service.Services
                         if (item != null)
                         {
                             item.StockQuantity -= orderItem.Quantity;
-                            item.UpdatedAt = DateTime.UtcNow;
                             _context.Items.Update(item);
                         }
                     }

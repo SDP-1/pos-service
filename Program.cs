@@ -44,6 +44,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddHttpContextAccessor();
 
+// In-memory caching
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<ICacheService, CacheService>();
+
 // Add services to the container.
 builder.Services.AddScoped<IItemService, ItemService>();
 builder.Services.AddScoped<IContactService, ContactService>();

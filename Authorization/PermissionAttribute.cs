@@ -24,7 +24,7 @@ namespace pos_service.Authorization
 
         public PermissionFilter(PermissionType permission, ICurrentUserService currentUserService)
         {
-            _permission = permission;
+            _permission         = permission;
             _currentUserService = currentUserService;
         }
 

@@ -18,10 +18,10 @@ namespace pos_service.Services
 
         public UserService(IUserRepository repo, IMapper mapper, IPasswordHasher hasher, IJwtGenerator jwt, IFileStorageService fileStorageService)
         {
-            _userRepository = repo;
-            _mapper = mapper;
-            _passwordHasher = hasher;
-            _jwtGenerator = jwt;
+            _userRepository     = repo;
+            _mapper             = mapper;
+            _passwordHasher     = hasher;
+            _jwtGenerator       = jwt;
             _fileStorageService = fileStorageService;
         }
 

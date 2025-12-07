@@ -26,18 +26,6 @@ namespace pos_service.Services
         bool HasPermission(PermissionType permission);
 
         /// <summary>
-        /// Checks if the current user has permission to manage other users.
-        /// </summary>
-        /// <returns>True if the current user can manage users, otherwise false.</returns>
-        bool CanManageUsers();
-
-        /// <summary>
-        /// Checks if the current user has permission to view sensitive data.
-        /// </summary>
-        /// <returns>True if the current user can view sensitive data, otherwise false.</returns>
-        bool CanViewSensitiveData();
-
-        /// <summary>
         /// Ensures that the current user is authenticated.
         /// Throws an exception if the user is not authenticated.
         /// </summary>

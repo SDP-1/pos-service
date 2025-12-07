@@ -9,6 +9,15 @@ namespace pos_service.Models.DTO.User
         public int Id { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
+
+        /// <summary>
+        /// User's full name.
+        /// </summary>
+        public string FullName
+        {
+            get { return $"{FirstName} {LastName}"; }
+        }
+
         public string UserName { get; set; } // Email is exposed for display
 
         // replaced enum role with RoleId and Role object

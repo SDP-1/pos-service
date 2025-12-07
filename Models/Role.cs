@@ -15,6 +15,6 @@ namespace pos_service.Models
 
         public string Uuid { get; set; } = string.Empty;
 
-        public virtual ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
+        //public virtual ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
     }
 }

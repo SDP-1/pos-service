@@ -7,8 +7,8 @@ using pos_service.Repositories.Permissions;
 using pos_service.Security;
 using pos_service.Services;
 using pos_service.Services.Common;
+using pos_service.Services.Common.Cache;
 using pos_service.Services.Permissions;
-using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 
 var options = new WebApplicationOptions
@@ -26,6 +26,8 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddScoped<IPasswordHasher, PasswordHasherService>();
 // Register the JWT Generation Service
 builder.Services.AddScoped<IJwtGenerator, JwtGeneratorService>();
+// Token validator service used during JWT validation   *Currently this not using REF - 000123*
+//builder.Services.AddScoped<ITokenValidator, TokenValidatorService>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -40,6 +42,31 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ClockSkew = TimeSpan.Zero,
             IssuerSigningKey = new SymmetricSecurityKey(key)
         };
+        // Validate that the token's user still exists and is active on each request using TokenValidatorService
+
+        //  * This committed because current user not cached not nee check this. REF - 000123 *
+
+        //options.Events = new JwtBearerEvents
+        //{
+        //    OnTokenValidated = async context =>
+        //    {
+        //        var validator = context.HttpContext.RequestServices.GetService<pos_service.Services.Authentication.ITokenValidator>();
+        //        if (validator == null)
+        //        {
+        //            context.Fail("Token validator unavailable");
+        //            return;
+        //        }
+
+        //        try
+        //        {
+        //            await validator.ValidateTokenPrincipalAsync(context.Principal!);
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            context.Fail(ex.Message ?? "Token validation failed");
+        //        }
+        //    }
+        //};
     });
 
 builder.Services.AddHttpContextAccessor();

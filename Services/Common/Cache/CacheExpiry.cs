@@ -1,4 +1,4 @@
-namespace pos_service.Services.Common
+namespace pos_service.Services.Common.Cache
 {
     public enum CacheExpiry
     {

@@ -1,50 +1,63 @@
 namespace pos_service.Models.Enums
 {
-    // Permission enum values MUST match Permission.Id values in the database.
+    // PermissionCatagory enum values start from 1
+    public enum PermissionCatagory
+    {
+        ORDER = 1,
+        ITEM = 2,
+        USER = 3,
+        SUPPLIER = 4,
+        CONTACT = 5,
+        PERMISSION = 6,
+        ROLE = 7
+    }
+
+    // PermissionType enum values MUST match Permission.Id values in the database.
+    // Start values at 100 as requested.
     public enum PermissionType
     {
-        // Orders
-        ORDER_VIEW               = 1,
-        ORDER_ADD                = 2,
-        ORDER_UPDATE             = 3,
-        ORDER_DELETE             = 4,
-        ORDER_DELETE_PERMANENTLY = 5,
-        ORDER_UPDATE_STATUS      = 6,
+        // Orders (start at 100)
+        ORDER_VIEW = 100,
+        ORDER_ADD,
+        ORDER_UPDATE,
+        ORDER_DELETE,
+        ORDER_DELETE_PERMANENTLY,
+        ORDER_UPDATE_STATUS,
 
-        // Items
-        ITEM_VIEW                = 10,
-        ITEM_ADD                 = 11,
-        ITEM_UPDATE              = 12,
-        ITEM_DELETE              = 13,
-        ITEM_ADD_STOCK           = 14,
+        // Items (start at 110)
+        ITEM_VIEW = 110,
+        ITEM_ADD,
+        ITEM_UPDATE,
+        ITEM_DELETE,
+        ITEM_ADD_STOCK,
 
-        // Users
-        USER_VIEW                = 20,
-        USER_CREATE              = 21,
-        USER_UPDATE              = 22,
-        USER_DEACTIVATE          = 23,
-        USER_DELETE              = 24,
-        USER_CHANGE_PASSWORD     = 25,
-        USER_MANAGE              = 26,
+        // Users (start at 120)
+        USER_VIEW = 120,
+        USER_CREATE,
+        USER_UPDATE,
+        USER_DEACTIVATE,
+        USER_DELETE,
+        USER_CHANGE_PASSWORD,
+        USER_MANAGE,
 
-        // Suppliers
-        SUPPLIER_VIEW            = 30,
-        SUPPLIER_CREATE          = 31,
-        SUPPLIER_UPDATE          = 32,
-        SUPPLIER_DELETE          = 33,
+        // Suppliers (start at 130)
+        SUPPLIER_VIEW = 130,
+        SUPPLIER_CREATE,
+        SUPPLIER_UPDATE,
+        SUPPLIER_DELETE,
 
-        // Contacts
-        CONTACT_VIEW             = 40,
-        CONTACT_CREATE           = 41,
-        CONTACT_UPDATE           = 42,
-        CONTACT_DELETE           = 43,
+        // Contacts (start at 140)
+        CONTACT_VIEW = 140,
+        CONTACT_CREATE,
+        CONTACT_UPDATE,
+        CONTACT_DELETE,
 
-        // Permissions & Roles
-        PERMISSION_VIEW          = 50,
-        PERMISSION_ASSIGN        = 51,
-        ROLE_VIEW                = 60,
-        ROLE_CREATE              = 61,
-        ROLE_UPDATE              = 62,
-        ROLE_DELETE              = 63
+        // Permissions & Roles (start at 150)
+        PERMISSION_VIEW = 150,
+        PERMISSION_ASSIGN,
+        ROLE_VIEW = 160,
+        ROLE_CREATE,
+        ROLE_UPDATE,
+        ROLE_DELETE
     }
 }

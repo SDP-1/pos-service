@@ -2,6 +2,7 @@
 using pos_service.Models;
 using pos_service.Models.Enums;
 using pos_service.Services;
+using pos_service.Exceptions;
 
 namespace pos_service.Controllers.Base
 {
@@ -36,19 +37,15 @@ namespace pos_service.Controllers.Base
         {
             EnsureAuthenticated();
             if (!_currentUser.HasPermission(permission))
-                throw new UnauthorizedAccessException($"User does not have required permission: {permission}");
+                throw new PermissionDeniedException($"User does not have required permission: {permission}");
         }
 
         // Quick access properties for convenience
         protected int CurrentUserId         => _currentUser.Id;
         protected string CurrentUserUuid    => _currentUser.Uuid;
         protected string CurrentUserName    => _currentUser.UserName;
-        protected int CurrentUserRoleId     => _currentUser.RoleId;
-        protected string CurrentUserRoleName=> _currentUser.RoleName;
+        protected int CurrentUserRoleId     => _currentUser.Role?.Id ?? 0;
+        protected string CurrentUserRoleName=> _currentUser.Role?.Name ?? string.Empty;
         protected bool IsUserAuthenticated  => _currentUser.IsAuthenticated;
-
-        // Common authorization checks
-        protected bool CanManageUsers       => _currentUser.CanManageUsers();
-        protected bool CanViewSensitiveData => _currentUser.CanViewSensitiveData();
     }
 }

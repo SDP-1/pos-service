@@ -6,6 +6,7 @@ using pos_service.Models.DTO.Order;
 using pos_service.Models.Enums;
 using pos_service.Services;
 using pos_service.Authorization;
+using pos_service.Exceptions;
 
 namespace pos_service.Controllers
 {
@@ -185,7 +186,7 @@ namespace pos_service.Controllers
             {
                 if (permanent)
                 {
-                    try { EnsurePermission(PermissionType.ORDER_DELETE_PERMANENTLY); } catch (UnauthorizedAccessException) { return Forbid(); }
+                    try { EnsurePermission(PermissionType.ORDER_DELETE_PERMANENTLY); } catch (PermissionDeniedException) { return Forbid(); }
                 }
 
                 var result = await _orderService.DeleteOrderAsync(id, _currentUser, permanent);

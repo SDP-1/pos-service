@@ -29,7 +29,7 @@ namespace pos_service.Profiles
 
             // User Mappings
             CreateMap<User, UserResDto>();
-
+            CreateMap<User, CurrentUser>();
             CreateMap<UserReqDto, User>();
             CreateMap<UserLoginReqDto, User>();
 

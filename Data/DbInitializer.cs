@@ -139,48 +139,48 @@ namespace pos_service.Data
                 var perms = new List<Permission>
                 {
                     // Orders
-                    new Permission { Id = (int)PermissionType.ORDER_VIEW, Name = "ORDER_VIEW", Description = "Can view orders", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.ORDER_ADD, Name = "ORDER_ADD", Description = "Can create orders", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.ORDER_UPDATE, Name = "ORDER_UPDATE", Description = "Can update orders", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.ORDER_DELETE, Name = "ORDER_DELETE", Description = "Can delete orders", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.ORDER_DELETE_PERMANENTLY, Name = "ORDER_DELETE_PERMANENTLY", Description = "Can permanently delete orders", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.ORDER_UPDATE_STATUS, Name = "ORDER_UPDATE_STATUS", Description = "Can update order status", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.ORDER_VIEW, PermissionType = PermissionType.ORDER_VIEW, PermissionCatagory = PermissionCatagory.ORDER, Description = "Can view orders", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.ORDER_ADD, PermissionType = PermissionType.ORDER_ADD, PermissionCatagory = PermissionCatagory.ORDER, Description = "Can create orders", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.ORDER_UPDATE, PermissionType = PermissionType.ORDER_UPDATE, PermissionCatagory = PermissionCatagory.ORDER, Description = "Can update orders", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.ORDER_DELETE, PermissionType = PermissionType.ORDER_DELETE, PermissionCatagory = PermissionCatagory.ORDER, Description = "Can delete orders", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.ORDER_DELETE_PERMANENTLY, PermissionType = PermissionType.ORDER_DELETE_PERMANENTLY, PermissionCatagory = PermissionCatagory.ORDER, Description = "Can permanently delete orders", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.ORDER_UPDATE_STATUS, PermissionType = PermissionType.ORDER_UPDATE_STATUS, PermissionCatagory = PermissionCatagory.ORDER, Description = "Can update order status", Uuid = Guid.NewGuid().ToString() },
 
                     // Items
-                    new Permission { Id = (int)PermissionType.ITEM_VIEW, Name = "ITEM_VIEW", Description = "Can view items", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.ITEM_ADD, Name = "ITEM_ADD", Description = "Can create items", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.ITEM_UPDATE, Name = "ITEM_UPDATE", Description = "Can update items", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.ITEM_DELETE, Name = "ITEM_DELETE", Description = "Can delete items", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.ITEM_ADD_STOCK, Name = "ITEM_ADD_STOCK", Description = "Can add stock to items", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.ITEM_VIEW, PermissionType = PermissionType.ITEM_VIEW, PermissionCatagory = PermissionCatagory.ITEM, Description = "Can view items", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.ITEM_ADD, PermissionType = PermissionType.ITEM_ADD, PermissionCatagory = PermissionCatagory.ITEM, Description = "Can create items", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.ITEM_UPDATE, PermissionType = PermissionType.ITEM_UPDATE, PermissionCatagory = PermissionCatagory.ITEM, Description = "Can update items", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.ITEM_DELETE, PermissionType = PermissionType.ITEM_DELETE, PermissionCatagory = PermissionCatagory.ITEM, Description = "Can delete items", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.ITEM_ADD_STOCK, PermissionType = PermissionType.ITEM_ADD_STOCK, PermissionCatagory = PermissionCatagory.ITEM, Description = "Can add stock to items", Uuid = Guid.NewGuid().ToString() },
 
                     // Users
-                    new Permission { Id = (int)PermissionType.USER_VIEW, Name = "USER_VIEW", Description = "Can view users", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.USER_CREATE, Name = "USER_CREATE", Description = "Can create users", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.USER_UPDATE, Name = "USER_UPDATE", Description = "Can update users", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.USER_DEACTIVATE, Name = "USER_DEACTIVATE", Description = "Can deactivate users", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.USER_DELETE, Name = "USER_DELETE", Description = "Can delete users", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.USER_CHANGE_PASSWORD, Name = "USER_CHANGE_PASSWORD", Description = "Can change password", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.USER_MANAGE, Name = "USER_MANAGE", Description = "Can manage user accounts and roles", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.USER_VIEW, PermissionType = PermissionType.USER_VIEW, PermissionCatagory = PermissionCatagory.USER, Description = "Can view users", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.USER_CREATE, PermissionType = PermissionType.USER_CREATE, PermissionCatagory = PermissionCatagory.USER, Description = "Can create users", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.USER_UPDATE, PermissionType = PermissionType.USER_UPDATE, PermissionCatagory = PermissionCatagory.USER, Description = "Can update users", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.USER_DEACTIVATE, PermissionType = PermissionType.USER_DEACTIVATE, PermissionCatagory = PermissionCatagory.USER, Description = "Can deactivate users", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.USER_DELETE, PermissionType = PermissionType.USER_DELETE, PermissionCatagory = PermissionCatagory.USER, Description = "Can delete users", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.USER_CHANGE_PASSWORD, PermissionType = PermissionType.USER_CHANGE_PASSWORD, PermissionCatagory = PermissionCatagory.USER, Description = "Can change password", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.USER_MANAGE, PermissionType = PermissionType.USER_MANAGE, PermissionCatagory = PermissionCatagory.USER, Description = "Can manage user accounts and roles", Uuid = Guid.NewGuid().ToString() },
 
                     // Suppliers
-                    new Permission { Id = (int)PermissionType.SUPPLIER_VIEW, Name = "SUPPLIER_VIEW", Description = "Can view suppliers", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.SUPPLIER_CREATE, Name = "SUPPLIER_CREATE", Description = "Can create suppliers", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.SUPPLIER_UPDATE, Name = "SUPPLIER_UPDATE", Description = "Can update suppliers", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.SUPPLIER_DELETE, Name = "SUPPLIER_DELETE", Description = "Can delete suppliers", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.SUPPLIER_VIEW, PermissionType = PermissionType.SUPPLIER_VIEW, PermissionCatagory = PermissionCatagory.SUPPLIER, Description = "Can view suppliers", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.SUPPLIER_CREATE, PermissionType = PermissionType.SUPPLIER_CREATE, PermissionCatagory = PermissionCatagory.SUPPLIER, Description = "Can create suppliers", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.SUPPLIER_UPDATE, PermissionType = PermissionType.SUPPLIER_UPDATE, PermissionCatagory = PermissionCatagory.SUPPLIER, Description = "Can update suppliers", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.SUPPLIER_DELETE, PermissionType = PermissionType.SUPPLIER_DELETE, PermissionCatagory = PermissionCatagory.SUPPLIER, Description = "Can delete suppliers", Uuid = Guid.NewGuid().ToString() },
 
                     // Contacts
-                    new Permission { Id = (int)PermissionType.CONTACT_VIEW, Name = "CONTACT_VIEW", Description = "Can view contacts", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.CONTACT_CREATE, Name = "CONTACT_CREATE", Description = "Can create contacts", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.CONTACT_UPDATE, Name = "CONTACT_UPDATE", Description = "Can update contacts", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.CONTACT_DELETE, Name = "CONTACT_DELETE", Description = "Can delete contacts", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.CONTACT_VIEW, PermissionType = PermissionType.CONTACT_VIEW, PermissionCatagory = PermissionCatagory.CONTACT, Description = "Can view contacts", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.CONTACT_CREATE, PermissionType = PermissionType.CONTACT_CREATE, PermissionCatagory = PermissionCatagory.CONTACT, Description = "Can create contacts", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.CONTACT_UPDATE, PermissionType = PermissionType.CONTACT_UPDATE, PermissionCatagory = PermissionCatagory.CONTACT, Description = "Can update contacts", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.CONTACT_DELETE, PermissionType = PermissionType.CONTACT_DELETE, PermissionCatagory = PermissionCatagory.CONTACT, Description = "Can delete contacts", Uuid = Guid.NewGuid().ToString() },
 
                     // Permissions and roles
-                    new Permission { Id = (int)PermissionType.PERMISSION_VIEW, Name = "PERMISSION_VIEW", Description = "Can view permissions", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.PERMISSION_ASSIGN, Name = "PERMISSION_ASSIGN", Description = "Can assign permissions to roles", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.ROLE_VIEW, Name = "ROLE_VIEW", Description = "Can view roles", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.ROLE_CREATE, Name = "ROLE_CREATE", Description = "Can create roles", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.ROLE_UPDATE, Name = "ROLE_UPDATE", Description = "Can update roles", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.ROLE_DELETE, Name = "ROLE_DELETE", Description = "Can delete roles", Uuid = Guid.NewGuid().ToString() }
+                    new Permission { Id = (int)PermissionType.PERMISSION_VIEW, PermissionType = PermissionType.PERMISSION_VIEW, PermissionCatagory = PermissionCatagory.PERMISSION, Description = "Can view permissions", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.PERMISSION_ASSIGN, PermissionType = PermissionType.PERMISSION_ASSIGN, PermissionCatagory = PermissionCatagory.PERMISSION, Description = "Can assign permissions to roles", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.ROLE_VIEW, PermissionType = PermissionType.ROLE_VIEW, PermissionCatagory = PermissionCatagory.ROLE, Description = "Can view roles", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.ROLE_CREATE, PermissionType = PermissionType.ROLE_CREATE, PermissionCatagory = PermissionCatagory.ROLE, Description = "Can create roles", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.ROLE_UPDATE, PermissionType = PermissionType.ROLE_UPDATE, PermissionCatagory = PermissionCatagory.ROLE, Description = "Can update roles", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.ROLE_DELETE, PermissionType = PermissionType.ROLE_DELETE, PermissionCatagory = PermissionCatagory.ROLE, Description = "Can delete roles", Uuid = Guid.NewGuid().ToString() }
                 };
 
                 context.Permissions.AddRange(perms);

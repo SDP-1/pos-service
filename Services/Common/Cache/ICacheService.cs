@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace pos_service.Services.Common
+namespace pos_service.Services.Common.Cache
 {
     public interface ICacheService
     {

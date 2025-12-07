@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using pos_service.Services;
 using pos_service.Models.Enums;
+using pos_service.Exceptions;
 
 namespace pos_service.Authorization
 {
@@ -36,14 +37,17 @@ namespace pos_service.Authorization
 
                 if (!_currentUserService.HasPermission(_permission))
                 {
-                    context.Result = new ForbidResult();
-                    return;
+                    // throw PermissionDeniedException so callers can handle it explicitly
+                    throw new pos_service.Exceptions.PermissionDeniedException($"User does not have required permission: {_permission}");
                 }
+            }
+            catch (PermissionDeniedException) {
+                throw;
             }
             catch (UnauthorizedAccessException)
             {
+                // not authenticated -> forbid
                 context.Result = new ForbidResult();
-                return;
             }
 
             await next();

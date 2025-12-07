@@ -26,18 +26,18 @@ namespace pos_service.Security
             var key = Encoding.ASCII.GetBytes(_secretKey);
 
             // safe role retrieval: prefer Role.Name if available, fallback to RoleId
-            var roleName = user.Role?.Name ?? ($"role:{user.RoleId}");
+            //var roleName = user.Role?.Name ?? ($"role:{user.RoleId}");
 
             // 1. Define the claims (user data stored in the token)
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                //new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim("role_id", user.RoleId.ToString()),
-                new Claim(ClaimTypes.Role, roleName),
-                new Claim(ClaimTypes.Name, user.FullName ?? string.Empty),
-                new Claim("user_id", user.Id.ToString()),
+                //new Claim(ClaimTypes.Role, roleName),
+                //new Claim(ClaimTypes.Name, user.FullName ?? string.Empty),
+                //new Claim("user_id", user.Id.ToString()),
                 new Claim("uuid", user.Uuid ?? string.Empty),
-                new Claim("username", user.UserName ?? string.Empty)
+                //new Claim("username", user.UserName ?? string.Empty)
             };
 
             // 2. Create the token descriptor

@@ -45,6 +45,14 @@ namespace pos_service.Repositories
                 .FirstOrDefaultAsync(u => u.Id == id);
         }
 
+        public async Task<User?> GetByUuidAsync(string uuid)
+        {
+            return await _context.Users
+                .Include(u => u.Contacts)
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Uuid == uuid);
+        }
+
         public async Task<User> AddAsync(User user)
         {
             try { 

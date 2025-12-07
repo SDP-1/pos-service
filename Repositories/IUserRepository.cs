@@ -32,6 +32,13 @@ namespace pos_service.Repositories
         Task<User?> GetByIdWithContactsAsync(int id);
 
         /// <summary>
+        /// Retrieves a user by its unique identifier including related contact information.
+        /// </summary>
+        /// <param name="uuid">The Uuid identifier of the user.</param>
+        /// <returns>The user entity with contact information if found, otherwise null.</returns>
+        Task<User?> GetByUuidAsync(string uuid);
+
+        /// <summary>
         /// Adds a new user to the data store.
         /// </summary>
         /// <param name="user">The user entity to add.</param>

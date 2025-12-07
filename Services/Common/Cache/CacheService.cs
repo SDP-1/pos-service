@@ -3,7 +3,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
 
-namespace pos_service.Services.Common
+namespace pos_service.Services.Common.Cache
 {
     /// <summary>
     /// A cache service that supports primary and optional secondary keys.

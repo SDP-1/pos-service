@@ -52,7 +52,12 @@ namespace pos_service.Data
             // --- Permission configuration ---
             modelBuilder.Entity<Permission>(entity =>
             {
-                entity.HasIndex(p => p.Name).IsUnique();
+                // index on PermissionType to ensure uniqueness of enum mapping
+                entity.HasIndex(p => p.PermissionType).IsUnique();
+
+                // store enums as ints
+                entity.Property(p => p.PermissionType).HasConversion<int>();
+                entity.Property(p => p.PermissionCatagory).HasConversion<int>();
 
                 entity.HasAlternateKey(p => p.Uuid);
             });
@@ -65,7 +70,8 @@ namespace pos_service.Data
                       .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasOne(rp => rp.Role)
-                      .WithMany(r => r.RolePermissions)
+                      //.WithMany(r => r.RolePermissions)
+                      .WithMany()
                       .HasForeignKey(rp => rp.RoleId)
                       .OnDelete(DeleteBehavior.Cascade);
 

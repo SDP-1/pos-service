@@ -56,8 +56,8 @@ namespace pos_service.Data
                 entity.HasIndex(p => p.PermissionType).IsUnique();
 
                 // store enums as ints
-                entity.Property(p => p.PermissionType).HasConversion<int>();
-                entity.Property(p => p.PermissionCatagory).HasConversion<int>();
+                entity.Property(p => p.PermissionType).HasConversion<string>();
+                entity.Property(p => p.PermissionCatagory).HasConversion<string>();
 
                 entity.HasAlternateKey(p => p.Uuid);
             });
@@ -157,6 +157,7 @@ namespace pos_service.Data
                 // Convert enums to strings for readability in the database.
                 entity.Property(o => o.Status).HasConversion<string>();
                 entity.Property(o => o.PaymentMethod).HasConversion<string>();
+                entity.Property(o => o.SaleType).HasConversion<string>();
 
                 // Configure the relationship to the User (Cashier).
                 entity.HasOne(o => o.Cashier)

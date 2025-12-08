@@ -82,6 +82,7 @@ builder.Services.AddScoped<ISupplierService, SupplierService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
+builder.Services.AddScoped<pos_service.Services.Roles.IRoleService, pos_service.Services.Roles.RoleService>();
 
 builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
@@ -92,6 +93,7 @@ builder.Services.AddScoped<ISupplierRepository, SupplierRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();
+builder.Services.AddScoped<pos_service.Repositories.Roles.IRoleRepository, pos_service.Repositories.Roles.RoleRepository>();
 
 // FIXED: DbContext registration with all dependencies
 builder.Services.AddDbContext<AppDbContext>((provider, options) =>

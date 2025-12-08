@@ -39,14 +39,14 @@ namespace pos_service.Repositories.Permissions
                 var val = (int)permType;
                 var cat = val switch
                 {
-                    >= 100 and < 110 => PermissionCatagory.ORDER,
-                    >= 110 and < 120 => PermissionCatagory.ITEM,
-                    >= 120 and < 130 => PermissionCatagory.USER,
-                    >= 130 and < 140 => PermissionCatagory.SUPPLIER,
-                    >= 140 and < 150 => PermissionCatagory.CONTACT,
-                    >= 150 and < 160 => PermissionCatagory.PERMISSION,
-                    >= 160 and < 170 => PermissionCatagory.ROLE,
-                    _ => PermissionCatagory.PERMISSION
+                    >= 100 and < 200 => PermissionCatagory.ORDER,
+                    >= 200 and < 300 => PermissionCatagory.ITEM,
+                    >= 300 and < 400 => PermissionCatagory.USER,
+                    >= 400 and < 500 => PermissionCatagory.SUPPLIER,
+                    >= 500 and < 600 => PermissionCatagory.CONTACT,
+                    >= 600 and < 650 => PermissionCatagory.PERMISSION,
+                    >= 650 and < 700 => PermissionCatagory.ROLE,
+                    _ => PermissionCatagory.DEFAULT
                 };
 
                 perm = new Permission { Id = val, PermissionType = permType, PermissionCatagory = cat, Uuid = Guid.NewGuid().ToString() };

@@ -180,7 +180,11 @@ namespace pos_service.Data
                     new Permission { Id = (int)PermissionType.ROLE_VIEW, PermissionType = PermissionType.ROLE_VIEW, PermissionCatagory = PermissionCatagory.ROLE, Description = "Can view roles", Uuid = Guid.NewGuid().ToString() },
                     new Permission { Id = (int)PermissionType.ROLE_CREATE, PermissionType = PermissionType.ROLE_CREATE, PermissionCatagory = PermissionCatagory.ROLE, Description = "Can create roles", Uuid = Guid.NewGuid().ToString() },
                     new Permission { Id = (int)PermissionType.ROLE_UPDATE, PermissionType = PermissionType.ROLE_UPDATE, PermissionCatagory = PermissionCatagory.ROLE, Description = "Can update roles", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.ROLE_DELETE, PermissionType = PermissionType.ROLE_DELETE, PermissionCatagory = PermissionCatagory.ROLE, Description = "Can delete roles", Uuid = Guid.NewGuid().ToString() }
+                    new Permission { Id = (int)PermissionType.ROLE_DELETE, PermissionType = PermissionType.ROLE_DELETE, PermissionCatagory = PermissionCatagory.ROLE, Description = "Can delete roles", Uuid = Guid.NewGuid().ToString() }, 
+                   
+
+                    // Only for Admin
+                    new Permission { Id = (int)PermissionType.PERMISSION_SYSADMIN_VIEW, PermissionType = PermissionType.PERMISSION_SYSADMIN_VIEW, PermissionCatagory = PermissionCatagory.ROLE, Description = "Can view the SystemAdmin role existence/details", Uuid = Guid.NewGuid().ToString() },
                 };
 
                 context.Permissions.AddRange(perms);

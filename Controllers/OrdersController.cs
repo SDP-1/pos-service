@@ -185,15 +185,16 @@ namespace pos_service.Controllers
             try
             {
                 if (permanent)
-                {
-                    try { EnsurePermission(PermissionType.ORDER_DELETE_PERMANENTLY); } catch (PermissionDeniedException) { return Forbid(); }
-                }
+                    EnsurePermission(PermissionType.ORDER_DELETE_PERMANENTLY);
 
                 var result = await _orderService.DeleteOrderAsync(id, _currentUser, permanent);
                 if (!result)
                     return NotFound("Order not found");
 
                 return Ok("Successfully deleted");
+            }
+            catch (PermissionDeniedException ex) {
+                return Forbid(ex.Message);
             }
             catch (Exception ex)
             {

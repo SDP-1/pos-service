@@ -8,7 +8,7 @@ namespace pos_service.Models
         public int Id                                { get; set; }
 
         [Required]
-        public PermissionType PermissionType         { get; set; 
+        public PermissionType PermissionType         { get; set; }
 
         [MaxLength(250)]
         public string? Description                   { get; set; }

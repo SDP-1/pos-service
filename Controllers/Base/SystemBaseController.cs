@@ -39,13 +39,5 @@ namespace pos_service.Controllers.Base
             if (!_currentUser.HasPermission(permission))
                 throw new PermissionDeniedException($"User does not have required permission: {permission}");
         }
-
-        // Quick access properties for convenience
-        protected int CurrentUserId         => _currentUser.Id;
-        protected string CurrentUserUuid    => _currentUser.Uuid;
-        protected string CurrentUserName    => _currentUser.UserName;
-        protected int CurrentUserRoleId     => _currentUser.Role?.Id ?? 0;
-        protected string CurrentUserRoleName=> _currentUser.Role?.Name ?? string.Empty;
-        protected bool IsUserAuthenticated  => _currentUser.IsAuthenticated;
     }
 }

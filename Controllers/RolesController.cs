@@ -28,7 +28,7 @@ namespace pos_service.Controllers
             var roles = await _roleService.GetAllAsync();
 
             // hide SystemAdmin from users who do not have PERMISSION_SYSADMIN_VIEW
-            var canSeeSysAdmin = IsUserAuthenticated && (_currentUser.HasPermission(PermissionType.PERMISSION_SYSADMIN_VIEW));
+            var canSeeSysAdmin = _currentUser.IsAuthenticated && (_currentUser.HasPermission(PermissionType.PERMISSION_SYSADMIN_VIEW));
             if (!canSeeSysAdmin)
             {
                 roles = roles.Where(r => r.Id != 1);
@@ -42,7 +42,7 @@ namespace pos_service.Controllers
         public async Task<IActionResult> Get(int id)
         {
             // Only users with PERMISSION_SYSADMIN_VIEW (or the system admin themselves) may view the SystemAdmin role
-            if (id == 1 && !(IsUserAuthenticated && (_currentUser.HasPermission(PermissionType.PERMISSION_SYSADMIN_VIEW))))
+            if (id == 1 && !(_currentUser.IsAuthenticated && (_currentUser.HasPermission(PermissionType.PERMISSION_SYSADMIN_VIEW))))
                 throw new PermissionDeniedException("Insufficient permission to view SystemAdmin role");
 
             var role = await _roleService.GetByIdAsync(id);
@@ -57,7 +57,7 @@ namespace pos_service.Controllers
             // Prevent creating or tampering with SystemAdmin unless caller has PERMISSION_SYSADMIN_VIEW
             if (string.Equals(role.Name, "SystemAdmin", StringComparison.OrdinalIgnoreCase) || role.Id == 1)
             {
-                if (!(IsUserAuthenticated && (_currentUser.HasPermission(PermissionType.PERMISSION_SYSADMIN_VIEW))))
+                if (!(_currentUser.IsAuthenticated && (_currentUser.HasPermission(PermissionType.PERMISSION_SYSADMIN_VIEW))))
                     throw new PermissionDeniedException("Insufficient permission to create or modify SystemAdmin role");
             }
 
@@ -73,7 +73,7 @@ namespace pos_service.Controllers
             // Prevent updates to SystemAdmin unless caller has PERMISSION_SYSADMIN_VIEW or is the SystemAdmin
             if (id == 1 || string.Equals(role.Name, "SystemAdmin", StringComparison.OrdinalIgnoreCase))
             {
-                if (!(IsUserAuthenticated && (_currentUser.HasPermission(PermissionType.PERMISSION_SYSADMIN_VIEW))))
+                if (!(_currentUser.IsAuthenticated && (_currentUser.HasPermission(PermissionType.PERMISSION_SYSADMIN_VIEW))))
                     throw new PermissionDeniedException("Insufficient permission to update SystemAdmin role");
             }
 
@@ -86,7 +86,7 @@ namespace pos_service.Controllers
         [Permission(PermissionType.ROLE_DELETE)]
         public async Task<IActionResult> Delete(int id)
         {
-            if (id == 1 && !(IsUserAuthenticated && (_currentUser.HasPermission(PermissionType.PERMISSION_SYSADMIN_VIEW))))
+            if (id == 1 && !(_currentUser.IsAuthenticated && (_currentUser.HasPermission(PermissionType.PERMISSION_SYSADMIN_VIEW))))
                 throw new PermissionDeniedException("Insufficient permission to delete SystemAdmin role");
 
             var deleted = await _roleService.DeleteAsync(id);

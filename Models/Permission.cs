@@ -5,21 +5,26 @@ namespace pos_service.Models
 {
     public class Permission
     {
-        public int Id { get; set; }
+        public int Id                                { get; set; }
 
         [Required]
-        public PermissionType PermissionType { get; set; }
+        public PermissionType PermissionType         { get; set; 
 
-        public string PermissionTypeName 
-        { 
-            get {
-                return PermissionType.ToString();
-            } 
-        }
+        [MaxLength(250)]
+        public string? Description                   { get; set; }
 
         [Required]
         public PermissionCatagory PermissionCatagory { get; set; }
 
+        public string PermissionTypeName
+        {
+            get
+            {
+                return PermissionType.ToString();
+            }
+        }
+
+       
         public string PermissionCatagoryName
         {
             get
@@ -27,10 +32,5 @@ namespace pos_service.Models
                 return PermissionCatagory.ToString();
             }
         }
-
-        [MaxLength(250)]
-        public string? Description { get; set; }
-
-        public string Uuid { get; set; } = string.Empty;
     }
 }

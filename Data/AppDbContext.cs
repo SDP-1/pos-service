@@ -58,8 +58,6 @@ namespace pos_service.Data
                 // store enums as ints
                 entity.Property(p => p.PermissionType).HasConversion<string>();
                 entity.Property(p => p.PermissionCatagory).HasConversion<string>();
-
-                entity.HasAlternateKey(p => p.Uuid);
             });
 
             modelBuilder.Entity<RolePermission>(entity =>
@@ -70,7 +68,6 @@ namespace pos_service.Data
                       .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasOne(rp => rp.Role)
-                      //.WithMany(r => r.RolePermissions)
                       .WithMany()
                       .HasForeignKey(rp => rp.RoleId)
                       .OnDelete(DeleteBehavior.Cascade);

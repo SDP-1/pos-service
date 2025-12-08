@@ -49,7 +49,7 @@ namespace pos_service.Repositories.Permissions
                     _ => PermissionCatagory.DEFAULT
                 };
 
-                perm = new Permission { Id = val, PermissionType = permType, PermissionCatagory = cat, Uuid = Guid.NewGuid().ToString() };
+                perm = new Permission { Id = val, PermissionType = permType, PermissionCatagory = cat };
                 _context.Permissions.Add(perm);
                 await _context.SaveChangesAsync();
             }

@@ -1,5 +1,5 @@
 ﻿using pos_service.Models;
-using pos_service.Models.DTO.Order;
+using pos_service.Models.DTO.Orders;
 using pos_service.Models.Enums;
 
 namespace pos_service.Services

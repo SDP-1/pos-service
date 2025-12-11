@@ -1,6 +1,8 @@
-﻿namespace pos_service.Models.DTO.OrderItem
+﻿using pos_service.Models.DTO.Audits;
+
+namespace pos_service.Models.DTO.OrderItems
 {
-    public class OrderItemMiniResDto
+    public class OrderItemResDto : IFullResAuditDto
     {
         public int Id { get; set; }
         public int OrderId { get; set; }
@@ -12,6 +14,13 @@
         public decimal CostAtSale { get; set; }
         public decimal LineTotal { get; set; }
         public bool AllowsDecimalQuantities { get; set; }
+
+        // Audit fields
+        public string Uuid { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public string CreatedBy { get; set; }
+        public string? UpdatedBy { get; set; }
         public bool IsActive { get; set; }
     }
 }

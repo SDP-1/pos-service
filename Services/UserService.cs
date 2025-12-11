@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using pos_service.Models;
-using pos_service.Models.DTO.User;
+using pos_service.Models.DTO.Users;
 using pos_service.Repositories;
 using pos_service.Security;
 using pos_service.Services.Common;

@@ -1,4 +1,4 @@
-﻿namespace pos_service.Models.DTO.Order
+﻿namespace pos_service.Models.DTO.Orders
 {
     public class OrderListResDto
     {

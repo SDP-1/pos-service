@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using pos_service.Models;
-using pos_service.Models.DTO.Item;
+using pos_service.Models.DTO.Items;
 using pos_service.Repositories;
 
 namespace pos_service.Services

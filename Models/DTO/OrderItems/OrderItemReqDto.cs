@@ -1,7 +1,7 @@
 ﻿using pos_service.Models.Enums;
 using System.ComponentModel.DataAnnotations;
 
-namespace pos_service.Models.DTO.OrderItem
+namespace pos_service.Models.DTO.OrderItems
 {
     public class OrderItemReqDto
     {

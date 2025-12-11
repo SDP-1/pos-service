@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using pos_service.Controllers.Base;
 using pos_service.Models;
-using pos_service.Models.DTO.Item;
+using pos_service.Models.DTO.Items;
 using pos_service.Services;
 
 namespace pos_service.Controllers

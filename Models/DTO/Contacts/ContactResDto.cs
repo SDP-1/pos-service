@@ -1,6 +1,6 @@
-﻿using pos_service.Models.DTO.Audit;
+﻿using pos_service.Models.DTO.Audits;
 
-namespace pos_service.Models.DTO.Contact
+namespace pos_service.Models.DTO.Contacts
 {
     public class ContactResDto : IFullResAuditDto
     {

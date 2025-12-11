@@ -30,6 +30,7 @@ namespace pos_service.Repositories.Roles
 
         public async Task<Role> AddAsync(Role role)
         {
+            role.Uuid = Guid.NewGuid().ToString();
             _context.Roles.Add(role);
             await _context.SaveChangesAsync();
             return role;

@@ -1,5 +1,5 @@
 ﻿using pos_service.Models;
-using pos_service.Models.DTO.Supplier;
+using pos_service.Models.DTO.Suppliers;
 
 namespace pos_service.Services
 {

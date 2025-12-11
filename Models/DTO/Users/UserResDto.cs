@@ -1,8 +1,8 @@
-﻿using pos_service.Models.DTO.Audit;
-using pos_service.Models.DTO.Contact;
+﻿using pos_service.Models.DTO.Audits;
+using pos_service.Models.DTO.Contacts;
 using pos_service.Models;
 
-namespace pos_service.Models.DTO.User
+namespace pos_service.Models.DTO.Users
 {
     public class UserResDto : IReqAuditDto
     {

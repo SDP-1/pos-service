@@ -1,6 +1,6 @@
-﻿using pos_service.Models.DTO.Supplier;
+﻿using pos_service.Models.DTO.Suppliers;
 
-namespace pos_service.Models.DTO.Item
+namespace pos_service.Models.DTO.Items
 {
     public class ItemMiniResDto
     {

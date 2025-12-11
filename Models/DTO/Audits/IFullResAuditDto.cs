@@ -1,4 +1,4 @@
-﻿namespace pos_service.Models.DTO.Audit
+﻿namespace pos_service.Models.DTO.Audits
 {
     public interface IFullResAuditDto
     {

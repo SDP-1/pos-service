@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using pos_service.Controllers.Base;
-using pos_service.Models.DTO.Supplier;
+using pos_service.Models.DTO.Suppliers;
 using pos_service.Models.Enums;
 using pos_service.Services;
 

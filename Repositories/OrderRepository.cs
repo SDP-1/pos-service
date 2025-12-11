@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Logging;
 using pos_service.Data;
 using pos_service.Models;
-using pos_service.Models.DTO.Order;
+using pos_service.Models.DTO.Orders;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace pos_service.Repositories

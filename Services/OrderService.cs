@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using pos_service.Data;
 using pos_service.Models;
-using pos_service.Models.DTO.Order;
+using pos_service.Models.DTO.Orders;
 using pos_service.Models.Enums;
 using pos_service.Repositories;
 

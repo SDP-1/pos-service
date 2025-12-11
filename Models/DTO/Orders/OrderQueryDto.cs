@@ -1,6 +1,6 @@
 ﻿using pos_service.Models.Enums;
 
-namespace pos_service.Models.DTO.Order
+namespace pos_service.Models.DTO.Orders
 {
     public class OrderQueryDto
     {

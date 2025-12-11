@@ -1,7 +1,7 @@
-﻿using pos_service.Models.DTO.Audit;
+﻿using pos_service.Models.DTO.Audits;
 using System.ComponentModel.DataAnnotations;
 
-namespace pos_service.Models.DTO.Contact
+namespace pos_service.Models.DTO.Contacts
 {
     public class ContactReqDto : IReqAuditDto
     {

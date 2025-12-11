@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using pos_service.Data;
 using pos_service.Exceptions;
 using pos_service.Models;
-using pos_service.Models.DTO.User;
+using pos_service.Models.DTO.Users;
 using pos_service.Models.Enums;
 using pos_service.Repositories;
 using pos_service.Services.Common.Cache;

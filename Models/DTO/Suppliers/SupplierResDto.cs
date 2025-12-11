@@ -1,7 +1,7 @@
-﻿using pos_service.Models.DTO.Audit;
-using pos_service.Models.DTO.Contact;
+﻿using pos_service.Models.DTO.Audits;
+using pos_service.Models.DTO.Contacts;
 
-namespace pos_service.Models.DTO.Supplier
+namespace pos_service.Models.DTO.Suppliers
 {
     public class SupplierResDto : IFullResAuditDto
     {

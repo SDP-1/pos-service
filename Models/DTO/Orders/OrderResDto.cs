@@ -1,8 +1,8 @@
-﻿using pos_service.Models.DTO.Audit;
-using pos_service.Models.DTO.OrderItem;
+﻿using pos_service.Models.DTO.Audits;
+using pos_service.Models.DTO.OrderItems;
 using pos_service.Models.Enums;
 
-namespace pos_service.Models.DTO.Order
+namespace pos_service.Models.DTO.Orders
 {
     public class OrderResDto : IFullResAuditDto
     {

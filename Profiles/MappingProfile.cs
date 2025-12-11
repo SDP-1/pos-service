@@ -1,12 +1,12 @@
 ﻿using AutoMapper;
 using pos_service.Models;
-using pos_service.Models.DTO.Contact;
-using pos_service.Models.DTO.Item;
-using pos_service.Models.DTO.Order;
-using pos_service.Models.DTO.OrderItem;
-using pos_service.Models.DTO.Supplier;
-using pos_service.Models.DTO.User;
-using pos_service.Repositories;
+using pos_service.Models.DTO.Contacts;
+using pos_service.Models.DTO.Items;
+using pos_service.Models.DTO.Orders;
+using pos_service.Models.DTO.OrderItems;
+using pos_service.Models.DTO.Roles;
+using pos_service.Models.DTO.Suppliers;
+using pos_service.Models.DTO.Users;
 
 namespace pos_service.Profiles
 {
@@ -42,6 +42,10 @@ namespace pos_service.Profiles
             CreateMap<OrderItem, OrderItemResDto>();
             CreateMap<OrderItem, OrderItemMiniResDto>();
             CreateMap<OrderItemReqDto, OrderItem>();
+
+            // Role Mapper
+            CreateMap<Role, RoleResDto>();
+            CreateMap<RoleReqDto, Role>();
         }
     }
 }

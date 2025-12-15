@@ -6,7 +6,6 @@ using pos_service.Models.DTO.Orders;
 using pos_service.Models.Enums;
 using pos_service.Services;
 using pos_service.Authorization;
-using pos_service.Exceptions;
 
 namespace pos_service.Controllers
 {

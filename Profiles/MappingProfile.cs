@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using pos_service.Models;
-using System.Linq;
 using pos_service.Models.DTO.Contacts;
 using pos_service.Models.DTO.Items;
 using pos_service.Models.DTO.Orders;

@@ -1,6 +1,5 @@
 ﻿using pos_service.Models.Enums;
 using pos_service.Models.DTO.Users;
-using System;
 using System.Security.Claims;
 
 namespace pos_service.Models

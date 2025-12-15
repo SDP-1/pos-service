@@ -3,15 +3,10 @@ using Microsoft.EntityFrameworkCore;
 using pos_service.Data;
 using pos_service.Exceptions;
 using pos_service.Models;
-using pos_service.Models.DTO.Users;
 using pos_service.Models.Enums;
 using pos_service.Repositories;
 using pos_service.Services.Common.Cache;
 using pos_service.Services.Permissions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace pos_service.Services
 {

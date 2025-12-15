@@ -1,10 +1,6 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using pos_service.Models;
 using pos_service.Models.Audit;
-using pos_service.Security;
-using pos_service.Services;
-using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 
 namespace pos_service.Data

@@ -1,10 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using pos_service.Controllers.Base;
-using pos_service.Models;
 using pos_service.Models.DTO.Users;
 using pos_service.Services;
-using System.Security.Claims;
 
 namespace pos_service.Controllers
 {

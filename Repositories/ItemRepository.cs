@@ -22,7 +22,8 @@ namespace pos_service.Repositories
         {
             //return await _context.Items.ToListAsync();
             return await _context.Items
-                .Include(i => i.Suppliers)
+                .Include(i => i.ItemSuppliers)
+                    .ThenInclude(isu => isu.Supplier)
                 .ToListAsync();
         }
 
@@ -56,14 +57,16 @@ namespace pos_service.Repositories
         {
             // Eagerly loads the related Suppliers data
             return await _context.Items
-                .Include(i => i.Suppliers)
+                .Include(i => i.ItemSuppliers)
+                    .ThenInclude(isu => isu.Supplier)
                 .FirstOrDefaultAsync(i => i.Id == id && i.SubId == subId);
         }
 
         public async Task<IEnumerable<Item>> GetByMainIdAsync(int id)
         {
             return await _context.Items
-                .Include(i => i.Suppliers)
+                .Include(i => i.ItemSuppliers)
+                    .ThenInclude(isu => isu.Supplier)
                 .Where(i => i.Id == id)
                 .ToListAsync();
         }
@@ -71,7 +74,8 @@ namespace pos_service.Repositories
         public async Task<IEnumerable<Item>> GetByBarCodeAsync(string barCode)
         {
             return await _context.Items
-                .Include(i => i.Suppliers)
+                .Include(i => i.ItemSuppliers)
+                    .ThenInclude(isu => isu.Supplier)
                 .Where(i => i.BarCode == barCode)
                 .ToListAsync();
         }
@@ -79,7 +83,8 @@ namespace pos_service.Repositories
         public async Task<Item?> GetByUuidAsync(string uuid)
         {
             return await _context.Items
-                .Include(i => i.Suppliers)
+                .Include(i => i.ItemSuppliers)
+                    .ThenInclude(isu => isu.Supplier)
                 .FirstOrDefaultAsync(i => i.Uuid == uuid);
         }
 
@@ -89,8 +94,9 @@ namespace pos_service.Repositories
         public async Task<IEnumerable<Item>> GetBySupplierIdAsync(int supplierId)
         {
             return await _context.Items
-                .Where(i => i.Suppliers.Any(s => s.Id == supplierId))
-                .Include(i => i.Suppliers)
+                .Where(i => i.ItemSuppliers.Any(isu => isu.SuppliersId == supplierId))
+                .Include(i => i.ItemSuppliers)
+                    .ThenInclude(isu => isu.Supplier)
                 .ToListAsync();
         }
     }

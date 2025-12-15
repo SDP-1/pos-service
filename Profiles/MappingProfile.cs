@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using pos_service.Models;
+using System.Linq;
 using pos_service.Models.DTO.Contacts;
 using pos_service.Models.DTO.Items;
 using pos_service.Models.DTO.Orders;
@@ -15,7 +16,9 @@ namespace pos_service.Profiles
         public MappingProfile()
         {
             // Item Mappings
-            CreateMap<Item, ItemResDto>();
+            // map Item -> ItemResDto.Suppliers from ItemSuppliers join
+            CreateMap<Item, ItemResDto>()
+                .ForMember(dest => dest.Suppliers, opt => opt.MapFrom(src => src.ItemSuppliers.Select(isu => isu.Supplier)));
             CreateMap<Item, ItemMiniResDto>();
             CreateMap<ItemReqDto, Item>();
 
@@ -24,7 +27,8 @@ namespace pos_service.Profiles
             CreateMap<ContactReqDto, Contact>();
 
             // Supplier Mappings
-            CreateMap<Supplier, SupplierResDto>();
+            CreateMap<Supplier, SupplierResDto>()
+                .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.ItemSuppliers.Select(isu => isu.Item)));
             CreateMap<SupplierReqDto, Supplier>();
 
             // User Mappings

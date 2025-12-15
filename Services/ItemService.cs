@@ -64,7 +64,7 @@ namespace pos_service.Services
 
             var item = _mapper.Map<Item>(itemDto);
 
-            // Handle Supplier Linking
+            // Handle Supplier Linking using ItemSupplier join entities
             if (itemDto.SupplierIds != null && itemDto.SupplierIds.Any())
             {
                 foreach (var supplierId in itemDto.SupplierIds)
@@ -72,7 +72,15 @@ namespace pos_service.Services
                     var supplier = await _supplierRepository.GetByIdAsync(supplierId);
                     if (supplier != null)
                     {
-                        item.Suppliers.Add(supplier);
+                        item.ItemSuppliers.Add(new ItemSupplier
+                        {
+                            Uuid = Guid.NewGuid().ToString(),
+                            SuppliersId = supplier.Id,
+                            ItemsId = item.Id,
+                            ItemsSubId = item.SubId,
+                            Supplier = supplier,
+                            Item = item
+                        });
                     }
                 }
             }
@@ -102,8 +110,8 @@ namespace pos_service.Services
             // Map flat properties from DTO to entity
             _mapper.Map(itemDto, itemToUpdate);
 
-            // Handle Supplier Linking
-            itemToUpdate.Suppliers.Clear(); // Clear existing links
+            // Handle Supplier Linking using ItemSupplier join entities
+            itemToUpdate.ItemSuppliers.Clear(); // Clear existing links
             if (itemDto.SupplierIds != null && itemDto.SupplierIds.Any())
             {
                 foreach (var supplierId in itemDto.SupplierIds)
@@ -111,7 +119,15 @@ namespace pos_service.Services
                     var supplier = await _supplierRepository.GetByIdAsync(supplierId);
                     if (supplier != null)
                     {
-                        itemToUpdate.Suppliers.Add(supplier);
+                        itemToUpdate.ItemSuppliers.Add(new ItemSupplier
+                        {
+                            Uuid = Guid.NewGuid().ToString(),
+                            SuppliersId = supplier.Id,
+                            ItemsId = itemToUpdate.Id,
+                            ItemsSubId = itemToUpdate.SubId,
+                            Supplier = supplier,
+                            Item = itemToUpdate
+                        });
                     }
                 }
             }

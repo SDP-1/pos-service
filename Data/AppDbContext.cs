@@ -27,6 +27,7 @@ namespace pos_service.Data
         public DbSet<Customer> Customers   { get; set; }
         public DbSet<Supplier> Suppliers   { get; set; }
         public DbSet<Item> Items           { get; set; }
+        public DbSet<ItemSupplier> ItemSuppliers { get; set; }
         public DbSet<Order> Orders         { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
         public DbSet<Permission> Permissions { get; set; }
@@ -130,13 +131,34 @@ namespace pos_service.Data
             {
                 // Define the composite primary key using both Id and SubId.
                 entity.HasKey(i => new { i.Id, i.SubId });
-
-                // Configure the many-to-many relationship between Item and Supplier.
-                // EF Core will create a junction table automatically.
-                entity.HasMany(i => i.Suppliers)
-                      .WithMany(s => s.Items);
+                // Configure one-to-many to the explicit join entity ItemSupplier.
+                entity.HasMany(i => i.ItemSuppliers)
+                      .WithOne(isu => isu.Item)
+                      .HasForeignKey(isu => new { isu.ItemsId, isu.ItemsSubId })
+                      .IsRequired()
+                      .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasAlternateKey(i => i.Uuid);   // creates unique constraint
+            });
+
+            // --- ItemSupplier Configuration ---
+            modelBuilder.Entity<ItemSupplier>(entity =>
+            {
+                entity.HasKey(e => new { e.SuppliersId, e.ItemsId, e.ItemsSubId });
+
+                entity.HasOne(e => e.Supplier)
+                      .WithMany(s => s.ItemSuppliers)
+                      .HasForeignKey(e => e.SuppliersId)
+                      .IsRequired()
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Item)
+                      .WithMany(i => i.ItemSuppliers)
+                      .HasForeignKey(e => new { e.ItemsId, e.ItemsSubId })
+                      .IsRequired()
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasAlternateKey(e => e.Uuid);
             });
 
             modelBuilder.Entity<Contact>(entity =>

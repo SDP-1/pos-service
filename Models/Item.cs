@@ -91,9 +91,10 @@ namespace pos_service.Models
         public decimal WholesaleDiscountRatio { get; set; } = 0.0m;
 
         /// <summary>
-        /// A collection of suppliers that provide this item.
+        /// Junction entities linking this item to suppliers.
+        /// Use the `ItemSupplier` entity when you need additional columns on the relationship.
         /// </summary>
-        public virtual ICollection<Supplier> Suppliers { get; set; } = new List<Supplier>();
+        public virtual ICollection<ItemSupplier> ItemSuppliers { get; set; } = new List<ItemSupplier>();
 
         // --- Implementation of IAuditable ---
         public string Uuid                    { get; set; }

@@ -121,10 +121,38 @@ namespace pos_service.Data
                 if (supplier == null)
                     throw new Exception("Supplier not found");
 
-                context.Items.AddRange(
-                    new Item { Id = 1, SubId = 0, Name = "Item 1", StockQuantity = 200, PrintName = "Item 1", RetailPrice = 100, BuyingPrice = 90, MarkedPrice = 100, Uuid = Guid.NewGuid().ToString(), Suppliers = new List<Supplier>() { supplier } },
-                    new Item { Id = 2, SubId = 0, Name = "Item 2", StockQuantity = 200, PrintName = "Item 2", RetailPrice = 200, BuyingPrice = 90, MarkedPrice = 100, Uuid = Guid.NewGuid().ToString(), Suppliers = suppliers }
-                );
+                var item1 = new Item
+                {
+                    Id = 1,
+                    SubId = 0,
+                    Name = "Item 1",
+                    StockQuantity = 200,
+                    PrintName = "Item 1",
+                    RetailPrice = 100,
+                    BuyingPrice = 90,
+                    MarkedPrice = 100,
+                    Uuid = Guid.NewGuid().ToString(),
+                    ItemSuppliers = new List<ItemSupplier>()
+                    {
+                        new ItemSupplier { SuppliersId = supplier.Id, ItemsId = 1, ItemsSubId = 0,Uuid = Guid.NewGuid().ToString(), Supplier = supplier }
+                    }
+                };
+
+                var item2 = new Item
+                {
+                    Id = 2,
+                    SubId = 0,
+                    Name = "Item 2",
+                    StockQuantity = 200,
+                    PrintName = "Item 2",
+                    RetailPrice = 200,
+                    BuyingPrice = 90,
+                    MarkedPrice = 100,
+                    Uuid = Guid.NewGuid().ToString(),
+                    ItemSuppliers = suppliers.Select(s => new ItemSupplier { SuppliersId = s.Id, ItemsId = 2, Uuid = Guid.NewGuid().ToString(), ItemsSubId = 0, Supplier = s }).ToList()
+                };
+
+                context.Items.AddRange(item1, item2);
                 await context.SaveChangesAsync();
             }
         }

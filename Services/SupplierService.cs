@@ -28,6 +28,12 @@ namespace pos_service.Services
             return _mapper.Map<SupplierResDto?>(supplier);
         }
 
+        public async Task<SupplierResDto?> GetSupplierWithItemsAsync(int id, CurrentUser currentUser)
+        {
+            var supplier = await _supplierRepo.GetSupplierWithItemsAsync(id);
+            return _mapper.Map<SupplierResDto?>(supplier);
+        }
+
         public async Task<SupplierResDto> CreateSupplierAsync(SupplierReqDto dto, CurrentUser currentUser)
         {
             var supplier = _mapper.Map<Supplier>(dto);

@@ -46,6 +46,16 @@ namespace pos_service.Controllers
         }
 
         /// <summary>
+        /// Retrieves a supplier including the list of supplied items.
+        /// </summary>
+        [HttpGet("{id}/items")]
+        public async Task<IActionResult> GetSupplierWithItems(int id)
+        {
+            var supplier = await _service.GetSupplierWithItemsAsync(id, _currentUser);
+            return supplier == null ? NotFound() : Ok(supplier);
+        }
+
+        /// <summary>
         /// Creates a new supplier in the system.
         /// </summary>
         /// <param name="dto">The supplier data transfer object containing supplier information.</param>

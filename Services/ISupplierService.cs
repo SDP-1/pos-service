@@ -44,5 +44,13 @@ namespace pos_service.Services
         /// <param name="currentUser">The current user deleting the supplier.</param>
         /// <returns>True if deletion was successful, otherwise false.</returns>
         Task<bool> DeleteSupplierAsync(int id, CurrentUser currentUser);
+
+        /// <summary>
+        /// Retrieves a specific supplier with its items by its unique identifier.
+        /// </summary>
+        /// <param name="id">The unique identifier of the supplier.</param>
+        /// <param name="currentUser">The current user requesting the supplier.</param>
+        /// <returns>The supplier details with items if found, otherwise null.</returns>
+        Task<SupplierResDto?> GetSupplierWithItemsAsync(int id, CurrentUser currentUser);
     }
 }

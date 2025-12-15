@@ -14,9 +14,11 @@ namespace pos_service.Controllers
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class UsersController : SystemBaseController
     {
         private readonly IUserService _userService;
+        private readonly ICurrentUserService _currentUserService;
 
         /// <summary>
         /// Initializes a new instance of the UsersController class.
@@ -25,6 +27,7 @@ namespace pos_service.Controllers
         public UsersController(IUserService userService, ICurrentUserService currentUserService) : base(currentUserService)
         {
             _userService = userService;
+            _currentUserService = currentUserService;
         }
 
         /// <summary>
@@ -43,6 +46,17 @@ namespace pos_service.Controllers
             }
             // Typically return an object containing the User details and the Token
             return Ok(new { User = result.User, Token = result.Token });
+        }
+
+        /// <summary>
+        /// Logs out the current user by invalidating their cached data.
+        /// Note: JWTs are stateless so this only clears server-side cache entries.
+        /// </summary>
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            await _userService.LogoutAsync(_currentUser.Uuid);
+            return Ok("Logged out");
         }
 
         /// <summary>

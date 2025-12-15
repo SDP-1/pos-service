@@ -7,7 +7,7 @@ namespace pos_service.Services.Common.Cache
     {
         T? Get<T>(ServiceCacheKey primaryKey, string? secondaryKey = null);
 
-        Task<T> GetOrCreateAsync<T>(ServiceCacheKey primaryKey, string? secondaryKey, Func<Task<T>> factory, CacheExpiry expiry = CacheExpiry.OneHour);
+        Task<T> GetOrCreateAsync<T>(ServiceCacheKey primaryKey, string? secondaryKey, Func<Task<T>> create, CacheExpiry expiry = CacheExpiry.OneHour);
 
         void Set<T>(ServiceCacheKey primaryKey, string? secondaryKey, T value, CacheExpiry expiry = CacheExpiry.OneHour);
 

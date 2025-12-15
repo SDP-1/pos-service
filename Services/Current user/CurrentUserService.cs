@@ -60,35 +60,31 @@ namespace pos_service.Services
             if (principal?.Identity?.IsAuthenticated != true)
                 return new CurrentUser { IsAuthenticated = false };
 
-            var uuid = principal.FindFirst("uuid")?.Value;
-
             try
             {
-                // Remove cache , because it always authenticate system using user if he was remove from Admin (account deleted but have valide token)
 
-
-                // 1. Try cache by uuid
-                //var cached = TryGetCachedUser(uuid);
-                //if (cached != null)
-                //{
-                //    _logger.LogDebug("Current user loaded from cache: Uuid={Uuid}", uuid);
-                //    return cached;
-                //}
-
-                // 2. Build minimal current user from claims
+                // 1. Build minimal current user from claims
                 var currentUser = CurrentUser.FromClaimsPrincipal(principal);
+
+                // 2. Try cache by uuidS
+                var cached = TryGetCachedUser(currentUser.Uuid);
+                if (cached != null)
+                {
+                    _logger.LogDebug("Current user loaded from cache: Uuid={Uuid}", currentUser.Uuid);
+                    return cached;
+                }
 
                 // 3. Ensure role metadata is loaded
                 LoadRoleForCurrentUser(currentUser);
 
                 // 4. Enrich from DB and validate user
-                currentUser = EnrichFromDbOrThrow(uuid, currentUser);
+                currentUser = EnrichFromDbOrThrow(currentUser);
 
-                // 5. Load permissions
-                currentUser.Permissions = LoadPermissionsForUser(currentUser, uuid);
+                // 5. Load permissions (this will try cache internally)
+                currentUser.Permissions = LoadPermissionsForUser(currentUser);
 
                 // 6. Cache final CurrentUser by uuid
-                //CacheUserIfPossible(uuid, currentUser);
+                CacheUserIfPossible(currentUser);
 
                 _logger.LogDebug("Current user retrieved: UserId={UserId}, Uuid={Uuid}, UserName={UserName}", currentUser.Id, currentUser.Uuid, currentUser.UserName);
                 return currentUser;
@@ -137,9 +133,9 @@ namespace pos_service.Services
             }
         }
 
-        private CurrentUser EnrichFromDbOrThrow(string? uuid, CurrentUser currentUser)
+        private CurrentUser EnrichFromDbOrThrow(CurrentUser currentUser)
         {
-            if (string.IsNullOrEmpty(uuid))
+            if (string.IsNullOrEmpty(currentUser.Uuid))
             {
                 _logger.LogWarning("User Uuid null");
                 throw new UnauthorizedAccessException("User Uuid null");
@@ -149,23 +145,23 @@ namespace pos_service.Services
 
             try
             {
-                userEntity = _userRepository.GetByUuidAsync(uuid).GetAwaiter().GetResult();
+                userEntity = _userRepository.GetByUuidAsync(currentUser.Uuid).GetAwaiter().GetResult();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Database error loading user for Uuid={Uuid}", uuid);
+                _logger.LogError(ex, "Database error loading user for Uuid={Uuid}", currentUser.Uuid);
                 throw new UnauthorizedAccessException("User could not be validated");
             }
 
             if (userEntity == null)
             {
-                _logger.LogWarning("User not found in DB: Uuid={Uuid}", uuid);
+                _logger.LogWarning("User not found in DB: Uuid={Uuid}", currentUser.Uuid);
                 throw new UnauthorizedAccessException("User not found");
             }
 
             if (!userEntity.IsActive)
             {
-                _logger.LogWarning("Inactive user attempted access: Uuid={Uuid}", uuid);
+                _logger.LogWarning("Inactive user attempted access: Uuid={Uuid}", currentUser.Uuid);
                 throw new UnauthorizedAccessException("Inactive user");
             }
 
@@ -181,14 +177,16 @@ namespace pos_service.Services
         }
 
 
-        private List<Permission> LoadPermissionsForUser(CurrentUser currentUser, string? uuid)
+        private List<Permission> LoadPermissionsForUser(CurrentUser currentUser)
         {
             List<Permission>? permList = null;
-            //if (!string.IsNullOrEmpty(uuid))
-            //{
-            //    try { permList = _cacheService.Get<List<Permission>>(ServiceCacheKey.Permissions, uuid); }
-            //    catch (Exception ex) { _logger.LogDebug(ex, "Failed to read permissions cache for Uuid={Uuid}", uuid); }
-            //}
+
+            // Try to read permissions from cache when uuid is available
+            if (!string.IsNullOrEmpty(currentUser.Uuid))
+            {
+                try { permList = _cacheService.Get<List<Permission>>(ServiceCacheKey.Permissions, currentUser.Uuid); }
+                catch (Exception ex) { _logger.LogDebug(ex, "Failed to read permissions cache for Uuid={Uuid}", currentUser.Uuid); }
+            }
 
             if (permList == null)
             {
@@ -201,11 +199,11 @@ namespace pos_service.Services
 
                     permList = perms.ToList();
 
-                    //if (!string.IsNullOrEmpty(uuid))
-                    //{
-                    //    try { _cacheService.Set(ServiceCacheKey.Permissions, uuid, permList); }
-                    //    catch (Exception ex) { _logger.LogDebug(ex, "Failed to write permissions cache for Uuid={Uuid}", uuid); }
-                    //}
+                    if (!string.IsNullOrEmpty(currentUser.Uuid))
+                    {
+                        try { _cacheService.Set(ServiceCacheKey.Permissions, currentUser.Uuid, permList); }
+                        catch (Exception ex) { _logger.LogDebug(ex, "Failed to write permissions cache for Uuid={Uuid}", currentUser.Uuid); }
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -217,16 +215,16 @@ namespace pos_service.Services
             return permList ?? new List<Permission>();
         }
 
-        private void CacheUserIfPossible(string? uuid, CurrentUser currentUser)
+        private void CacheUserIfPossible(CurrentUser currentUser)
         {
-            if (string.IsNullOrEmpty(uuid)) return;
+            if (string.IsNullOrEmpty(currentUser.Uuid)) return;
             try 
             { 
-                _cacheService.Set(ServiceCacheKey.Users, uuid, currentUser); 
+                _cacheService.Set(ServiceCacheKey.Users, currentUser.Uuid, currentUser); 
             }
             catch (Exception ex) 
             { 
-                _logger.LogDebug(ex, "Failed to write current user cache for Uuid={Uuid}", uuid); 
+                _logger.LogDebug(ex, "Failed to write current user cache for Uuid={Uuid}", currentUser.Uuid); 
             }
         }
 

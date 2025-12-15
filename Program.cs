@@ -143,7 +143,7 @@ app.UseExceptionHandler(errorApp =>
         }
 
         context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-        await context.Response.WriteAsJsonAsync(new { error = "Internal server error" });
+        await context.Response.WriteAsJsonAsync(new { error = "Internal server error. " + exception?.Message });
     });
 });
 

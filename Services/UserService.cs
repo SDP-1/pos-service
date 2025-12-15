@@ -5,6 +5,7 @@ using pos_service.Models.DTO.Users;
 using pos_service.Repositories;
 using pos_service.Security;
 using pos_service.Services.Common;
+using pos_service.Services.Common.Cache;
 
 namespace pos_service.Services
 {
@@ -15,14 +16,16 @@ namespace pos_service.Services
         private readonly IPasswordHasher _passwordHasher;
         private readonly IJwtGenerator _jwtGenerator;
         private readonly IFileStorageService _fileStorageService;
+        private readonly ICacheService _cacheService;
 
-        public UserService(IUserRepository repo, IMapper mapper, IPasswordHasher hasher, IJwtGenerator jwt, IFileStorageService fileStorageService)
+        public UserService(IUserRepository repo, IMapper mapper, IPasswordHasher hasher, IJwtGenerator jwt, IFileStorageService fileStorageService, Services.Common.Cache.ICacheService cacheService)
         {
             _userRepository     = repo;
             _mapper             = mapper;
             _passwordHasher     = hasher;
             _jwtGenerator       = jwt;
             _fileStorageService = fileStorageService;
+            _cacheService       = cacheService;
         }
 
         public async Task<IEnumerable<UserResDto>> GetAllUsersAsync(CurrentUser currentUser)
@@ -90,6 +93,10 @@ namespace pos_service.Services
             if (userToUpdate == null) return false;
 
             userToUpdate.IsActive = false;
+
+            //clear all system cache wen user delete
+            _cacheService.ClearAll();
+
             await _userRepository.UpdateAsync(userToUpdate);
             return true;
         }
@@ -133,7 +140,30 @@ namespace pos_service.Services
             // Authentication successful, generate JWT
             var token = _jwtGenerator.GenerateToken(user);
 
+            try
+            {
+                // Cache the basic user for token validation and current user lookup
+                _cacheService.Set(ServiceCacheKey.Users, user.Uuid, user);
+            }
+            catch { /* ignore cache errors */ }
+
             return (_mapper.Map<UserResDto>(user), token);
+        }
+
+        /// <summary>
+        /// Invalidates any cached entries related to a user (logout).
+        /// </summary>
+        public Task LogoutAsync(string uuid)
+        {
+            if (string.IsNullOrEmpty(uuid)) return Task.CompletedTask;
+            try
+            {
+                _cacheService.Remove(ServiceCacheKey.Users, uuid);
+                _cacheService.Remove(ServiceCacheKey.Permissions, uuid);
+            }
+            catch { /* ignore cache errors */ }
+
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -246,6 +276,9 @@ namespace pos_service.Services
                 // User not found
                 return false;
             }
+
+            //clear all system cache wen user delete
+            _cacheService.ClearAll();
 
             // 1. Delete the associated file from storage
             if (!string.IsNullOrEmpty(userToDelete.ProfileImageUrl))

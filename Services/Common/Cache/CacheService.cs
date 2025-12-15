@@ -1,7 +1,5 @@
 using Microsoft.Extensions.Caching.Memory;
-using System;
 using System.Collections.Concurrent;
-using System.Threading.Tasks;
 
 namespace pos_service.Services.Common.Cache
 {
@@ -44,14 +42,14 @@ namespace pos_service.Services.Common.Cache
             return _memoryCache.TryGetValue(composed, out value);
         }
 
-        public async Task<T> GetOrCreateAsync<T>(ServiceCacheKey primaryKey, string? secondaryKey, Func<Task<T>> factory, CacheExpiry expiry = CacheExpiry.OneHour)
+        public async Task<T> GetOrCreateAsync<T>(ServiceCacheKey primaryKey, string? secondaryKey, Func<Task<T>> create, CacheExpiry expiry = CacheExpiry.OneHour)
         {
             var composed = ComposeKey(primaryKey, secondaryKey);
 
             if (_memoryCache.TryGetValue(composed, out T existing))
                 return existing;
 
-            var result = await factory();
+            var result = await create();
 
             Set(primaryKey, secondaryKey, result, expiry);
 
@@ -99,12 +97,12 @@ namespace pos_service.Services.Common.Cache
             // also try to remove from index bag - can't remove specific item from ConcurrentBag, so leave it (harmless)
         }
 
-        public System.Collections.Generic.IEnumerable<string> GetPrimaryKeys()
+        public IEnumerable<string> GetPrimaryKeys()
         {
             return _primaryIndex.Keys;
         }
 
-        public System.Collections.Generic.IEnumerable<string> GetAllKeys()
+        public IEnumerable<string> GetAllKeys()
         {
             foreach (var bag in _primaryIndex.Values)
             {

@@ -25,6 +25,11 @@ namespace pos_service.Models.DTO.Orders
         public int? CustomerId { get; set; }
 
         /// <summary>
+        /// Optional description or notes for the order
+        /// </summary>
+        public string? Description { get; set; }
+
+        /// <summary>
         /// Collection of order items
         /// </summary>
         [Required]

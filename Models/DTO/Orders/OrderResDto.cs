@@ -19,6 +19,9 @@ namespace pos_service.Models.DTO.Orders
         public decimal AmountPaid { get; set; }
         public decimal Balance { get; set; }
 
+        // Optional description/notes
+        public string? Description { get; set; }
+
         // Cashier information
         public int CashierId { get; set; }
         public string CashierName { get; set; }

@@ -85,6 +85,12 @@ namespace pos_service.Models
         /// </summary>
         public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
 
+        /// <summary>
+        /// Optional description or notes for the order.
+        /// Default is null.
+        /// </summary>
+        public string? Description                       { get; set; } = null;
+
         // --- Implementation of IAuditable ---
         public string Uuid                               { get; set; }
         public DateTime CreatedAt                        { get; set; }

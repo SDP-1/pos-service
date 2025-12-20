@@ -13,6 +13,7 @@ namespace pos_service.Models.DTO.Orders
         public decimal NetAmount { get; set; }
         public decimal AmountPaid { get; set; }
         public decimal Balance { get; set; }
+        public string? Description { get; set; }
         public DateTime CreatedAt { get; set; }
 
         // Basic customer info

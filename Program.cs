@@ -44,31 +44,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ClockSkew = TimeSpan.Zero,
             IssuerSigningKey = new SymmetricSecurityKey(key)
         };
-        // Validate that the token's user still exists and is active on each request using TokenValidatorService
-
-        //  * This committed because current user not cached not nee check this. REF - 000123 *
-
-        //options.Events = new JwtBearerEvents
-        //{
-        //    OnTokenValidated = async context =>
-        //    {
-        //        var validator = context.HttpContext.RequestServices.GetService<pos_service.Services.Authentication.ITokenValidator>();
-        //        if (validator == null)
-        //        {
-        //            context.Fail("Token validator unavailable");
-        //            return;
-        //        }
-
-        //        try
-        //        {
-        //            await validator.ValidateTokenPrincipalAsync(context.Principal!);
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            context.Fail(ex.Message ?? "Token validation failed");
-        //        }
-        //    }
-        //};
     });
 
 builder.Services.AddHttpContextAccessor();
@@ -111,6 +86,18 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+// Configure CORS to allow requests from frontend running on localhost and network IP
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000", "http://192.168.56.1:3000")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -150,6 +137,9 @@ app.UseExceptionHandler(errorApp =>
 // Enable Static File Serving 
 // This middleware is essential for serving files from the designated WebRootPath.
 app.UseStaticFiles();
+
+// Enable CORS using the defined policy
+app.UseCors("AllowFrontend");
 
 app.UseHttpsRedirection();
 

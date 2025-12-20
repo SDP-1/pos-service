@@ -39,6 +39,9 @@ namespace pos_service.Data
 
             // Seed default items
             await SeedItemsAsync(context);
+
+            // Seed sample orders
+            await SeedOrdersAsync(context);
         }
 
         private static async Task SeedRolesAsync(AppDbContext context)
@@ -237,6 +240,118 @@ namespace pos_service.Data
                 mappings.AddRange(cashierPermIds.Select(id => new RolePermission { RoleId = 4, PermissionId = id, Uuid = Guid.NewGuid().ToString() })); //Cashier
 
                 context.RolePermissions.AddRange(mappings);
+                await context.SaveChangesAsync();
+            }
+        }
+
+        private static async Task SeedOrdersAsync(AppDbContext context)
+        {
+            if (!await context.Orders.AnyAsync())
+            {
+                // Ensure required data exists
+                var admin = await context.Users.FindAsync(1);
+                if (admin == null)
+                    throw new Exception("Admin user not found for seeding orders");
+
+                var item1 = await context.Items.FindAsync(1, 0);
+                var item2 = await context.Items.FindAsync(2, 0);
+                if (item1 == null || item2 == null)
+                    throw new Exception("Seed items not found when creating sample orders");
+
+                // Create first sample order
+                var order1Items = new List<OrderItem>
+                {
+                    new OrderItem
+                    {
+                        Uuid = Guid.NewGuid().ToString(),
+                        OriginalItemUuid = item1.Uuid,
+                        PrintName = item1.PrintName,
+                        Quantity = 2,
+                        PriceAtSale = item1.RetailPrice,
+                        DiscountRatioAtSale = 0,
+                        CostAtSale = item1.BuyingPrice,
+                        LineTotal = 2 * item1.RetailPrice
+                    },
+                    new OrderItem
+                    {
+                        Uuid = Guid.NewGuid().ToString(),
+                        OriginalItemUuid = item2.Uuid,
+                        PrintName = item2.PrintName,
+                        Quantity = 1,
+                        PriceAtSale = item2.RetailPrice,
+                        DiscountRatioAtSale = 0,
+                        CostAtSale = item2.BuyingPrice,
+                        LineTotal = 1 * item2.RetailPrice
+                    }
+                };
+
+                var gross1 = order1Items.Sum(i => i.PriceAtSale * i.Quantity);
+                var totalCost1 = order1Items.Sum(i => i.CostAtSale * i.Quantity);
+                var totalDiscount1 = order1Items.Sum(i => i.PriceAtSale * i.Quantity * (i.DiscountRatioAtSale / 100));
+                var net1 = gross1 - totalDiscount1;
+
+                var order1 = new Order
+                {
+                    Uuid = Guid.NewGuid().ToString(),
+                    OrderNumber = "ORD-SEED-00001",
+                    Status = OrderStatus.Paid,
+                    PaymentMethod = PaymentMethod.Cash,
+                    SaleType = SaleType.Reatail,
+                    ItemCount = order1Items.Count,
+                    GrossAmount = gross1,
+                    TotalDiscount = totalDiscount1,
+                    NetAmount = net1,
+                    TotalCost = totalCost1,
+                    AmountPaid = net1,
+                    Balance = 0,
+                    CashierId = admin.Id,
+                    CustomerId = null,
+                    OrderItems = order1Items,
+                    Description = "Sample seeded order 1"
+                };
+
+                // Create second sample order
+                var order2Items = new List<OrderItem>
+                {
+                    new OrderItem
+                    {
+                        Uuid = Guid.NewGuid().ToString(),
+                        OriginalItemUuid = item2.Uuid,
+                        PrintName = item2.PrintName,
+                        Quantity = 3,
+                        PriceAtSale = item2.RetailPrice,
+                        DiscountRatioAtSale = 0,
+                        CostAtSale = item2.BuyingPrice,
+                        LineTotal = 3 * item2.RetailPrice
+                    }
+                };
+
+                var gross2 = order2Items.Sum(i => i.PriceAtSale * i.Quantity);
+                var totalCost2 = order2Items.Sum(i => i.CostAtSale * i.Quantity);
+                var totalDiscount2 = 0m;
+                var net2 = gross2 - totalDiscount2;
+
+                var order2 = new Order
+                {
+                    Uuid = Guid.NewGuid().ToString(),
+                    OrderNumber = "ORD-SEED-00002",
+                    Status = OrderStatus.Paid,
+                    PaymentMethod = PaymentMethod.Card,
+                    SaleType = SaleType.Reatail,
+                    ItemCount = order2Items.Count,
+                    GrossAmount = gross2,
+                    TotalDiscount = totalDiscount2,
+                    NetAmount = net2,
+                    TotalCost = totalCost2,
+                    AmountPaid = net2,
+                    Balance = 0,
+                    CashierId = admin.Id,
+                    CustomerId = null,
+                    OrderItems = order2Items,
+                    Description = "Sample seeded order 2"
+                };
+
+                context.Orders.AddRange(order1, order2);
                 await context.SaveChangesAsync();
             }
         }

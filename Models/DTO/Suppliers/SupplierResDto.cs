@@ -10,8 +10,8 @@ namespace pos_service.Models.DTO.Suppliers
         public string Name                    { get; set; }
         public string? Address                { get; set; }
         public List<ContactResDto> contacts   { get; set; }
-        // Items provided by this supplier
-        public List<ItemResDto> Items         { get; set; }
+        // Items provided by this supplier (use mini DTO to avoid cycles)
+        public List<ItemMiniResDto> Items     { get; set; }
 
         public string Uuid                    { get; set; }
         public DateTime CreatedAt             { get; set; }

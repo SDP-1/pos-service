@@ -10,7 +10,7 @@ namespace pos_service.Models.DTO.Orders
         public PaymentMethod PaymentMethod { get; set; } = PaymentMethod.Cash;
 
         [Required]
-        public SaleType SaleType { get; set; } = SaleType.Reatail;
+        public SaleType SaleType { get; set; } = SaleType.Retail;
 
         /// <summary>
         /// The amount of money received from the customer.

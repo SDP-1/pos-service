@@ -2,6 +2,7 @@
 using pos_service.Models;
 using pos_service.Models.Audit;
 using System.Security.Claims;
+using System.Linq;
 
 namespace pos_service.Data
 {
@@ -29,6 +30,7 @@ namespace pos_service.Data
         public DbSet<Permission> Permissions { get; set; }
         public DbSet<RolePermission> RolePermissions { get; set; }
         public DbSet<Role> Roles { get; set; }
+        public DbSet<Setting> Settings { get; set; }
 
         /// <summary>
         /// This method is used to configure the database model using the Fluent API.
@@ -37,6 +39,48 @@ namespace pos_service.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // Add database-side defaults for IAuditable timestamps so the database will populate
+            // CreatedAt and UpdatedAt when not supplied by the application.
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes()
+                         .Where(t => t.ClrType != null && typeof(IAuditable).IsAssignableFrom(t.ClrType)))
+            {
+                var entity = modelBuilder.Entity(entityType.ClrType);
+
+                entity
+                    .Property<DateTime>(nameof(IAuditable.CreatedAt))
+                    .HasColumnType("datetime(6)")
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP(6)")
+                    .ValueGeneratedOnAdd();
+
+                entity
+                    .Property<DateTime?>(nameof(IAuditable.UpdatedAt))
+                    .HasColumnType("datetime(6)")
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)")
+                    .ValueGeneratedOnAddOrUpdate();
+
+                // CreatedBy default to 'SYSTEM' when not provided
+                entity
+                    .Property<string>(nameof(IAuditable.CreatedBy))
+                    .HasColumnType("longtext")
+                    .IsRequired()
+                    .HasDefaultValue("SYSTEM")
+                    .ValueGeneratedOnAdd();
+
+                // UpdatedBy default to 'SYSTEM' when not provided
+                entity
+                    .Property<string?>(nameof(IAuditable.UpdatedBy))
+                    .HasColumnType("longtext")
+                    .HasDefaultValue("SYSTEM")
+                    .ValueGeneratedOnAddOrUpdate();
+
+                // IsActive defaults to true
+                entity
+                    .Property<bool>(nameof(IAuditable.IsActive))
+                    .HasColumnType("tinyint(1)")
+                    .HasDefaultValue(true)
+                    .ValueGeneratedOnAdd();
+            }
 
             // --- Role configuration ---
             modelBuilder.Entity<Role>(entity =>
@@ -135,6 +179,15 @@ namespace pos_service.Data
                       .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasAlternateKey(i => i.Uuid);   // creates unique constraint
+            });
+
+            // --- Settings Configuration ---
+            modelBuilder.Entity<Setting>(entity =>
+            {
+                entity.HasIndex(s => s.SettingKey).IsUnique();
+                entity.Property(s => s.SettingKey).HasConversion<string>();
+                entity.Property(s => s.Description).HasMaxLength(500);
+                entity.HasAlternateKey(s => s.Uuid);
             });
 
             // --- ItemSupplier Configuration ---

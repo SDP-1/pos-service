@@ -287,5 +287,14 @@ namespace pos_service.Services
             var items = await _itemRepository.GetBySupplierIdAsync(supplierId);
             return _mapper.Map<IEnumerable<ItemResDto>>(items);
         }
+
+        /// <summary>
+        /// Search items by term matching name, print name, barcode or uuid.
+        /// </summary>
+        public async Task<IEnumerable<ItemResDto>> SearchItemsAsync(string searchTerm, CurrentUser currentUser)
+        {
+            var items = await _itemRepository.GetBySearchAsync(searchTerm);
+            return _mapper.Map<IEnumerable<ItemResDto>>(items);
+        }
     }
 }

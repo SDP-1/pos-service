@@ -12,8 +12,8 @@ using pos_service.Data;
 namespace pos_service.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251208061952_remove_uuid_from_permissionTable")]
-    partial class remove_uuid_from_permissionTable
+    [Migration("20251221102617_update_Iauditable_filds")]
+    partial class update_Iauditable_filds
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,24 +25,6 @@ namespace pos_service.Migrations
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
-            modelBuilder.Entity("ItemSupplier", b =>
-                {
-                    b.Property<int>("SuppliersId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ItemsId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ItemsSubId")
-                        .HasColumnType("int");
-
-                    b.HasKey("SuppliersId", "ItemsId", "ItemsSubId");
-
-                    b.HasIndex("ItemsId", "ItemsSubId");
-
-                    b.ToTable("ItemSupplier");
-                });
-
             modelBuilder.Entity("pos_service.Models.Contact", b =>
                 {
                     b.Property<int>("Id")
@@ -52,11 +34,15 @@ namespace pos_service.Migrations
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("longtext")
+                        .HasDefaultValue("SYSTEM");
 
                     b.Property<string>("Designation")
                         .HasMaxLength(100)
@@ -67,7 +53,9 @@ namespace pos_service.Migrations
                         .HasColumnType("varchar(100)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("tinyint(1)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -82,10 +70,16 @@ namespace pos_service.Migrations
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlComputedColumn(b.Property<DateTime?>("UpdatedAt"));
 
                     b.Property<string>("UpdatedBy")
-                        .HasColumnType("longtext");
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("longtext")
+                        .HasDefaultValue("SYSTEM");
 
                     b.Property<int?>("UserId")
                         .HasColumnType("int");
@@ -117,11 +111,15 @@ namespace pos_service.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("longtext")
+                        .HasDefaultValue("SYSTEM");
 
                     b.Property<string>("Email")
                         .HasMaxLength(100)
@@ -133,7 +131,9 @@ namespace pos_service.Migrations
                         .HasColumnType("varchar(50)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("tinyint(1)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
 
                     b.Property<string>("LastName")
                         .HasMaxLength(50)
@@ -148,10 +148,16 @@ namespace pos_service.Migrations
                         .HasColumnType("varchar(20)");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlComputedColumn(b.Property<DateTime?>("UpdatedAt"));
 
                     b.Property<string>("UpdatedBy")
-                        .HasColumnType("longtext");
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("longtext")
+                        .HasDefaultValue("SYSTEM");
 
                     b.Property<string>("Uuid")
                         .IsRequired()
@@ -186,14 +192,20 @@ namespace pos_service.Migrations
                         .HasColumnType("decimal(18, 2)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("longtext")
+                        .HasDefaultValue("SYSTEM");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("tinyint(1)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
 
                     b.Property<decimal>("MarkedPrice")
                         .HasColumnType("decimal(18, 2)");
@@ -218,10 +230,16 @@ namespace pos_service.Migrations
                         .HasColumnType("decimal(18, 3)");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlComputedColumn(b.Property<DateTime?>("UpdatedAt"));
 
                     b.Property<string>("UpdatedBy")
-                        .HasColumnType("longtext");
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("longtext")
+                        .HasDefaultValue("SYSTEM");
 
                     b.Property<string>("Uuid")
                         .IsRequired()
@@ -236,6 +254,58 @@ namespace pos_service.Migrations
                     b.HasKey("Id", "SubId");
 
                     b.ToTable("Items");
+                });
+
+            modelBuilder.Entity("pos_service.Models.ItemSupplier", b =>
+                {
+                    b.Property<int>("SuppliersId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ItemsId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ItemsSubId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("longtext")
+                        .HasDefaultValue("SYSTEM");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlComputedColumn(b.Property<DateTime?>("UpdatedAt"));
+
+                    b.Property<string>("UpdatedBy")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("longtext")
+                        .HasDefaultValue("SYSTEM");
+
+                    b.Property<string>("Uuid")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.HasKey("SuppliersId", "ItemsId", "ItemsSubId");
+
+                    b.HasAlternateKey("Uuid");
+
+                    b.HasIndex("ItemsId", "ItemsSubId");
+
+                    b.ToTable("ItemSuppliers");
                 });
 
             modelBuilder.Entity("pos_service.Models.Order", b =>
@@ -256,20 +326,29 @@ namespace pos_service.Migrations
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("longtext")
+                        .HasDefaultValue("SYSTEM");
 
                     b.Property<int?>("CustomerId")
                         .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("longtext");
 
                     b.Property<decimal>("GrossAmount")
                         .HasColumnType("decimal(18, 2)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("tinyint(1)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
 
                     b.Property<int>("ItemCount")
                         .HasColumnType("int");
@@ -301,10 +380,16 @@ namespace pos_service.Migrations
                         .HasColumnType("decimal(18, 2)");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlComputedColumn(b.Property<DateTime?>("UpdatedAt"));
 
                     b.Property<string>("UpdatedBy")
-                        .HasColumnType("longtext");
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("longtext")
+                        .HasDefaultValue("SYSTEM");
 
                     b.Property<string>("Uuid")
                         .IsRequired()
@@ -339,17 +424,23 @@ namespace pos_service.Migrations
                         .HasColumnType("decimal(18, 2)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("longtext")
+                        .HasDefaultValue("SYSTEM");
 
                     b.Property<decimal>("DiscountRatioAtSale")
                         .HasColumnType("decimal(5, 2)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("tinyint(1)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
 
                     b.Property<decimal>("LineTotal")
                         .HasColumnType("decimal(18, 2)");
@@ -372,10 +463,16 @@ namespace pos_service.Migrations
                         .HasColumnType("decimal(18, 3)");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlComputedColumn(b.Property<DateTime?>("UpdatedAt"));
 
                     b.Property<string>("UpdatedBy")
-                        .HasColumnType("longtext");
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("longtext")
+                        .HasDefaultValue("SYSTEM");
 
                     b.Property<string>("Uuid")
                         .IsRequired()
@@ -429,18 +526,24 @@ namespace pos_service.Migrations
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("longtext")
+                        .HasDefaultValue("SYSTEM");
 
                     b.Property<string>("Description")
                         .HasMaxLength(250)
                         .HasColumnType("varchar(250)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("tinyint(1)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -448,10 +551,16 @@ namespace pos_service.Migrations
                         .HasColumnType("varchar(100)");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlComputedColumn(b.Property<DateTime?>("UpdatedAt"));
 
                     b.Property<string>("UpdatedBy")
-                        .HasColumnType("longtext");
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("longtext")
+                        .HasDefaultValue("SYSTEM");
 
                     b.Property<string>("Uuid")
                         .IsRequired()
@@ -476,14 +585,20 @@ namespace pos_service.Migrations
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("longtext")
+                        .HasDefaultValue("SYSTEM");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("tinyint(1)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
 
                     b.Property<int>("PermissionId")
                         .HasColumnType("int");
@@ -492,10 +607,16 @@ namespace pos_service.Migrations
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlComputedColumn(b.Property<DateTime?>("UpdatedAt"));
 
                     b.Property<string>("UpdatedBy")
-                        .HasColumnType("longtext");
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("longtext")
+                        .HasDefaultValue("SYSTEM");
 
                     b.Property<string>("Uuid")
                         .IsRequired()
@@ -524,14 +645,20 @@ namespace pos_service.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("longtext")
+                        .HasDefaultValue("SYSTEM");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("tinyint(1)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -539,10 +666,16 @@ namespace pos_service.Migrations
                         .HasColumnType("varchar(150)");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlComputedColumn(b.Property<DateTime?>("UpdatedAt"));
 
                     b.Property<string>("UpdatedBy")
-                        .HasColumnType("longtext");
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("longtext")
+                        .HasDefaultValue("SYSTEM");
 
                     b.Property<string>("Uuid")
                         .IsRequired()
@@ -564,11 +697,15 @@ namespace pos_service.Migrations
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("longtext")
+                        .HasDefaultValue("SYSTEM");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
@@ -576,7 +713,9 @@ namespace pos_service.Migrations
                         .HasColumnType("varchar(50)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("tinyint(1)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
 
                     b.Property<string>("LastName")
                         .IsRequired()
@@ -599,10 +738,16 @@ namespace pos_service.Migrations
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlComputedColumn(b.Property<DateTime?>("UpdatedAt"));
 
                     b.Property<string>("UpdatedBy")
-                        .HasColumnType("longtext");
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("longtext")
+                        .HasDefaultValue("SYSTEM");
 
                     b.Property<string>("UserName")
                         .IsRequired()
@@ -624,21 +769,6 @@ namespace pos_service.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("ItemSupplier", b =>
-                {
-                    b.HasOne("pos_service.Models.Supplier", null)
-                        .WithMany()
-                        .HasForeignKey("SuppliersId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("pos_service.Models.Item", null)
-                        .WithMany()
-                        .HasForeignKey("ItemsId", "ItemsSubId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("pos_service.Models.Contact", b =>
                 {
                     b.HasOne("pos_service.Models.Supplier", "Supplier")
@@ -654,6 +784,25 @@ namespace pos_service.Migrations
                     b.Navigation("Supplier");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("pos_service.Models.ItemSupplier", b =>
+                {
+                    b.HasOne("pos_service.Models.Supplier", "Supplier")
+                        .WithMany("ItemSuppliers")
+                        .HasForeignKey("SuppliersId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("pos_service.Models.Item", "Item")
+                        .WithMany("ItemSuppliers")
+                        .HasForeignKey("ItemsId", "ItemsSubId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Item");
+
+                    b.Navigation("Supplier");
                 });
 
             modelBuilder.Entity("pos_service.Models.Order", b =>
@@ -728,6 +877,11 @@ namespace pos_service.Migrations
                     b.Navigation("Orders");
                 });
 
+            modelBuilder.Entity("pos_service.Models.Item", b =>
+                {
+                    b.Navigation("ItemSuppliers");
+                });
+
             modelBuilder.Entity("pos_service.Models.Order", b =>
                 {
                     b.Navigation("OrderItems");
@@ -736,6 +890,8 @@ namespace pos_service.Migrations
             modelBuilder.Entity("pos_service.Models.Supplier", b =>
                 {
                     b.Navigation("Contacts");
+
+                    b.Navigation("ItemSuppliers");
                 });
 
             modelBuilder.Entity("pos_service.Models.User", b =>

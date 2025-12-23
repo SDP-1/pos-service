@@ -17,9 +17,5 @@ namespace pos_service.Models.DTO.OrderItems
         /// </summary>
         [Range(0, 100)]
         public decimal DiscountRatio { get; set; }
-
-        // Update-specific fields (optional for updates)
-        public int? Id { get; set; }
-        public bool? IsDeleted { get; set; }
     }
 }

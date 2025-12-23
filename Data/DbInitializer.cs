@@ -42,6 +42,29 @@ namespace pos_service.Data
 
             // Seed sample orders
             await SeedOrdersAsync(context);
+            // Seed default settings
+            await SeedSettingsAsync(context);
+        }
+
+        private static async Task SeedSettingsAsync(AppDbContext context)
+        {
+            // Desired default settings. If a setting exists, update its value; otherwise create it.
+            var desired = new List<Setting>
+            {
+                new Setting { SettingKey = SettingKey.AllowZeroStock, SettingValue = true, Description = "Allows selling items when stock quantity is zero without throwing an error" }
+            };
+
+            foreach (var s in desired)
+            {
+                var existing = await context.Settings.FirstOrDefaultAsync(x => x.SettingKey == s.SettingKey);
+                if (existing == null)
+                {
+                    s.Uuid = Guid.NewGuid().ToString();
+                    context.Settings.Add(s);
+                }
+            }
+
+            await context.SaveChangesAsync();
         }
 
         private static async Task SeedRolesAsync(AppDbContext context)
@@ -71,21 +94,18 @@ namespace pos_service.Data
         /// <param name="passwordHasher">The password hasher service for securing the admin password.</param>
         private static async Task SeedAdminUserAsync(AppDbContext context, IPasswordHasher passwordHasher)
         {
-            if (!await context.Users.AnyAsync(u => u.UserName == "admin@pos.com"))
+            if (!await context.Users.AnyAsync(u => u.UserName == "sehandevinda1@gmail.com"))
             {
                 var adminUser = new User
                 {
                     Id = 1,
-                    FirstName = "System",
-                    LastName = "Admin",
-                    UserName = "admin@pos.com",
-                    PasswordHash = passwordHasher.HashPassword("AdminPass@123"),
+                    FirstName = "Sehan",
+                    LastName = "devinda",
+                    UserName = "sehandevinda1@gmail.com",
+                    PasswordHash = passwordHasher.HashPassword("1234"),
                     RoleId = 1, // SystemAdmin role id
                     NIC = "000000000000",
-                    Uuid = Guid.NewGuid().ToString(),
-                    IsActive = true,
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedBy = "System Seed"
+                    Uuid = Guid.NewGuid().ToString()
                 };
                 context.Users.Add(adminUser);
                 await context.SaveChangesAsync();
@@ -296,7 +316,7 @@ namespace pos_service.Data
                     OrderNumber = "ORD-SEED-00001",
                     Status = OrderStatus.Paid,
                     PaymentMethod = PaymentMethod.Cash,
-                    SaleType = SaleType.Reatail,
+                    SaleType = SaleType.Retail,
                     ItemCount = order1Items.Count,
                     GrossAmount = gross1,
                     TotalDiscount = totalDiscount1,
@@ -337,7 +357,7 @@ namespace pos_service.Data
                     OrderNumber = "ORD-SEED-00002",
                     Status = OrderStatus.Paid,
                     PaymentMethod = PaymentMethod.Card,
-                    SaleType = SaleType.Reatail,
+                    SaleType = SaleType.Retail,
                     ItemCount = order2Items.Count,
                     GrossAmount = gross2,
                     TotalDiscount = totalDiscount2,

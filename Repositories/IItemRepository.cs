@@ -81,5 +81,11 @@ namespace pos_service.Repositories
         /// <param name="supplierId">The unique identifier of the supplier.</param>
         /// <returns>A list of item entities associated with the specified supplier.</returns>
         Task<IEnumerable<Item>> GetBySupplierIdAsync(int supplierId);
+
+        /// <summary>
+        /// Searches items by a term matching name, print name, barcode or uuid.
+        /// If searchTerm is null or empty returns all items.
+        /// </summary>
+        Task<IEnumerable<Item>> GetBySearchAsync(string searchTerm);
     }
 }

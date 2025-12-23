@@ -22,7 +22,7 @@ namespace pos_service.Models
         /// <summary>
         /// True if it's a retail sale, false if it's a wholesale transaction.
         /// </summary>
-        public SaleType SaleType                         { get; set; } = SaleType.Reatail;
+        public SaleType SaleType                         { get; set; } = SaleType.Retail;
 
         /// <summary>
         /// The total number of unique items in the order.

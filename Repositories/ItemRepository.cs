@@ -99,5 +99,26 @@ namespace pos_service.Repositories
                     .ThenInclude(isu => isu.Supplier)
                 .ToListAsync();
         }
+
+        public async Task<IEnumerable<Item>> GetBySearchAsync(string searchTerm)
+        {
+            var query = _context.Items
+                .Include(i => i.ItemSuppliers)
+                    .ThenInclude(isu => isu.Supplier)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                searchTerm = searchTerm.Trim();
+                query = query.Where(i =>
+                    i.Name.Contains(searchTerm) ||
+                    i.PrintName.Contains(searchTerm) ||
+                    (i.BarCode != null && i.BarCode.Contains(searchTerm)) ||
+                    i.Uuid.Contains(searchTerm)
+                );
+            }
+
+            return await query.ToListAsync();
+        }
     }
 }

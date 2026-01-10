@@ -20,6 +20,36 @@ namespace pos_service.Models.DTO.Orders
         public decimal AmountPaid { get; set; }
 
         /// <summary>
+        /// Optional gross amount calculated by frontend. When provided, service will
+        /// use this instead of recalculating from item master data.
+        /// </summary>
+        [Required]
+        [Range(0, double.MaxValue)]
+        public decimal GrossAmount { get; set; }
+
+        /// <summary>
+        /// Total discount calculated by frontend.
+        /// </summary>
+        [Required]
+        [Range(0, double.MaxValue)]
+        public decimal TotalDiscount { get; set; }
+
+        /// <summary>
+        /// Net amount (GrossAmount - TotalDiscount) provided by frontend.
+        /// </summary>
+        [Required]
+        [Range(0, double.MaxValue)]
+        public decimal NetAmount { get; set; }
+
+        /// <summary>
+        /// Number of unique items in the order as calculated by the frontend.
+        /// Required so the service does not have to recalculate it.
+        /// </summary>
+        [Required]
+        [Range(0, int.MaxValue)]
+        public int ItemCount { get; set; }
+
+        /// <summary>
         /// Optional customer ID for registered customers
         /// </summary>
         public int? CustomerId { get; set; }

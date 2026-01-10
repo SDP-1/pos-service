@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using pos_service.Data;
 using pos_service.Exceptions;
+using pos_service.Middlewares;
 using pos_service.Repositories;
 using pos_service.Repositories.Permissions;
 using pos_service.Security;
@@ -118,23 +119,8 @@ using (var scope = app.Services.CreateScope())
     await DbInitializer.SeedAsync(context, passwordHasher);
 }
 
-app.UseExceptionHandler(errorApp =>
-{
-    errorApp.Run(async context =>
-    {
-        var exception = context.Features.Get<IExceptionHandlerFeature>()?.Error;
-
-        if (exception is PermissionDeniedException)
-        {
-            context.Response.StatusCode = StatusCodes.Status403Forbidden;
-            await context.Response.WriteAsJsonAsync(new { error = exception.Message });
-            return;
-        }
-
-        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-        await context.Response.WriteAsJsonAsync(new { error = "Internal server error. " + exception?.Message });
-    });
-});
+// Use global exception handler middleware
+app.UseGlobalExceptionHandler();
 
 // Enable Static File Serving 
 // This middleware is essential for serving files from the designated WebRootPath.

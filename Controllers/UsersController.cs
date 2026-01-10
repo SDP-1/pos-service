@@ -121,7 +121,7 @@ namespace pos_service.Controllers
         /// <param name="id">The unique identifier of the user to update.</param>
         /// <param name="userDto">The user data transfer object containing updated information.</param>
         /// <returns>The updated user details if successful, otherwise returns NotFound.</returns>
-        [HttpPut("{id:int}")]
+        [HttpPatch("{id:int}")]
         public async Task<IActionResult> UpdateUser(int id, [FromBody] UserReqDto userDto)
         {
             try

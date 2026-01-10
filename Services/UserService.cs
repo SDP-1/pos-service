@@ -205,11 +205,14 @@ namespace pos_service.Services
             }
 
             // 1. Check if the new username is already taken by another user
-            var userByUserName = await _userRepository.GetByUserNameAsync(userDto.UserName);
-            if (userByUserName != null && userByUserName.Id != id)
+            if (!string.IsNullOrEmpty(userDto.UserName)) 
             {
-                // Conflict: Another user already has this username (email)
-                return null;
+                var userByUserName = await _userRepository.GetByUserNameAsync(userDto.UserName);
+                if (userByUserName != null && userByUserName.Id != id)
+                {
+                    // Conflict: Another user already has this username (email)
+                    return null;
+                }
             }
 
             // Handle File Copy/Replacement using local path string
@@ -250,13 +253,18 @@ namespace pos_service.Services
             }
 
                 // Map incoming DTO into existing entity (this will set flat properties)
-                _mapper.Map(userDto, userToUpdate);
+                //_mapper.Map(userDto, userToUpdate);
+
+            if (userDto.FirstName != null      ) userToUpdate.FirstName         = userDto.FirstName;
+            if (userDto.LastName != null       ) userToUpdate.LastName          = userDto.LastName;
+            if (userDto.NIC != null            ) userToUpdate.NIC               = userDto.NIC;
+            if (userDto.ProfileImageUrl != null) userToUpdate.ProfileImageUrl   = userDto.ProfileImageUrl;
+            if (userDto.RoleId != null         ) userToUpdate.RoleId            = userDto.RoleId.Value;
+            if (userDto.UserName != null       ) userToUpdate.UserName          = userDto.UserName;
 
             // 3. Handle password change
             if (!string.IsNullOrEmpty(userDto.Password))
-            {
                 userToUpdate.PasswordHash = _passwordHasher.HashPassword(userDto.Password);
-            }
 
             var data = await _userRepository.UpdateAsync(userToUpdate);
             return _mapper.Map<UserResDto>(data);

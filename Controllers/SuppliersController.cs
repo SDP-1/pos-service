@@ -12,6 +12,7 @@ namespace pos_service.Controllers
     /// Provides CRUD operations for supplier information with administrative access control.
     /// </summary>
     [Route("api/[controller]")]
+    [Authorize]
     public class SuppliersController : SystemBaseController
     {
         private readonly ISupplierService _service;

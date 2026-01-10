@@ -13,6 +13,7 @@ namespace pos_service.Controllers
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class ContactsController : SystemBaseController
     {
         private readonly IContactService _service;

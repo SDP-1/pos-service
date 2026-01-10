@@ -8,6 +8,7 @@ namespace pos_service.Controllers
 {
     [Route("api/[controller]")]
     [Authorize] // Only authenticated users; permission checks are done in service or controller
+    [Authorize]
     public class PermissionsController : SystemBaseController
     {
         private readonly IPermissionService _permissionService;

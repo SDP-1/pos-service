@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using pos_service.Data;
+using System.Linq;
 using pos_service.Models;
 using pos_service.Models.DTO.Orders;
 using pos_service.Models.Enums;
@@ -54,37 +55,37 @@ namespace pos_service.Services
 
                     itemsToUpdate[item] = itemDto.Quantity;
 
-                    var basePrice = orderDto.SaleType == SaleType.Wholesale ? item.WholesalePrice : item.RetailPrice;
-                    var discountRatio = orderDto.SaleType == SaleType.Wholesale ? item.WholesaleDiscountRatio : item.RetailDiscountRatio;
-                    if (itemDto.DiscountRatio > 0)
-                        discountRatio = itemDto.DiscountRatio;
-
-                    var priceAfterDiscount = basePrice * (1 - discountRatio / 100);
-                    var lineTotal = itemDto.Quantity * priceAfterDiscount;
+                    // Frontend-provided prices and totals (required)
+                    var markedPrice   = itemDto.MarkedPrice;
+                    var salePrice     = itemDto.SalePrice;
+                    var lineTotal     = itemDto.LineTotal;
+                    var discountRatio = itemDto.DiscountRatio;
 
                     var orderItem = new OrderItem
                     {
-                        Uuid = Guid.NewGuid().ToString(),
-                        OriginalItemUuid = item.Uuid,
+                        Uuid                    = Guid.NewGuid().ToString(),
+                        OriginalItemUuid        = item.Uuid,
                         AllowsDecimalQuantities = item.AllowsDecimalQuantities,
-                        PrintName = item.PrintName,
-                        Quantity = itemDto.Quantity,
-                        PriceAtSale = basePrice,
-                        DiscountRatioAtSale = discountRatio,
-                        CostAtSale = item.BuyingPrice,
-                        LineTotal = lineTotal
+                        PrintName               = item.PrintName,
+                        Quantity                = itemDto.Quantity,
+                        PriceAtSale             = salePrice,
+                        DiscountRatioAtSale     = discountRatio,
+                        CostAtSale              = item.BuyingPrice,
+                        LineTotal               = lineTotal
                     };
 
                     orderItems.Add(orderItem);
 
-                    grossAmount += itemDto.Quantity * basePrice;
-                    totalDiscount += itemDto.Quantity * basePrice * (discountRatio / 100);
+                    // Only accumulate cost for profit calculation; trust frontend for gross/discount/net/itemCount
                     totalCost += itemDto.Quantity * item.BuyingPrice;
-                    itemCount++;
                 }
 
-                var netAmount = grossAmount - totalDiscount;
-                var balance = orderDto.AmountPaid - netAmount;
+                // Use frontend-provided (required) order-level totals and item count
+                grossAmount   = orderDto.GrossAmount;
+                totalDiscount = orderDto.TotalDiscount;
+                var netAmount = orderDto.NetAmount;
+                itemCount     = orderDto.ItemCount;
+                var balance   = orderDto.AmountPaid - netAmount;
 
                 if (balance < 0 && !allowOrdersForLoan)
                     throw new InvalidOperationException("Negative balance not allowed. Enable setting AllowOrdesForsLoan to allow credit/loan sales.");
@@ -99,20 +100,21 @@ namespace pos_service.Services
 
                 var order = new Order
                 {
-                    OrderNumber = await _orderRepository.GenerateOrderNumberAsync(),
-                    Status = initialStatus,
+                    OrderNumber   = await _orderRepository.GenerateOrderNumberAsync(),
+                    Status        = initialStatus,
                     PaymentMethod = orderDto.PaymentMethod,
-                    SaleType = orderDto.SaleType,
-                    ItemCount = itemCount,
-                    GrossAmount = grossAmount,
+                    SaleType      = orderDto.SaleType,
+                    ItemCount     = itemCount,
+                    GrossAmount   = grossAmount,
                     TotalDiscount = totalDiscount,
-                    NetAmount = netAmount,
-                    TotalCost = totalCost,
-                    AmountPaid = orderDto.AmountPaid,
-                    Balance = balance,
-                    CashierId = currentUser.Id,
-                    CustomerId = orderDto.CustomerId,
-                    OrderItems = orderItems
+                    NetAmount     = netAmount,
+                    TotalCost     = totalCost,
+                    AmountPaid    = orderDto.AmountPaid,
+                    Balance       = balance,
+                    Description   = orderDto.Description,
+                    CashierId     = currentUser.Id,
+                    CustomerId    = orderDto.CustomerId,
+                    OrderItems    = orderItems
                 };
 
                 var createdOrder = await _orderRepository.CreateAsync(order);
@@ -227,15 +229,11 @@ namespace pos_service.Services
                     // Add to tracking dictionary
                     itemsToUpdate[item] = itemDto.Quantity;
 
-                    var basePrice = orderDto.SaleType == SaleType.Wholesale ? item.WholesalePrice : item.RetailPrice;
-                    var discountRatio = orderDto.SaleType == SaleType.Wholesale ?
-                        item.WholesaleDiscountRatio : item.RetailDiscountRatio;
-
-                    if (itemDto.DiscountRatio > 0)
-                        discountRatio = itemDto.DiscountRatio;
-
-                    var priceAfterDiscount = basePrice * (1 - discountRatio / 100);
-                    var lineTotal = itemDto.Quantity * priceAfterDiscount;
+                    // Use frontend-provided prices directly
+                    var markedPrice = itemDto.MarkedPrice;
+                    var salePrice   = itemDto.SalePrice;
+                    var lineTotal   = itemDto.LineTotal;
+                    var discountRatio = itemDto.DiscountRatio;
 
                     var orderItem = new OrderItem
                     {
@@ -244,7 +242,7 @@ namespace pos_service.Services
                         AllowsDecimalQuantities = item.AllowsDecimalQuantities,
                         PrintName               = item.PrintName,
                         Quantity                = itemDto.Quantity,
-                        PriceAtSale             = basePrice,
+                        PriceAtSale             = salePrice,
                         DiscountRatioAtSale     = discountRatio,
                         CostAtSale              = item.BuyingPrice,
                         LineTotal               = lineTotal
@@ -252,10 +250,8 @@ namespace pos_service.Services
 
                     existingOrder.OrderItems.Add(orderItem);
 
-                    grossAmount += itemDto.Quantity * basePrice;
-                    totalDiscount += itemDto.Quantity * basePrice * (discountRatio / 100);
+                    // Only accumulate cost for profit calculation; trust frontend for gross/discount/net/itemCount
                     totalCost += itemDto.Quantity * item.BuyingPrice;
-                    itemCount++;
                 }
 
                 // Update item quantities
@@ -274,16 +270,21 @@ namespace pos_service.Services
                     _context.Items.Update(item);
                 }
 
+                // Use frontend-provided (required) order totals
+                grossAmount   = orderDto.GrossAmount;
+                totalDiscount = orderDto.TotalDiscount;
+                var netAmount = orderDto.NetAmount;
+
                 // Update order totals
                 existingOrder.PaymentMethod = orderDto.PaymentMethod;
-                existingOrder.SaleType = orderDto.SaleType;
-                existingOrder.ItemCount = itemCount;
-                existingOrder.GrossAmount = grossAmount;
+                existingOrder.SaleType      = orderDto.SaleType;
+                existingOrder.ItemCount     = itemCount;
+                existingOrder.GrossAmount   = grossAmount;
                 existingOrder.TotalDiscount = totalDiscount;
-                existingOrder.NetAmount = grossAmount - totalDiscount;
-                existingOrder.TotalCost = totalCost;
-                existingOrder.AmountPaid = orderDto.AmountPaid;
-                existingOrder.Balance = orderDto.AmountPaid - (grossAmount - totalDiscount);
+                existingOrder.NetAmount     = netAmount;
+                existingOrder.TotalCost     = totalCost;
+                existingOrder.AmountPaid    = orderDto.AmountPaid;
+                existingOrder.Balance       = orderDto.AmountPaid - netAmount;
 
                 // Enforce loan setting on update
                 if (existingOrder.Balance < 0 && !allowOrdersForLoan)

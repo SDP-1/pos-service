@@ -59,20 +59,18 @@ namespace pos_service.Data
                     .HasDefaultValueSql("CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)")
                     .ValueGeneratedOnAddOrUpdate();
 
-                // CreatedBy default to 'SYSTEM' when not provided
+                // CreatedBy is optional and has no DB default; application may set it or leave null.
                 entity
-                    .Property<string>(nameof(IAuditable.CreatedBy))
-                    .HasColumnType("longtext")
-                    .IsRequired()
-                    .HasDefaultValue("SYSTEM")
-                    .ValueGeneratedOnAdd();
+                    .Property<string?>(nameof(IAuditable.CreatedBy))
+                    .HasColumnType("varchar(255)")
+                    .HasMaxLength(255)
+                    .IsRequired(false);
 
-                // UpdatedBy default to 'SYSTEM' when not provided
+                // UpdatedBy is optional and has no DB default; application may set it or leave null.
                 entity
                     .Property<string?>(nameof(IAuditable.UpdatedBy))
-                    .HasColumnType("longtext")
-                    .HasDefaultValue("SYSTEM")
-                    .ValueGeneratedOnAddOrUpdate();
+                    .HasColumnType("varchar(255)")
+                    .HasMaxLength(255);
 
                 // IsActive defaults to true
                 entity

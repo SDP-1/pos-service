@@ -19,7 +19,11 @@ namespace pos_service.Profiles
             CreateMap<Item, ItemResDto>()
                 .ForMember(dest => dest.Suppliers, opt => opt.MapFrom(src => src.ItemSuppliers.Select(isu => isu.Supplier)));
             CreateMap<Item, ItemMiniResDto>();
-            CreateMap<ItemReqDto, Item>();
+            // Map ItemReqDto -> Item but do not overwrite primary key properties when mapping
+            // into an existing entity. Keys are assigned by service logic when creating items.
+            CreateMap<ItemReqDto, Item>()
+                .ForMember(d => d.Id, opt => opt.Ignore())
+                .ForMember(d => d.SubId, opt => opt.Ignore());
 
             // Contact Mappings
             CreateMap<Contact, ContactResDto>();

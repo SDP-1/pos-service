@@ -35,6 +35,18 @@ namespace pos_service.Repositories
             return item;
         }
 
+        public async Task<int> GetNextMainIdAsync()
+        {
+            var maxId = await _context.Items.MaxAsync(i => (int?)i.Id) ?? 0;
+            return maxId + 1;
+        }
+
+        public async Task<int> GetNextSubIdAsync(int mainId)
+        {
+            var maxSubId = await _context.Items.Where(i => i.Id == mainId).MaxAsync(i => (int?)i.SubId) ?? -1;
+            return maxSubId + 1;
+        }
+
         public async Task<Item> UpdateAsync(Item item)
         {
             _context.Entry(item).State = EntityState.Modified;

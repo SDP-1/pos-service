@@ -205,7 +205,13 @@ namespace pos_service.Controllers
         [HttpPut("{id:int}/{subId:int}")]
         public async Task<IActionResult> UpdateItem(int id, int subId, [FromBody] ItemReqDto itemDto)
         {
-            if (id != itemDto.Id || subId != itemDto.SubId)
+            // For updates the body must include Id and SubId and they must match the route.
+            if (!itemDto.Id.HasValue || !itemDto.SubId.HasValue)
+            {
+                return BadRequest("Request body must include Id and SubId for updates.");
+            }
+
+            if (id != itemDto.Id.Value || subId != itemDto.SubId.Value)
             {
                 return BadRequest("The route parameters must match the item's Id and SubId.");
             }

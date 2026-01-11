@@ -56,13 +56,41 @@ namespace pos_service.Services
         /// <returns>The newly created item details if successful, otherwise null.</returns>
         public async Task<ItemResDto?> CreateItemAsync(ItemReqDto itemDto, CurrentUser currentUser)
         {
-            if (await _itemRepository.ItemExistsAsync(itemDto.Id, itemDto.SubId))
+            // Determine Id/SubId values. If not supplied, assign next available values.
+            int idToUse;
+            int subIdToUse;
+
+            if (itemDto.Id.HasValue && itemDto.SubId.HasValue)
             {
-                // An item with this composite key already exists.
-                return null;
+                idToUse = itemDto.Id.Value;
+                subIdToUse = itemDto.SubId.Value;
+
+                if (await _itemRepository.ItemExistsAsync(idToUse, subIdToUse))
+                {
+                    return null; // already exists
+                }
+            }
+            else if (itemDto.Id.HasValue && !itemDto.SubId.HasValue)
+            {
+                idToUse = itemDto.Id.Value;
+                // compute next sub id for this main id
+                subIdToUse = await _itemRepository.GetNextSubIdAsync(idToUse);
+
+                if (await _itemRepository.ItemExistsAsync(idToUse, subIdToUse))
+                {
+                    return null; // unlikely but safe
+                }
+            }
+            else
+            {
+                // No Id provided. Get next main id and start subId at 0
+                idToUse = await _itemRepository.GetNextMainIdAsync();
+                subIdToUse = 0;
             }
 
             var item = _mapper.Map<Item>(itemDto);
+            item.Id = idToUse;
+            item.SubId = subIdToUse;
 
             // Handle Supplier Linking using ItemSupplier join entities
             if (itemDto.SupplierIds != null && itemDto.SupplierIds.Any())

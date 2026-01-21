@@ -47,6 +47,8 @@ namespace pos_service.Data
             {
                 var entity = modelBuilder.Entity(entityType.ClrType);
 
+                // Let the database populate CreatedAt and UpdatedAt using CURRENT_TIMESTAMP.
+                // EF will treat these as store-generated values so DB defaults and ON UPDATE apply.
                 entity
                     .Property<DateTime>(nameof(IAuditable.CreatedAt))
                     .HasColumnType("datetime(6)")
@@ -295,13 +297,13 @@ namespace pos_service.Data
                     // ignore and use SYSTEM
                 }
 
-                auditableEntity.UpdatedAt = DateTime.UtcNow;
+                // Do not set CreatedAt/UpdatedAt in application when DB is configured to generate them
+                // Database will populate CreatedAt on insert and UpdatedAt on update via CURRENT_TIMESTAMP.
                 auditableEntity.UpdatedBy = userUuid;
 
                 if (entityEntry.State == EntityState.Added)
                 {
-                    if(auditableEntity.Uuid == null) auditableEntity.Uuid = Guid.NewGuid().ToString();
-                    auditableEntity.CreatedAt = DateTime.UtcNow;
+                    if (auditableEntity.Uuid == null) auditableEntity.Uuid = Guid.NewGuid().ToString();
                     auditableEntity.CreatedBy = userUuid;
                 }
             }

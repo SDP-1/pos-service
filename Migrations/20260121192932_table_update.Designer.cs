@@ -12,8 +12,8 @@ using pos_service.Data;
 namespace pos_service.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260114061546_tableUpdate")]
-    partial class tableUpdate
+    [Migration("20260121192932_table_update")]
+    partial class table_update
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

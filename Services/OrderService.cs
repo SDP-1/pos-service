@@ -66,7 +66,7 @@ namespace pos_service.Services
                         Uuid                    = Guid.NewGuid().ToString(),
                         OriginalItemUuid        = item.Uuid,
                         AllowsDecimalQuantities = item.AllowsDecimalQuantities,
-                        PrintName               = item.PrintName,
+                        PrintName               = itemDto.PrintName,
                         Quantity                = itemDto.Quantity,
                         PriceAtSale             = salePrice,
                         MarkedPriceAtSale       = markedPrice,

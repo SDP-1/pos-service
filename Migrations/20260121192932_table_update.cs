@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace pos_service.Migrations
 {
     /// <inheritdoc />
-    public partial class tableUpdate : Migration
+    public partial class table_update : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

@@ -12,132 +12,32 @@ namespace pos_service.Helpers
         // Produce ESC/POS bytes for a receipt from OrderReqDto (kept for compatibility)
         public static byte[] FormatReceipt(OrderReqDto order, int width = 48)
         {
-            static string Repeat(char ch, int n) => new string(ch, Math.Max(0, n));
-            static string Center(string s, int w)
+            // Convert OrderReqDto to OrderResDto-lite and reuse the main formatter to avoid duplicating logic.
+            var tmp = new Models.DTO.Orders.OrderResDto
             {
-                if (s == null) s = string.Empty;
-                var pad = Math.Max(0, (w - s.Length) / 2);
-                return Repeat(' ', pad) + s + Repeat(' ', Math.Max(0, w - s.Length - pad));
-            }
-            static string PadRight(string s, int n)
-            {
-                if (s == null) s = string.Empty;
-                return s.Length > n ? s.Substring(0, n) : s + Repeat(' ', n - s.Length);
-            }
-            static string PadLeft(string s, int n)
-            {
-                if (s == null) s = string.Empty;
-                return s.Length > n ? s.Substring(0, n) : Repeat(' ', n - s.Length) + s;
-            }
+                OrderNumber = order.Description ?? string.Empty,
+                Status = Models.Enums.OrderStatus.Pending,
+                ItemCount = order.ItemCount,
+                GrossAmount = order.GrossAmount,
+                TotalDiscount = order.TotalDiscount,
+                NetAmount = order.NetAmount,
+                AmountPaid = order.AmountPaid,
+                Balance = order.AmountPaid - order.NetAmount,
+                Description = order.Description,
+                CreatedAt = DateTime.Now,
+                OrderItems = order.OrderItems?.Select(i => new Models.DTO.OrderItems.OrderItemMiniResDto
+                {
+                    OriginalItemUuid = i.ItemUuid,
+                    PrintName = i.PrintName ?? i.ItemUuid,
+                    Quantity = i.Quantity,
+                    PriceAtSale = i.SalePrice,
+                    MarkedPriceAtSale = i.MarkedPrice,
+                    LineTotal = i.LineTotal,
+                    AllowsDecimalQuantities = true
+                }).ToList() ?? new List<Models.DTO.OrderItems.OrderItemMiniResDto>()
+            };
 
-            var lines = new List<string>();
-
-            // Header
-            lines.Add(Center("SIRITHUNGA GROCERY", width));
-            lines.Add(Center("Nalagasdeniya, Hikkaduwa", width));
-            lines.Add(Center($"Tel: {(order?.Description ?? "(+94)912276011")}", width));
-            lines.Add(Repeat('-', width));
-
-            // Invoice / Cashier
-            var invLeft = $"Invoice No : {order?.Description ?? "-"}"; // OrderReqDto doesn't carry OrderNumber
-            var invRight = string.Empty; // no cashier in OrderReqDto
-            if (!string.IsNullOrEmpty(invRight))
-            {
-                var space = Math.Max(1, width - invLeft.Length - invRight.Length);
-                lines.Add(invLeft + Repeat(' ', space) + invRight);
-            }
-            else
-            {
-                lines.Add(PadRight(invLeft, width));
-            }
-
-            var created = DateTime.Now;
-            lines.Add(PadRight($"Date       : {created:yyyy-MM-dd}", width));
-            lines.Add(PadRight($"Time       : {created:HH:mm:ss}", width));
-            lines.Add(Repeat('-', width));
-
-            // Items header
-            var qtyHeader = "QTY";
-            var priceHeader = "Price";
-            var amountHeader = "Amount";
-            var headerLine = Repeat(' ', 6) + PadRight(qtyHeader, 12) + PadRight(priceHeader, 12) + PadRight(amountHeader, 18);
-            lines.Add(headerLine);
-
-            var items = order?.OrderItems ?? new List<OrderItemReqDto>();
-            var idx = 1;
-            foreach (var it in items)
-            {
-                var qty = (it?.Quantity ?? 0m).ToString("0.##");
-                var unit = (it?.MarkedPrice ?? it?.SalePrice ?? 0m).ToString("0.00");
-                var amt = (it?.LineTotal ?? 0m).ToString("0.00");
-                var name = it != null ? (it.PrintName ?? it.ItemUuid ?? "") : ""; // prefer PrintName if provided
-
-                var nameLine = $"{idx}  {name}".Length > width ? $"{idx}  {name}".Substring(0, width) : $"{idx}  {name}";
-                lines.Add(PadRight(nameLine, width));
-
-                var valueLine = Repeat(' ', 6) + PadLeft(qty, 12) + PadLeft(unit, 12) + PadLeft(amt, 18);
-                lines.Add(valueLine);
-
-                idx++;
-            }
-
-            lines.Add(Repeat('-', width));
-
-            // Totals block
-            var itemCount = items.Count;
-            var qtyDisplay = itemCount.ToString();
-            var statusValue = order?.Description ?? string.Empty;
-
-            var rightLabels = new[] { "Net amount", "Discount *", "Cash", "Balance" };
-            var maxLabelLen = rightLabels.Max(l => l.Length);
-
-            static string BuildRightBlock(string label, string value, int maxLabelLen)
-            {
-                var paddedLabel = label.Length > maxLabelLen ? label.Substring(0, maxLabelLen) : label.PadRight(maxLabelLen);
-                return $"{paddedLabel} : {value.PadLeft(8)}";
-            }
-
-            var qtyLeft = $"QTY      : {qtyDisplay}";
-            var netRight = BuildRightBlock("Net amount", (order?.NetAmount ?? 0m).ToString("0.00"), maxLabelLen);
-            var spacing1 = Math.Max(1, width - qtyLeft.Length - netRight.Length);
-            lines.Add(qtyLeft + Repeat(' ', spacing1) + netRight);
-
-            var statusLeft = $"Status   : {statusValue}";
-            var discRight = BuildRightBlock("Discount *", (order?.TotalDiscount ?? 0m).ToString("0.00"), maxLabelLen);
-            var spacing2 = Math.Max(1, width - statusLeft.Length - discRight.Length);
-            lines.Add(statusLeft + Repeat(' ', spacing2) + discRight);
-
-            var cashRight = BuildRightBlock("Cash", (order?.AmountPaid ?? 0m).ToString("0.00"), maxLabelLen);
-            var cashPad = Math.Max(0, width - cashRight.Length);
-            lines.Add(Repeat(' ', cashPad) + cashRight);
-
-            var balance = (order?.AmountPaid ?? 0m) - (order?.NetAmount ?? 0m);
-            var balRight = BuildRightBlock("Balance", balance.ToString("0.00"), maxLabelLen);
-            var balPad = Math.Max(0, width - balRight.Length);
-            lines.Add(Repeat(' ', balPad) + balRight);
-            lines.Add(" ");
-
-            lines.Add(Center("THANK YOU. PLEASE VISIT AGAIN.", width));
-            lines.Add(Repeat('*', width));
-            lines.Add(Center("SOLUTION BY : Devinda Panditha", width));
-            lines.Add(Center("CONTACT : +94772829780", width));
-
-            // Build byte array with simple ASCII encoding and ESC/POS initialize + cut
-            var sb = new List<byte>();
-            void Add(params byte[] b) => sb.AddRange(b);
-            Add(new byte[] { 0x1B, 0x40 }); // Initialize
-
-            foreach (var l in lines)
-            {
-                var text = l ?? string.Empty;
-                var bytes = Encoding.ASCII.GetBytes(text + "\r\n");
-                Add(bytes);
-            }
-
-            Add(new byte[] { 0x0A, 0x0A }); // feed
-            Add(new byte[] { 0x1D, 0x56, 0x41, 0x10 }); // Full cut
-
-            return sb.ToArray();
+            return FormatReceipt(tmp, width);
         }
 
         // Produce ESC/POS bytes for a receipt from OrderResDto (used when printing saved orders)
@@ -149,11 +49,35 @@ namespace pos_service.Helpers
             void Add(params byte[] b) => sb.AddRange(b);
             Add(new byte[] { 0x1B, 0x40 }); // Initialize
 
-            foreach (var l in lines)
+            foreach (var line in lines)
             {
-                var text = l ?? string.Empty;
+                // Select small font if requested
+                if (line.Small)
+                {
+                    Add(new byte[] { 0x1B, 0x4D, 0x01 }); // Font B
+                }
+
+                // Enable bold if requested
+                if (line.Bold)
+                {
+                    Add(new byte[] { 0x1B, 0x45, 0x01 }); // Bold on
+                }
+
+                var text = line.Text ?? string.Empty;
                 var bytes = Encoding.ASCII.GetBytes(text + "\r\n");
                 Add(bytes);
+
+                // Disable bold if it was enabled
+                if (line.Bold)
+                {
+                    Add(new byte[] { 0x1B, 0x45, 0x00 }); // Bold off
+                }
+
+                // Restore font A if we switched to Font B
+                if (line.Small)
+                {
+                    Add(new byte[] { 0x1B, 0x4D, 0x00 }); // Font A
+                }
             }
 
             Add(new byte[] { 0x0A, 0x0A }); // feed
@@ -166,10 +90,12 @@ namespace pos_service.Helpers
         public static string FormatReceiptText(Models.DTO.Orders.OrderResDto order, int width = 48)
         {
             var lines = BuildLinesFromOrderRes(order, width);
-            return string.Join("\r\n", lines);
+            return string.Join("\r\n", lines.Select(l => l.Text));
         }
 
-        private static List<string> BuildLinesFromOrderRes(Models.DTO.Orders.OrderResDto order, int width)
+        private sealed record PrintLine(string Text, bool Bold = false, bool Small = false);
+
+        private static List<PrintLine> BuildLinesFromOrderRes(Models.DTO.Orders.OrderResDto order, int width)
         {
             static string Repeat(char ch, int n) => new string(ch, Math.Max(0, n));
             static string Center(string s, int w)
@@ -189,92 +115,137 @@ namespace pos_service.Helpers
                 return s.Length > n ? s.Substring(0, n) : Repeat(' ', n - s.Length) + s;
             }
 
-            var lines = new List<string>();
+            var lines = new List<PrintLine>();
 
-            lines.Add(Center("SIRITHUNGA GROCERY", width));
-            lines.Add(Center("Nalagasdeniya, Hikkaduwa", width));
-            lines.Add(Center($"Tel: {order?.CustomerPhone ?? "+94)912276011"}", width));
-            lines.Add(Repeat('-', width));
+            lines.Add(new PrintLine(Center("SIRITHUNGA GROCERY", width), Bold: true));
+            lines.Add(new PrintLine(Center("Nalagasdeniya, Hikkaduwa", width), Bold: true));
+            lines.Add(new PrintLine(Center($"Tel: {order?.CustomerPhone ?? "(+94)912276011"}", width), Bold: true));
+            lines.Add(new PrintLine(Repeat('-', width)));
 
             var invLeft = $"Invoice No : {order?.OrderNumber ?? "-"}";
             var invRight = order?.CashierName ?? string.Empty;
             if (!string.IsNullOrEmpty(invRight))
             {
                 var space = Math.Max(1, width - invLeft.Length - invRight.Length);
-                lines.Add(invLeft + Repeat(' ', space) + invRight);
+                lines.Add(new PrintLine(invLeft + Repeat(' ', space) + invRight));
             }
             else
             {
-                lines.Add(PadRight(invLeft, width));
+                lines.Add(new PrintLine(PadRight(invLeft, width)));
             }
 
             var created = order?.CreatedAt ?? DateTime.Now;
-            lines.Add(PadRight($"Date       : {created:yyyy-MM-dd}", width));
-            lines.Add(PadRight($"Time       : {created:HH:mm:ss}", width));
-            lines.Add(Repeat('-', width));
+            // Date and Time on single row (left: Date, right: Time) with AM/PM
+            var leftDate = $"Date : {created:yyyy-MM-dd}";
+            var rightTime = $"Time : {created:hh:mm:ss tt}";
+            var spaceDt = Math.Max(1, width - leftDate.Length - rightTime.Length);
+            lines.Add(new PrintLine(leftDate + Repeat(' ', spaceDt) + rightTime));
+            // Print description if available
+            if (!string.IsNullOrWhiteSpace(order?.Description))
+            {
+                lines.Add(new PrintLine(PadRight($"Desc : {order.Description}", width)));
+            }
+            lines.Add(new PrintLine(Repeat('-', width)));
+
+            // Prepare columns for numeric values: MarkedPrice, OurPrice, QTY, Amount
+            // Column widths (sum should be <= width). We'll right-align numbers in each column and center headers.
+            var colMarked = 12;
+            var colOur = 12;
+            var colQty = 6;
+            var colAmount = 12;
+            var colsTotal = colMarked + colOur + colQty + colAmount;
+            var leftPad = Math.Max(0, width - colsTotal);
+
+            static string CenterInWidth(string s, int w)
+            {
+                if (s == null) s = string.Empty;
+                var pad = Math.Max(0, (w - s.Length) / 2);
+                return new string(' ', pad) + (s.Length > w ? s.Substring(0, w) : s) + new string(' ', Math.Max(0, w - s.Length - pad));
+            }
 
             var qtyHeader = "QTY";
-            var priceHeader = "Price";
+            var priceHeader = "OurPrice";
+            var markedHeader = "M.Price";
             var amountHeader = "Amount";
-            var headerLine = Repeat(' ', 6) + PadRight(qtyHeader, 12) + PadRight(priceHeader, 12) + PadRight(amountHeader, 18);
-            lines.Add(headerLine);
+            // Right-align column headers so labels sit above numeric columns
+            var headerLine = Repeat(' ', leftPad) + PadLeft(markedHeader, colMarked) + PadLeft(priceHeader, colOur) + PadLeft(qtyHeader, colQty) + PadLeft(amountHeader, colAmount);
+            lines.Add(new PrintLine(headerLine));
+            // Empty spacer line to visually separate header from items
+            lines.Add(new PrintLine(string.Empty));
 
             var items = order?.OrderItems ?? new List<Models.DTO.OrderItems.OrderItemMiniResDto>();
             var idx = 1;
             foreach (var it in items)
             {
                 var qty = (it?.Quantity ?? 0m).ToString("0.##");
+                var marked = (it?.MarkedPriceAtSale ?? 0m).ToString("0.00");
                 var unit = (it?.PriceAtSale ?? 0m).ToString("0.00");
                 var amt = (it?.LineTotal ?? 0m).ToString("0.00");
-                var name = it != null ? (it.PrintName ?? it.OriginalItemUuid ?? "") : "";
+                var name = it != null ? (it.PrintName ?? it.OriginalItemUuid ?? "") : string.Empty;
 
-                var nameLine = $"{idx}  {name}".Length > width ? $"{idx}  {name}".Substring(0, width) : $"{idx}  {name}";
-                lines.Add(PadRight(nameLine, width));
+                // First line: item index and name
+                var nameLine = $"{idx}. {name}";
+                if (nameLine.Length > width) nameLine = nameLine.Substring(0, width);
+                lines.Add(new PrintLine(PadRight(nameLine, width)));
 
-                var valueLine = Repeat(' ', 6) + PadLeft(qty, 12) + PadLeft(unit, 12) + PadLeft(amt, 18);
-                lines.Add(valueLine);
+                // Second line: numeric columns right-aligned under headers (MarkedPrice, OurPrice, QTY, Amount)
+                var valueLine = Repeat(' ', leftPad) + PadLeft(marked, colMarked) + PadLeft(unit, colOur) + PadLeft(qty, colQty) + PadLeft(amt, colAmount);
+                lines.Add(new PrintLine(valueLine));
 
                 idx++;
             }
 
-            lines.Add(Repeat('-', width));
+            lines.Add(new PrintLine(Repeat('-', width)));
 
-            var qtyDisplay = (order?.ItemCount ?? items.Count).ToString();
-            var statusValue = order?.Status.ToString() ?? string.Empty;
+            // Totals row: Gros | Discount | Net
+            var gross = (order?.GrossAmount ?? 0m);
+            var discount = (order?.TotalDiscount ?? 0m);
+            var net = (order?.NetAmount ?? 0m);
 
-            var rightLabels = new[] { "Net amount", "Discount *", "Cash", "Balance" };
-            var maxLabelLen = rightLabels.Max(l => l.Length);
+            // Totals: align Gross under M.Price column, Discount under OurPrice column,
+            // Net under Amount column (right-aligned with item amounts).
+            // We'll reuse the item column widths to position totals.
+            var headerTotals = Repeat(' ', leftPad) + PadLeft("Gros", colMarked) + PadLeft("Discount", colOur) + PadLeft(string.Empty, colQty) + PadLeft("Net Amount", colAmount);
+            lines.Add(new PrintLine(headerTotals));
 
-            static string BuildRightBlock(string label, string value, int maxLabelLen)
+            var valuesTotals = Repeat(' ', leftPad) + PadLeft(gross.ToString("0.00"), colMarked) + PadLeft(discount.ToString("0.00"), colOur) + PadLeft(string.Empty, colQty) + PadLeft(net.ToString("0.00"), colAmount);
+            lines.Add(new PrintLine(valuesTotals));
+
+            // Cash and Balance on the right
+            var cashValue = (order?.AmountPaid ?? 0m).ToString("0.00");
+            var balanceValue = (order?.Balance ?? (order?.AmountPaid ?? 0m) - (order?.NetAmount ?? 0m)).ToString("0.00");
+
+            var cashLabel = "Cash";
+            var valueWidth = 12;
+            var cashLabelSep = cashLabel + " : ";
+            var cashPrefix = Math.Max(0, width - (cashLabelSep.Length + valueWidth));
+            var cashLine = Repeat(' ', cashPrefix) + cashLabelSep + cashValue.PadLeft(valueWidth);
+            lines.Add(new PrintLine(cashLine));
+
+            var balLabel = "Balance";
+            var balLabelSep = balLabel + " : ";
+            var balPrefix = Math.Max(0, width - (balLabelSep.Length + valueWidth));
+            var balLine = Repeat(' ', balPrefix) + balLabelSep + balanceValue.PadLeft(valueWidth);
+            lines.Add(new PrintLine(balLine));
+            //lines.Add(new PrintLine(" "));
+
+            // If discount > 0 show the highlighted discount block before Thank you
+            var totalDiscount = order?.TotalDiscount ?? 0m;
+            if (totalDiscount > 0)
             {
-                var paddedLabel = label.Length > maxLabelLen ? label.Substring(0, maxLabelLen) : label.PadRight(maxLabelLen);
-                return $"{paddedLabel} : {value.PadLeft(8)}";
+                lines.Add(new PrintLine(Repeat('_', width)));
+                lines.Add(new PrintLine(Center("** Your Total Discount **", width), Bold: true));
+                lines.Add(new PrintLine(Repeat(' ', Math.Max(0, (width - 8) / 2)) + totalDiscount.ToString("0.00")));
             }
 
-            var qtyLeft = $"QTY      : {qtyDisplay}";
-            var netRight = BuildRightBlock("Net amount", (order?.NetAmount ?? 0m).ToString("0.00"), maxLabelLen);
-            var spacing1 = Math.Max(1, width - qtyLeft.Length - netRight.Length);
-            lines.Add(qtyLeft + Repeat(' ', spacing1) + netRight);
+            lines.Add(new PrintLine(Repeat('_', width)));
 
-            var statusLeft = $"Status   : {statusValue}";
-            var discRight = BuildRightBlock("Discount *", (order?.TotalDiscount ?? 0m).ToString("0.00"), maxLabelLen);
-            var spacing2 = Math.Max(1, width - statusLeft.Length - discRight.Length);
-            lines.Add(statusLeft + Repeat(' ', spacing2) + discRight);
+            lines.Add(new PrintLine(Center("THANK YOU. PLEASE VISIT AGAIN.", width)));
 
-            var cashRight = BuildRightBlock("Cash", (order?.AmountPaid ?? 0m).ToString("0.00"), maxLabelLen);
-            var cashPad = Math.Max(0, width - cashRight.Length);
-            lines.Add(Repeat(' ', cashPad) + cashRight);
-
-            var balance = (order?.Balance ?? (order?.AmountPaid ?? 0m) - (order?.NetAmount ?? 0m));
-            var balRight = BuildRightBlock("Balance", balance.ToString("0.00"), maxLabelLen);
-            var balPad = Math.Max(0, width - balRight.Length);
-            lines.Add(Repeat(' ', balPad) + balRight);
-            lines.Add(" ");
-
-            lines.Add(Center("THANK YOU. PLEASE VISIT AGAIN.", width));
-            lines.Add(Repeat('*', width));
-            lines.Add(Center("SOLUTION BY : Devinda Panditha", width));
-            lines.Add(Center("CONTACT : +94772829780", width));
+            //lines.Add(new PrintLine(Repeat('*', width)));
+            //// Footer in small font
+            //lines.Add(new PrintLine(Center("SOLUTION BY : Devinda Panditha", width), Small: true));
+            //lines.Add(new PrintLine(Center("CONTACT : +94772829780", width), Small: true));
 
             return lines;
         }

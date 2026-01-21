@@ -37,6 +37,8 @@ namespace pos_service.Models.DTO.Items
         [Range(0, double.MaxValue)]
         public decimal MarkedPrice            { get; set; }
 
+        public DateTime? ExpDate { get; set; }
+
         [Required]
         [Range(0, double.MaxValue)]
         public decimal RetailPrice            { get; set; }

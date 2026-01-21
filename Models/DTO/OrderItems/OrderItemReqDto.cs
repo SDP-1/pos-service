@@ -19,8 +19,8 @@ namespace pos_service.Models.DTO.OrderItems
         public decimal DiscountRatio { get; set; }
 
         /// <summary>
-        /// Marked price provided by frontend. Service will use this value
-        /// instead of looking up the item's price for line calculations.
+        /// Marked price provided by frontend. Service will store this value
+        /// on the order item as the item's marked price at sale.
         /// </summary>
         [Required]
         [Range(0, double.MaxValue)]

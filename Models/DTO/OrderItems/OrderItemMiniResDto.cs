@@ -8,7 +8,7 @@
         public string PrintName { get; set; }
         public decimal Quantity { get; set; }
         public decimal PriceAtSale { get; set; }
-        public decimal DiscountRatioAtSale { get; set; }
+        public decimal MarkedPriceAtSale { get; set; }
         public decimal CostAtSale { get; set; }
         public decimal LineTotal { get; set; }
         public bool AllowsDecimalQuantities { get; set; }

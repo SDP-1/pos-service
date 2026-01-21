@@ -24,6 +24,7 @@
   <ItemGroup>
     <Folder Include="Middleware\" />
     <Folder Include="Migrations\" />
+    <Folder Include="Models\DTO\Bills\" />
     <Folder Include="Repositories\Base\" />
   </ItemGroup>
 

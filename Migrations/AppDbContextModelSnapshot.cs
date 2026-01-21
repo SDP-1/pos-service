@@ -191,6 +191,9 @@ namespace pos_service.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("varchar(255)");
 
+                    b.Property<DateTime?>("ExpDate")
+                        .HasColumnType("date");
+
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("tinyint(1)")
@@ -414,15 +417,15 @@ namespace pos_service.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("varchar(255)");
 
-                    b.Property<decimal>("DiscountRatioAtSale")
-                        .HasColumnType("decimal(5, 2)");
-
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("tinyint(1)")
                         .HasDefaultValue(true);
 
                     b.Property<decimal>("LineTotal")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<decimal>("MarkedPriceAtSale")
                         .HasColumnType("decimal(18, 2)");
 
                     b.Property<int>("OrderId")

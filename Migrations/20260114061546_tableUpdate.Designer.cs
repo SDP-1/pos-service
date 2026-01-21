@@ -12,8 +12,8 @@ using pos_service.Data;
 namespace pos_service.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260110112504_tabe_update")]
-    partial class tabe_update
+    [Migration("20260114061546_tableUpdate")]
+    partial class tableUpdate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -193,6 +193,9 @@ namespace pos_service.Migrations
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(255)
                         .HasColumnType("varchar(255)");
+
+                    b.Property<DateTime?>("ExpDate")
+                        .HasColumnType("date");
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
@@ -417,15 +420,15 @@ namespace pos_service.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("varchar(255)");
 
-                    b.Property<decimal>("DiscountRatioAtSale")
-                        .HasColumnType("decimal(5, 2)");
-
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("tinyint(1)")
                         .HasDefaultValue(true);
 
                     b.Property<decimal>("LineTotal")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<decimal>("MarkedPriceAtSale")
                         .HasColumnType("decimal(18, 2)");
 
                     b.Property<int>("OrderId")

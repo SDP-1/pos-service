@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace pos_service.Migrations
 {
     /// <inheritdoc />
-    public partial class tabe_update : Migration
+    public partial class tableUpdate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -70,6 +70,7 @@ namespace pos_service.Migrations
                     WholesalePrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     RetailDiscountRatio = table.Column<decimal>(type: "decimal(5,2)", nullable: false),
                     WholesaleDiscountRatio = table.Column<decimal>(type: "decimal(5,2)", nullable: false),
+                    ExpDate = table.Column<DateTime>(type: "date", nullable: true),
                     Uuid = table.Column<string>(type: "varchar(255)", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP(6)"),
@@ -425,7 +426,7 @@ namespace pos_service.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Quantity = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
                     PriceAtSale = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    DiscountRatioAtSale = table.Column<decimal>(type: "decimal(5,2)", nullable: false),
+                    MarkedPriceAtSale = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     CostAtSale = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     LineTotal = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Uuid = table.Column<string>(type: "varchar(255)", nullable: false)

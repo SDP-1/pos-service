@@ -288,7 +288,7 @@ namespace pos_service.Data
                         PrintName = item1.PrintName,
                         Quantity = 2,
                         PriceAtSale = item1.RetailPrice,
-                        DiscountRatioAtSale = 0,
+                        MarkedPriceAtSale = item1.MarkedPrice,
                         CostAtSale = item1.BuyingPrice,
                         LineTotal = 2 * item1.RetailPrice
                     },
@@ -299,7 +299,7 @@ namespace pos_service.Data
                         PrintName = item2.PrintName,
                         Quantity = 1,
                         PriceAtSale = item2.RetailPrice,
-                        DiscountRatioAtSale = 0,
+                        MarkedPriceAtSale = item2.MarkedPrice,
                         CostAtSale = item2.BuyingPrice,
                         LineTotal = 1 * item2.RetailPrice
                     }
@@ -307,7 +307,7 @@ namespace pos_service.Data
 
                 var gross1 = order1Items.Sum(i => i.PriceAtSale * i.Quantity);
                 var totalCost1 = order1Items.Sum(i => i.CostAtSale * i.Quantity);
-                var totalDiscount1 = order1Items.Sum(i => i.PriceAtSale * i.Quantity * (i.DiscountRatioAtSale / 100));
+                var totalDiscount1 = gross1 - order1Items.Sum(i => i.LineTotal);
                 var net1 = gross1 - totalDiscount1;
 
                 var order1 = new Order
@@ -340,7 +340,7 @@ namespace pos_service.Data
                         PrintName = item2.PrintName,
                         Quantity = 3,
                         PriceAtSale = item2.RetailPrice,
-                        DiscountRatioAtSale = 0,
+                        MarkedPriceAtSale = item2.MarkedPrice,
                         CostAtSale = item2.BuyingPrice,
                         LineTotal = 3 * item2.RetailPrice
                     }
@@ -348,7 +348,7 @@ namespace pos_service.Data
 
                 var gross2 = order2Items.Sum(i => i.PriceAtSale * i.Quantity);
                 var totalCost2 = order2Items.Sum(i => i.CostAtSale * i.Quantity);
-                var totalDiscount2 = 0m;
+                var totalDiscount2 = gross2 - order2Items.Sum(i => i.LineTotal);
                 var net2 = gross2 - totalDiscount2;
 
                 var order2 = new Order

@@ -14,6 +14,7 @@ namespace pos_service.Models.DTO.Items
         public bool AllowsDecimalQuantities   { get; set; }
         public decimal BuyingPrice            { get; set; }
         public decimal MarkedPrice            { get; set; }
+        public DateTime? ExpDate { get; set; }
         public decimal RetailPrice            { get; set; }
         public decimal WholesalePrice         { get; set; }
         public decimal RetailDiscountRatio    { get; set; }

@@ -24,6 +24,7 @@ namespace pos_service.Profiles
             CreateMap<ItemReqDto, Item>()
                 .ForMember(d => d.Id, opt => opt.Ignore())
                 .ForMember(d => d.SubId, opt => opt.Ignore());
+            CreateMap<Item, ItemResDto>();
 
             // Contact Mappings
             CreateMap<Contact, ContactResDto>();
@@ -48,7 +49,10 @@ namespace pos_service.Profiles
             // Order Maper
             CreateMap<OrderItem, OrderItemResDto>();
             CreateMap<OrderItem, OrderItemMiniResDto>();
-            CreateMap<OrderItemReqDto, OrderItem>();
+            CreateMap<OrderItemReqDto, OrderItem>()
+                .ForMember(dest => dest.MarkedPriceAtSale, opt => opt.MapFrom(src => src.MarkedPrice))
+                .ForMember(dest => dest.PriceAtSale, opt => opt.MapFrom(src => src.SalePrice))
+                .ForMember(dest => dest.LineTotal, opt => opt.MapFrom(src => src.LineTotal));
 
             // Role Mapper
             CreateMap<Role, RoleResDto>();

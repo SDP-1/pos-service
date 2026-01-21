@@ -69,7 +69,7 @@ namespace pos_service.Services
                         PrintName               = item.PrintName,
                         Quantity                = itemDto.Quantity,
                         PriceAtSale             = salePrice,
-                        DiscountRatioAtSale     = discountRatio,
+                        MarkedPriceAtSale       = markedPrice,
                         CostAtSale              = item.BuyingPrice,
                         LineTotal               = lineTotal
                     };
@@ -243,7 +243,7 @@ namespace pos_service.Services
                         PrintName               = item.PrintName,
                         Quantity                = itemDto.Quantity,
                         PriceAtSale             = salePrice,
-                        DiscountRatioAtSale     = discountRatio,
+                        MarkedPriceAtSale       = markedPrice,
                         CostAtSale              = item.BuyingPrice,
                         LineTotal               = lineTotal
                     };

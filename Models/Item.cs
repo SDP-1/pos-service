@@ -91,6 +91,13 @@ namespace pos_service.Models
         public decimal WholesaleDiscountRatio { get; set; } = 0.0m;
 
         /// <summary>
+        /// Optional expiry date for the item (null if not applicable).
+        /// Stored as a date only in the database.
+        /// </summary>
+        [Column(TypeName = "date")]
+        public DateTime? ExpDate { get; set; }
+
+        /// <summary>
         /// Junction entities linking this item to suppliers.
         /// Use the `ItemSupplier` entity when you need additional columns on the relationship.
         /// </summary>

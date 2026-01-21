@@ -5,6 +5,12 @@ namespace pos_service.Models.DTO.OrderItems
 {
     public class OrderItemReqDto
     {
+        /// <summary>
+        /// Printable name for the item. This value will be used on receipts
+        /// </summary>
+        [Required]
+        public string PrintName { get; set; } = string.Empty;
+
         [Required]
         public string ItemUuid { get; set; }
 

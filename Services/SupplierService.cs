@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using pos_service.Models;
-using pos_service.Models.DTO.Supplier;
+using pos_service.Models.DTO.Suppliers;
 using pos_service.Repositories;
 
 namespace pos_service.Services
@@ -25,6 +25,12 @@ namespace pos_service.Services
         public async Task<SupplierResDto?> GetSupplierByIdAsync(int id, CurrentUser currentUser)
         {
             var supplier = await _supplierRepo.GetByIdWithDetailsAsync(id);
+            return _mapper.Map<SupplierResDto?>(supplier);
+        }
+
+        public async Task<SupplierResDto?> GetSupplierWithItemsAsync(int id, CurrentUser currentUser)
+        {
+            var supplier = await _supplierRepo.GetSupplierWithItemsAsync(id);
             return _mapper.Map<SupplierResDto?>(supplier);
         }
 

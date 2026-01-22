@@ -1,12 +1,12 @@
 ﻿using AutoMapper;
 using pos_service.Models;
-using pos_service.Models.DTO.Contact;
-using pos_service.Models.DTO.Item;
-using pos_service.Models.DTO.Order;
-using pos_service.Models.DTO.OrderItem;
-using pos_service.Models.DTO.Supplier;
-using pos_service.Models.DTO.User;
-using pos_service.Repositories;
+using pos_service.Models.DTO.Contacts;
+using pos_service.Models.DTO.Items;
+using pos_service.Models.DTO.Orders;
+using pos_service.Models.DTO.OrderItems;
+using pos_service.Models.DTO.Roles;
+using pos_service.Models.DTO.Suppliers;
+using pos_service.Models.DTO.Users;
 
 namespace pos_service.Profiles
 {
@@ -15,21 +15,29 @@ namespace pos_service.Profiles
         public MappingProfile()
         {
             // Item Mappings
-            CreateMap<Item, ItemResDto>();
+            // map Item -> ItemResDto.Suppliers from ItemSuppliers join
+            CreateMap<Item, ItemResDto>()
+                .ForMember(dest => dest.Suppliers, opt => opt.MapFrom(src => src.ItemSuppliers.Select(isu => isu.Supplier)));
             CreateMap<Item, ItemMiniResDto>();
-            CreateMap<ItemReqDto, Item>();
+            // Map ItemReqDto -> Item but do not overwrite primary key properties when mapping
+            // into an existing entity. Keys are assigned by service logic when creating items.
+            CreateMap<ItemReqDto, Item>()
+                .ForMember(d => d.Id, opt => opt.Ignore())
+                .ForMember(d => d.SubId, opt => opt.Ignore());
+            CreateMap<Item, ItemResDto>();
 
             // Contact Mappings
             CreateMap<Contact, ContactResDto>();
             CreateMap<ContactReqDto, Contact>();
 
             // Supplier Mappings
-            CreateMap<Supplier, SupplierResDto>();
+            CreateMap<Supplier, SupplierResDto>()
+                .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.ItemSuppliers.Select(isu => isu.Item)));
             CreateMap<SupplierReqDto, Supplier>();
 
             // User Mappings
             CreateMap<User, UserResDto>();
-
+            CreateMap<User, CurrentUser>();
             CreateMap<UserReqDto, User>();
             CreateMap<UserLoginReqDto, User>();
 
@@ -41,7 +49,14 @@ namespace pos_service.Profiles
             // Order Maper
             CreateMap<OrderItem, OrderItemResDto>();
             CreateMap<OrderItem, OrderItemMiniResDto>();
-            CreateMap<OrderItemReqDto, OrderItem>();
+            CreateMap<OrderItemReqDto, OrderItem>()
+                .ForMember(dest => dest.MarkedPriceAtSale, opt => opt.MapFrom(src => src.MarkedPrice))
+                .ForMember(dest => dest.PriceAtSale, opt => opt.MapFrom(src => src.SalePrice))
+                .ForMember(dest => dest.LineTotal, opt => opt.MapFrom(src => src.LineTotal));
+
+            // Role Mapper
+            CreateMap<Role, RoleResDto>();
+            CreateMap<RoleReqDto, Role>();
         }
     }
 }

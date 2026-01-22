@@ -1,24 +1,17 @@
 ﻿using pos_service.Models.Enums;
-using System;
+using pos_service.Models.DTO.Users;
 using System.Security.Claims;
 
 namespace pos_service.Models
 {
-    public class CurrentUser
+    public class CurrentUser : UserResDto
     {
-            public int Id               { get; set; }
             public string Uuid          { get; set; } = string.Empty;
-            public string Name          { get; set; } = string.Empty;
-            public string UserName      { get; set; } = string.Empty;
-
-            // role from DB
-            public int RoleId           { get; set; }
-            public string RoleName      { get; set; } = string.Empty;
 
             public bool IsAuthenticated { get; set; }
 
             // populated at runtime
-            public ICollection<string> Permissions { get; set; } = new List<string>();
+            public ICollection<Permission> Permissions { get; set; } = new List<Permission>();
 
             public static CurrentUser FromClaimsPrincipal(ClaimsPrincipal principal)
             {
@@ -29,15 +22,18 @@ namespace pos_service.Models
 
                 try
                 {
-                    var currentUser = new CurrentUser
+                        var currentUser = new CurrentUser
                     {
                         IsAuthenticated = true,
-                        Id              = GetClaimValue<int>(principal, ClaimTypes.NameIdentifier, "user_id"),
-                        Uuid            = GetClaimValue<string>(principal, "uuid") ?? string.Empty,
-                        Name            = GetClaimValue<string>(principal, ClaimTypes.Name) ?? string.Empty,
-                        UserName        = GetClaimValue<string>(principal, "username") ?? string.Empty,
-                        RoleId          = GetClaimValue<int>(principal, "role_id"),
-                        RoleName        = GetClaimValue<string>(principal, ClaimTypes.Role, "role") ?? string.Empty
+                            //Id              = GetClaimValue<int>(principal, ClaimTypes.NameIdentifier, "user_id"),
+                            Uuid            = GetClaimValue<string>(principal, "uuid") ?? string.Empty,
+                            //Name            = GetClaimValue<string>(principal, ClaimTypes.Name) ?? string.Empty,
+                            //UserName        = GetClaimValue<string>(principal, "username") ?? string.Empty,
+                            Role = new Role
+                            {
+                                Id = GetClaimValue<int>(principal, "role_id"),
+                                //Name = GetClaimValue<string>(principal, ClaimTypes.Role, "role") ?? string.Empty
+                            }
                     };
 
                     return currentUser;
@@ -73,15 +69,9 @@ namespace pos_service.Models
             }
 
             public bool IsInRole(params int[] roleIds)
-                => IsAuthenticated && roleIds.Contains(RoleId);
+                => IsAuthenticated && Role != null && roleIds.Contains(Role.Id);
 
             public bool HasPermission(PermissionType permission)
-                => IsAuthenticated && Permissions.Contains(permission.ToString());
-
-            public bool CanManageUsers()
-                => IsInRole(1, 3); // default SystemAdmin role id 1 and Manager id 3 - keep legacy semantics if seeded that way
-
-            public bool CanViewSensitiveData()
-                => IsInRole(1, 3);
+                => IsAuthenticated && Permissions.Any(p => p.PermissionType == permission);
         }
     }

@@ -19,6 +19,11 @@ namespace pos_service.Repositories
         Task<Supplier?> GetByIdWithDetailsAsync(int id);
 
         /// <summary>
+        /// Retrieves a supplier and its items by supplier id.
+        /// </summary>
+        Task<Supplier?> GetSupplierWithItemsAsync(int id);
+
+        /// <summary>
         /// Retrieves all suppliers from the data store.
         /// </summary>
         /// <returns>A list of all supplier entities.</returns>

@@ -1,5 +1,5 @@
 ﻿using pos_service.Models;
-using pos_service.Models.DTO.User;
+using pos_service.Models.DTO.Users;
 
 namespace pos_service.Services
 {
@@ -77,5 +77,11 @@ namespace pos_service.Services
         /// <param name="currentUser">The current user changing the password.</param>
         /// <returns>True if password change was successful, otherwise false.</returns>
         Task<bool> ChangePasswordAsync(int id, string oldPassword, string newPassword, CurrentUser currentUser);
+
+        /// <summary>
+        /// Clears any server-side cached entries for a user (logout).
+        /// JWTs are stateless; this only removes cached user/permission data.
+        /// </summary>
+        Task LogoutAsync(string uuid);
     }
 }

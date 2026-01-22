@@ -1,5 +1,5 @@
 ﻿using pos_service.Models;
-using pos_service.Models.DTO.Item;
+using pos_service.Models.DTO.Items;
 
 namespace pos_service.Services
 {
@@ -122,5 +122,10 @@ namespace pos_service.Services
         /// <param name="currentUser">The current user requesting the items.</param>
         /// <returns>A list of items associated with the specified supplier.</returns>
         Task<IEnumerable<ItemResDto>> GetItemsBySupplierIdAsync(int supplierId, CurrentUser currentUser);
+
+        /// <summary>
+        /// Search items by term matching name, print name, barcode or uuid.
+        /// </summary>
+        Task<IEnumerable<ItemResDto>> SearchItemsAsync(string searchTerm, CurrentUser currentUser);
     }
 }

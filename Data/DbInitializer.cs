@@ -39,6 +39,32 @@ namespace pos_service.Data
 
             // Seed default items
             await SeedItemsAsync(context);
+
+            // Seed sample orders
+            await SeedOrdersAsync(context);
+            // Seed default settings
+            await SeedSettingsAsync(context);
+        }
+
+        private static async Task SeedSettingsAsync(AppDbContext context)
+        {
+            // Desired default settings. If a setting exists, update its value; otherwise create it.
+            var desired = new List<Setting>
+            {
+                new Setting { SettingKey = SettingKey.AllowZeroStock, SettingValue = true, Description = "Allows selling items when stock quantity is zero without throwing an error" }
+            };
+
+            foreach (var s in desired)
+            {
+                var existing = await context.Settings.FirstOrDefaultAsync(x => x.SettingKey == s.SettingKey);
+                if (existing == null)
+                {
+                    s.Uuid = Guid.NewGuid().ToString();
+                    context.Settings.Add(s);
+                }
+            }
+
+            await context.SaveChangesAsync();
         }
 
         private static async Task SeedRolesAsync(AppDbContext context)
@@ -68,21 +94,18 @@ namespace pos_service.Data
         /// <param name="passwordHasher">The password hasher service for securing the admin password.</param>
         private static async Task SeedAdminUserAsync(AppDbContext context, IPasswordHasher passwordHasher)
         {
-            if (!await context.Users.AnyAsync(u => u.UserName == "admin@pos.com"))
+            if (!await context.Users.AnyAsync(u => u.UserName == "sehandevinda1@gmail.com"))
             {
                 var adminUser = new User
                 {
                     Id = 1,
-                    FirstName = "System",
-                    LastName = "Admin",
-                    UserName = "admin@pos.com",
-                    PasswordHash = passwordHasher.HashPassword("AdminPass@123"),
+                    FirstName = "Sehan",
+                    LastName = "devinda",
+                    UserName = "sehandevinda1@gmail.com",
+                    PasswordHash = passwordHasher.HashPassword("1234"),
                     RoleId = 1, // SystemAdmin role id
                     NIC = "000000000000",
-                    Uuid = Guid.NewGuid().ToString(),
-                    IsActive = true,
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedBy = "System Seed"
+                    Uuid = Guid.NewGuid().ToString()
                 };
                 context.Users.Add(adminUser);
                 await context.SaveChangesAsync();
@@ -121,10 +144,38 @@ namespace pos_service.Data
                 if (supplier == null)
                     throw new Exception("Supplier not found");
 
-                context.Items.AddRange(
-                    new Item { Id = 1, SubId = 0, Name = "Item 1", StockQuantity = 200, PrintName = "Item 1", RetailPrice = 100, BuyingPrice = 90, MarkedPrice = 100, Uuid = Guid.NewGuid().ToString(), Suppliers = new List<Supplier>() { supplier } },
-                    new Item { Id = 2, SubId = 0, Name = "Item 2", StockQuantity = 200, PrintName = "Item 2", RetailPrice = 200, BuyingPrice = 90, MarkedPrice = 100, Uuid = Guid.NewGuid().ToString(), Suppliers = suppliers }
-                );
+                var item1 = new Item
+                {
+                    Id = 1,
+                    SubId = 0,
+                    Name = "Item 1",
+                    StockQuantity = 200,
+                    PrintName = "Item 1",
+                    RetailPrice = 100,
+                    BuyingPrice = 90,
+                    MarkedPrice = 100,
+                    Uuid = Guid.NewGuid().ToString(),
+                    ItemSuppliers = new List<ItemSupplier>()
+                    {
+                        new ItemSupplier { SuppliersId = supplier.Id, ItemsId = 1, ItemsSubId = 0,Uuid = Guid.NewGuid().ToString(), Supplier = supplier }
+                    }
+                };
+
+                var item2 = new Item
+                {
+                    Id = 2,
+                    SubId = 0,
+                    Name = "Item 2",
+                    StockQuantity = 200,
+                    PrintName = "Item 2",
+                    RetailPrice = 200,
+                    BuyingPrice = 90,
+                    MarkedPrice = 100,
+                    Uuid = Guid.NewGuid().ToString(),
+                    ItemSuppliers = suppliers.Select(s => new ItemSupplier { SuppliersId = s.Id, ItemsId = 2, Uuid = Guid.NewGuid().ToString(), ItemsSubId = 0, Supplier = s }).ToList()
+                };
+
+                context.Items.AddRange(item1, item2);
                 await context.SaveChangesAsync();
             }
         }
@@ -139,48 +190,52 @@ namespace pos_service.Data
                 var perms = new List<Permission>
                 {
                     // Orders
-                    new Permission { Id = (int)PermissionType.ORDER_VIEW, Name = "ORDER_VIEW", Description = "Can view orders", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.ORDER_ADD, Name = "ORDER_ADD", Description = "Can create orders", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.ORDER_UPDATE, Name = "ORDER_UPDATE", Description = "Can update orders", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.ORDER_DELETE, Name = "ORDER_DELETE", Description = "Can delete orders", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.ORDER_DELETE_PERMANENTLY, Name = "ORDER_DELETE_PERMANENTLY", Description = "Can permanently delete orders", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.ORDER_UPDATE_STATUS, Name = "ORDER_UPDATE_STATUS", Description = "Can update order status", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.ORDER_VIEW, PermissionType = PermissionType.ORDER_VIEW, PermissionCatagory = PermissionCatagory.ORDER, Description = "Can view orders" },
+                    new Permission { Id = (int)PermissionType.ORDER_ADD, PermissionType = PermissionType.ORDER_ADD, PermissionCatagory = PermissionCatagory.ORDER, Description = "Can create orders" },
+                    new Permission { Id = (int)PermissionType.ORDER_UPDATE, PermissionType = PermissionType.ORDER_UPDATE, PermissionCatagory = PermissionCatagory.ORDER, Description = "Can update orders" },
+                    new Permission { Id = (int)PermissionType.ORDER_DELETE, PermissionType = PermissionType.ORDER_DELETE, PermissionCatagory = PermissionCatagory.ORDER, Description = "Can delete orders" },
+                    new Permission { Id = (int)PermissionType.ORDER_DELETE_PERMANENTLY, PermissionType = PermissionType.ORDER_DELETE_PERMANENTLY, PermissionCatagory = PermissionCatagory.ORDER, Description = "Can permanently delete orders" },
+                    new Permission { Id = (int)PermissionType.ORDER_UPDATE_STATUS, PermissionType = PermissionType.ORDER_UPDATE_STATUS, PermissionCatagory = PermissionCatagory.ORDER, Description = "Can update order status" },
 
                     // Items
-                    new Permission { Id = (int)PermissionType.ITEM_VIEW, Name = "ITEM_VIEW", Description = "Can view items", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.ITEM_ADD, Name = "ITEM_ADD", Description = "Can create items", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.ITEM_UPDATE, Name = "ITEM_UPDATE", Description = "Can update items", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.ITEM_DELETE, Name = "ITEM_DELETE", Description = "Can delete items", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.ITEM_ADD_STOCK, Name = "ITEM_ADD_STOCK", Description = "Can add stock to items", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.ITEM_VIEW, PermissionType = PermissionType.ITEM_VIEW, PermissionCatagory = PermissionCatagory.ITEM, Description = "Can view items" },
+                    new Permission { Id = (int)PermissionType.ITEM_ADD, PermissionType = PermissionType.ITEM_ADD, PermissionCatagory = PermissionCatagory.ITEM, Description = "Can create items" },
+                    new Permission { Id = (int)PermissionType.ITEM_UPDATE, PermissionType = PermissionType.ITEM_UPDATE, PermissionCatagory = PermissionCatagory.ITEM, Description = "Can update items" },
+                    new Permission { Id = (int)PermissionType.ITEM_DELETE, PermissionType = PermissionType.ITEM_DELETE, PermissionCatagory = PermissionCatagory.ITEM, Description = "Can delete items" },
+                    new Permission { Id = (int)PermissionType.ITEM_ADD_STOCK, PermissionType = PermissionType.ITEM_ADD_STOCK, PermissionCatagory = PermissionCatagory.ITEM, Description = "Can add stock to items" },
 
                     // Users
-                    new Permission { Id = (int)PermissionType.USER_VIEW, Name = "USER_VIEW", Description = "Can view users", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.USER_CREATE, Name = "USER_CREATE", Description = "Can create users", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.USER_UPDATE, Name = "USER_UPDATE", Description = "Can update users", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.USER_DEACTIVATE, Name = "USER_DEACTIVATE", Description = "Can deactivate users", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.USER_DELETE, Name = "USER_DELETE", Description = "Can delete users", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.USER_CHANGE_PASSWORD, Name = "USER_CHANGE_PASSWORD", Description = "Can change password", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.USER_MANAGE, Name = "USER_MANAGE", Description = "Can manage user accounts and roles", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.USER_VIEW, PermissionType = PermissionType.USER_VIEW, PermissionCatagory = PermissionCatagory.USER, Description = "Can view users" },
+                    new Permission { Id = (int)PermissionType.USER_CREATE, PermissionType = PermissionType.USER_CREATE, PermissionCatagory = PermissionCatagory.USER, Description = "Can create users" },
+                    new Permission { Id = (int)PermissionType.USER_UPDATE, PermissionType = PermissionType.USER_UPDATE, PermissionCatagory = PermissionCatagory.USER, Description = "Can update users" },
+                    new Permission { Id = (int)PermissionType.USER_DEACTIVATE, PermissionType = PermissionType.USER_DEACTIVATE, PermissionCatagory = PermissionCatagory.USER, Description = "Can deactivate users" },
+                    new Permission { Id = (int)PermissionType.USER_DELETE, PermissionType = PermissionType.USER_DELETE, PermissionCatagory = PermissionCatagory.USER, Description = "Can delete users" },
+                    new Permission { Id = (int)PermissionType.USER_CHANGE_PASSWORD, PermissionType = PermissionType.USER_CHANGE_PASSWORD, PermissionCatagory = PermissionCatagory.USER, Description = "Can change password" },
+                    new Permission { Id = (int)PermissionType.USER_MANAGE, PermissionType = PermissionType.USER_MANAGE, PermissionCatagory = PermissionCatagory.USER, Description = "Can manage user accounts and roles" },
 
                     // Suppliers
-                    new Permission { Id = (int)PermissionType.SUPPLIER_VIEW, Name = "SUPPLIER_VIEW", Description = "Can view suppliers", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.SUPPLIER_CREATE, Name = "SUPPLIER_CREATE", Description = "Can create suppliers", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.SUPPLIER_UPDATE, Name = "SUPPLIER_UPDATE", Description = "Can update suppliers", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.SUPPLIER_DELETE, Name = "SUPPLIER_DELETE", Description = "Can delete suppliers", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.SUPPLIER_VIEW, PermissionType = PermissionType.SUPPLIER_VIEW, PermissionCatagory = PermissionCatagory.SUPPLIER, Description = "Can view suppliers" },
+                    new Permission { Id = (int)PermissionType.SUPPLIER_CREATE, PermissionType = PermissionType.SUPPLIER_CREATE, PermissionCatagory = PermissionCatagory.SUPPLIER, Description = "Can create suppliers" },
+                    new Permission { Id = (int)PermissionType.SUPPLIER_UPDATE, PermissionType = PermissionType.SUPPLIER_UPDATE, PermissionCatagory = PermissionCatagory.SUPPLIER, Description = "Can update suppliers" },
+                    new Permission { Id = (int)PermissionType.SUPPLIER_DELETE, PermissionType = PermissionType.SUPPLIER_DELETE, PermissionCatagory = PermissionCatagory.SUPPLIER, Description = "Can delete suppliers" },
 
                     // Contacts
-                    new Permission { Id = (int)PermissionType.CONTACT_VIEW, Name = "CONTACT_VIEW", Description = "Can view contacts", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.CONTACT_CREATE, Name = "CONTACT_CREATE", Description = "Can create contacts", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.CONTACT_UPDATE, Name = "CONTACT_UPDATE", Description = "Can update contacts", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.CONTACT_DELETE, Name = "CONTACT_DELETE", Description = "Can delete contacts", Uuid = Guid.NewGuid().ToString() },
+                    new Permission { Id = (int)PermissionType.CONTACT_VIEW, PermissionType = PermissionType.CONTACT_VIEW, PermissionCatagory = PermissionCatagory.CONTACT, Description = "Can view contacts" },
+                    new Permission { Id = (int)PermissionType.CONTACT_CREATE, PermissionType = PermissionType.CONTACT_CREATE, PermissionCatagory = PermissionCatagory.CONTACT, Description = "Can create contacts" },
+                    new Permission { Id = (int)PermissionType.CONTACT_UPDATE, PermissionType = PermissionType.CONTACT_UPDATE, PermissionCatagory = PermissionCatagory.CONTACT, Description = "Can update contacts" },
+                    new Permission { Id = (int)PermissionType.CONTACT_DELETE, PermissionType = PermissionType.CONTACT_DELETE, PermissionCatagory = PermissionCatagory.CONTACT, Description = "Can delete contacts" },
 
                     // Permissions and roles
-                    new Permission { Id = (int)PermissionType.PERMISSION_VIEW, Name = "PERMISSION_VIEW", Description = "Can view permissions", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.PERMISSION_ASSIGN, Name = "PERMISSION_ASSIGN", Description = "Can assign permissions to roles", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.ROLE_VIEW, Name = "ROLE_VIEW", Description = "Can view roles", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.ROLE_CREATE, Name = "ROLE_CREATE", Description = "Can create roles", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.ROLE_UPDATE, Name = "ROLE_UPDATE", Description = "Can update roles", Uuid = Guid.NewGuid().ToString() },
-                    new Permission { Id = (int)PermissionType.ROLE_DELETE, Name = "ROLE_DELETE", Description = "Can delete roles", Uuid = Guid.NewGuid().ToString() }
+                    new Permission { Id = (int)PermissionType.PERMISSION_VIEW, PermissionType = PermissionType.PERMISSION_VIEW, PermissionCatagory = PermissionCatagory.PERMISSION, Description = "Can view permissions" },
+                    new Permission { Id = (int)PermissionType.PERMISSION_ASSIGN, PermissionType = PermissionType.PERMISSION_ASSIGN, PermissionCatagory = PermissionCatagory.PERMISSION, Description = "Can assign permissions to roles" },
+                    new Permission { Id = (int)PermissionType.ROLE_VIEW, PermissionType = PermissionType.ROLE_VIEW, PermissionCatagory = PermissionCatagory.ROLE, Description = "Can view roles" },
+                    new Permission { Id = (int)PermissionType.ROLE_CREATE, PermissionType = PermissionType.ROLE_CREATE, PermissionCatagory = PermissionCatagory.ROLE, Description = "Can create roles" },
+                    new Permission { Id = (int)PermissionType.ROLE_UPDATE, PermissionType = PermissionType.ROLE_UPDATE, PermissionCatagory = PermissionCatagory.ROLE, Description = "Can update roles" },
+                    new Permission { Id = (int)PermissionType.ROLE_DELETE, PermissionType = PermissionType.ROLE_DELETE, PermissionCatagory = PermissionCatagory.ROLE, Description = "Can delete roles" }, 
+                   
+
+                    // Only for Admin
+                    new Permission { Id = (int)PermissionType.PERMISSION_SYSADMIN_VIEW, PermissionType = PermissionType.PERMISSION_SYSADMIN_VIEW, PermissionCatagory = PermissionCatagory.ROLE, Description = "Can view the SystemAdmin role existence/details" },
                 };
 
                 context.Permissions.AddRange(perms);
@@ -205,6 +260,118 @@ namespace pos_service.Data
                 mappings.AddRange(cashierPermIds.Select(id => new RolePermission { RoleId = 4, PermissionId = id, Uuid = Guid.NewGuid().ToString() })); //Cashier
 
                 context.RolePermissions.AddRange(mappings);
+                await context.SaveChangesAsync();
+            }
+        }
+
+        private static async Task SeedOrdersAsync(AppDbContext context)
+        {
+            if (!await context.Orders.AnyAsync())
+            {
+                // Ensure required data exists
+                var admin = await context.Users.FindAsync(1);
+                if (admin == null)
+                    throw new Exception("Admin user not found for seeding orders");
+
+                var item1 = await context.Items.FindAsync(1, 0);
+                var item2 = await context.Items.FindAsync(2, 0);
+                if (item1 == null || item2 == null)
+                    throw new Exception("Seed items not found when creating sample orders");
+
+                // Create first sample order
+                var order1Items = new List<OrderItem>
+                {
+                    new OrderItem
+                    {
+                        Uuid = Guid.NewGuid().ToString(),
+                        OriginalItemUuid = item1.Uuid,
+                        PrintName = item1.PrintName,
+                        Quantity = 2,
+                        PriceAtSale = item1.RetailPrice,
+                        MarkedPriceAtSale = item1.MarkedPrice,
+                        CostAtSale = item1.BuyingPrice,
+                        LineTotal = 2 * item1.RetailPrice
+                    },
+                    new OrderItem
+                    {
+                        Uuid = Guid.NewGuid().ToString(),
+                        OriginalItemUuid = item2.Uuid,
+                        PrintName = item2.PrintName,
+                        Quantity = 1,
+                        PriceAtSale = item2.RetailPrice,
+                        MarkedPriceAtSale = item2.MarkedPrice,
+                        CostAtSale = item2.BuyingPrice,
+                        LineTotal = 1 * item2.RetailPrice
+                    }
+                };
+
+                var gross1 = order1Items.Sum(i => i.PriceAtSale * i.Quantity);
+                var totalCost1 = order1Items.Sum(i => i.CostAtSale * i.Quantity);
+                var totalDiscount1 = gross1 - order1Items.Sum(i => i.LineTotal);
+                var net1 = gross1 - totalDiscount1;
+
+                var order1 = new Order
+                {
+                    Uuid = Guid.NewGuid().ToString(),
+                    OrderNumber = "ORD-SEED-00001",
+                    Status = OrderStatus.Paid,
+                    PaymentMethod = PaymentMethod.Cash,
+                    SaleType = SaleType.Retail,
+                    ItemCount = order1Items.Count,
+                    GrossAmount = gross1,
+                    TotalDiscount = totalDiscount1,
+                    NetAmount = net1,
+                    TotalCost = totalCost1,
+                    AmountPaid = net1,
+                    Balance = 0,
+                    CashierId = admin.Id,
+                    CustomerId = null,
+                    OrderItems = order1Items,
+                    Description = "Sample seeded order 1"
+                };
+
+                // Create second sample order
+                var order2Items = new List<OrderItem>
+                {
+                    new OrderItem
+                    {
+                        Uuid = Guid.NewGuid().ToString(),
+                        OriginalItemUuid = item2.Uuid,
+                        PrintName = item2.PrintName,
+                        Quantity = 3,
+                        PriceAtSale = item2.RetailPrice,
+                        MarkedPriceAtSale = item2.MarkedPrice,
+                        CostAtSale = item2.BuyingPrice,
+                        LineTotal = 3 * item2.RetailPrice
+                    }
+                };
+
+                var gross2 = order2Items.Sum(i => i.PriceAtSale * i.Quantity);
+                var totalCost2 = order2Items.Sum(i => i.CostAtSale * i.Quantity);
+                var totalDiscount2 = gross2 - order2Items.Sum(i => i.LineTotal);
+                var net2 = gross2 - totalDiscount2;
+
+                var order2 = new Order
+                {
+                    Uuid = Guid.NewGuid().ToString(),
+                    OrderNumber = "ORD-SEED-00002",
+                    Status = OrderStatus.Paid,
+                    PaymentMethod = PaymentMethod.Card,
+                    SaleType = SaleType.Retail,
+                    ItemCount = order2Items.Count,
+                    GrossAmount = gross2,
+                    TotalDiscount = totalDiscount2,
+                    NetAmount = net2,
+                    TotalCost = totalCost2,
+                    AmountPaid = net2,
+                    Balance = 0,
+                    CashierId = admin.Id,
+                    CustomerId = null,
+                    OrderItems = order2Items,
+                    Description = "Sample seeded order 2"
+                };
+
+                context.Orders.AddRange(order1, order2);
                 await context.SaveChangesAsync();
             }
         }

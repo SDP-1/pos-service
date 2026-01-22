@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using pos_service.Controllers.Base;
-using pos_service.Models.DTO.Contact;
+using pos_service.Models.DTO.Contacts;
 using pos_service.Models.Enums;
 using pos_service.Services;
 
@@ -13,6 +13,7 @@ namespace pos_service.Controllers
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class ContactsController : SystemBaseController
     {
         private readonly IContactService _service;

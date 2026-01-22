@@ -47,10 +47,11 @@ namespace pos_service.Models
         public decimal PriceAtSale          { get; set; }
 
         /// <summary>
-        /// The discount ratio of the item at the moment of sale.
+        /// The marked price (MRP) of the item at the moment of sale.
+        /// Stored so historical receipts keep the item's marked price.
         /// </summary>
-        [Column(TypeName = "decimal(5, 2)")]
-        public decimal DiscountRatioAtSale  { get; set; }
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal MarkedPriceAtSale  { get; set; }
 
         /// <summary>
         /// The cost of the item at the moment of sale.
@@ -59,7 +60,8 @@ namespace pos_service.Models
         public decimal CostAtSale           { get; set; }
 
         /// <summary>
-        /// The total price for this line item after discount (Quantity * Price * (1 - DiscountRatio/100)).
+        /// The total price for this line item. Service accepts the final line total
+        /// from the client and stores it here for historical accuracy.
         /// </summary>
         [Column(TypeName = "decimal(18, 2)")]
         public decimal LineTotal            { get; set; }

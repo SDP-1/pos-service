@@ -1,7 +1,8 @@
 ﻿using AutoMapper;
 using pos_service.Data;
+using System.Linq;
 using pos_service.Models;
-using pos_service.Models.DTO.Order;
+using pos_service.Models.DTO.Orders;
 using pos_service.Models.Enums;
 using pos_service.Repositories;
 
@@ -10,33 +11,34 @@ namespace pos_service.Services
     public class OrderService : IOrderService
     {
         private readonly IOrderRepository _orderRepository;
-        private readonly IItemRepository  _itemRepository;
-        private readonly IMapper          _mapper;
-        private readonly AppDbContext     _context; 
+        private readonly IItemRepository _itemRepository;
+        private readonly ISettingService _settingService;
+        private readonly IMapper _mapper;
+        private readonly AppDbContext _context;
 
-        public OrderService(IOrderRepository orderRepository, IItemRepository itemRepository, IMapper mapper, AppDbContext context)
+        public OrderService(IOrderRepository orderRepository, IItemRepository itemRepository, ISettingService settingService, IMapper mapper, AppDbContext context)
         {
             _orderRepository = orderRepository;
-            _itemRepository  = itemRepository;
-            _mapper          = mapper;
-            _context         = context;
+            _itemRepository = itemRepository;
+            _settingService = settingService;
+            _mapper = mapper;
+            _context = context;
         }
 
         public async Task<OrderResDto> CreateOrderAsync(OrderReqDto orderDto, CurrentUser currentUser)
         {
-            // Start a transaction
             using var transaction = await _context.Database.BeginTransactionAsync();
-
             try
             {
-                // Validate items and get current item data
-                var orderItems        = new List<OrderItem>();
-                decimal grossAmount   = 0;
-                decimal totalDiscount = 0;
-                decimal totalCost     = 0;
-                int itemCount         = 0;
+                var allowZeroStock = (await _settingService.GetByKeyAsync(SettingKey.AllowZeroStock, currentUser))?.SettingValue ?? false;
+                var allowOrdersForLoan = (await _settingService.GetByKeyAsync(SettingKey.AllowOrdesForsLoan, currentUser))?.SettingValue ?? false;
 
-                // Dictionary to track items and their quantities for stock reduction
+                var orderItems = new List<OrderItem>();
+                decimal grossAmount = 0m;
+                decimal totalDiscount = 0m;
+                decimal totalCost = 0m;
+                int itemCount = 0;
+
                 var itemsToUpdate = new Dictionary<Item, decimal>();
 
                 foreach (var itemDto in orderDto.OrderItems)
@@ -48,54 +50,58 @@ namespace pos_service.Services
                     if (!item.AllowsDecimalQuantities && itemDto.Quantity % 1 != 0)
                         throw new ArgumentException($"Item {item.PrintName} does not allow decimal quantities");
 
-                    // Check stock availability
-                    if (item.StockQuantity < itemDto.Quantity)
+                    if (!allowZeroStock && item.StockQuantity < itemDto.Quantity)
                         throw new ArgumentException($"Insufficient stock for item {item.PrintName}. Available: {item.StockQuantity}, Requested: {itemDto.Quantity}");
 
-                    // Add to tracking dictionary for later update
                     itemsToUpdate[item] = itemDto.Quantity;
 
-                    // Calculate prices based on sale type
-                    var basePrice = orderDto.SaleType == SaleType.Wholesale ? item.WholesalePrice : item.RetailPrice;
-                    var discountRatio = orderDto.SaleType == SaleType.Wholesale ?
-                        item.WholesaleDiscountRatio : item.RetailDiscountRatio;
-
-                    // Use provided discount ratio if specified
-                    if (itemDto.DiscountRatio > 0)
-                        discountRatio = itemDto.DiscountRatio;
-
-                    var priceAfterDiscount = basePrice * (1 - discountRatio / 100);
-                    var lineTotal = itemDto.Quantity * priceAfterDiscount;
+                    // Frontend-provided prices and totals (required)
+                    var markedPrice   = itemDto.MarkedPrice;
+                    var salePrice     = itemDto.SalePrice;
+                    var lineTotal     = itemDto.LineTotal;
+                    var discountRatio = itemDto.DiscountRatio;
 
                     var orderItem = new OrderItem
                     {
                         Uuid                    = Guid.NewGuid().ToString(),
                         OriginalItemUuid        = item.Uuid,
                         AllowsDecimalQuantities = item.AllowsDecimalQuantities,
-                        PrintName           = item.PrintName,
+                        PrintName               = itemDto.PrintName,
                         Quantity                = itemDto.Quantity,
-                        PriceAtSale             = basePrice,
-                        DiscountRatioAtSale     = discountRatio,
+                        PriceAtSale             = salePrice,
+                        MarkedPriceAtSale       = markedPrice,
                         CostAtSale              = item.BuyingPrice,
-                        LineTotal               = lineTotal,
+                        LineTotal               = lineTotal
                     };
 
                     orderItems.Add(orderItem);
 
-                    grossAmount   += itemDto.Quantity * basePrice;
-                    totalDiscount += itemDto.Quantity * basePrice * (discountRatio / 100);
-                    totalCost     += itemDto.Quantity * item.BuyingPrice;
-                    itemCount     ++;
+                    // Only accumulate cost for profit calculation; trust frontend for gross/discount/net/itemCount
+                    totalCost += itemDto.Quantity * item.BuyingPrice;
                 }
 
-                var netAmount = grossAmount - totalDiscount;
-                var balance = orderDto.AmountPaid - netAmount;
+                // Use frontend-provided (required) order-level totals and item count
+                grossAmount   = orderDto.GrossAmount;
+                totalDiscount = orderDto.TotalDiscount;
+                var netAmount = orderDto.NetAmount;
+                itemCount     = orderDto.ItemCount;
+                var balance   = orderDto.AmountPaid - netAmount;
 
-                // Create the order
+                if (balance < 0 && !allowOrdersForLoan)
+                    throw new InvalidOperationException("Negative balance not allowed. Enable setting AllowOrdesForsLoan to allow credit/loan sales.");
+
+                OrderStatus initialStatus;
+                if (balance < 0 && allowOrdersForLoan)
+                    initialStatus = OrderStatus.Loan;
+                else if (balance >= 0 && orderDto.AmountPaid >= netAmount)
+                    initialStatus = OrderStatus.Paid;
+                else
+                    initialStatus = OrderStatus.Pending;
+
                 var order = new Order
                 {
                     OrderNumber   = await _orderRepository.GenerateOrderNumberAsync(),
-                    Status        = OrderStatus.Pending,
+                    Status        = initialStatus,
                     PaymentMethod = orderDto.PaymentMethod,
                     SaleType      = orderDto.SaleType,
                     ItemCount     = itemCount,
@@ -105,30 +111,34 @@ namespace pos_service.Services
                     TotalCost     = totalCost,
                     AmountPaid    = orderDto.AmountPaid,
                     Balance       = balance,
+                    Description   = orderDto.Description,
                     CashierId     = currentUser.Id,
                     CustomerId    = orderDto.CustomerId,
-                    OrderItems    = orderItems,
+                    OrderItems    = orderItems
                 };
 
-                // Save the order first
                 var createdOrder = await _orderRepository.CreateAsync(order);
 
-                // Update item quantities
                 foreach (var (item, quantity) in itemsToUpdate)
                 {
-                    item.StockQuantity -= quantity;
+                    if (allowZeroStock)
+                    {
+                        var deduct = Math.Min(item.StockQuantity, quantity);
+                        item.StockQuantity -= deduct;
+                    }
+                    else
+                    {
+                        item.StockQuantity -= quantity;
+                    }
                     _context.Items.Update(item);
                 }
 
-                // Save all changes (order and item updates)
                 await _context.SaveChangesAsync();
-
-                // Commit transaction
                 await transaction.CommitAsync();
 
                 return _mapper.Map<OrderResDto>(createdOrder);
             }
-            catch (Exception)
+            catch
             {
                 await transaction.RollbackAsync();
                 throw;
@@ -173,6 +183,9 @@ namespace pos_service.Services
 
             try
             {
+                var allowZeroStock = (await _settingService.GetByKeyAsync(SettingKey.AllowZeroStock, currentUser))?.SettingValue ?? false;
+                var allowOrdersForLoan = (await _settingService.GetByKeyAsync(SettingKey.AllowOrdesForsLoan, currentUser))?.SettingValue ?? false;
+
                 var existingOrder = await _orderRepository.GetByIdAsync(id);
                 if (existingOrder == null)
                     throw new ArgumentException($"Order with ID {id} not found");
@@ -201,33 +214,26 @@ namespace pos_service.Services
                 decimal totalCost = 0;
                 int itemCount = 0;
 
-                // Dictionary to track items and their quantities for stock reduction
                 var itemsToUpdate = new Dictionary<Item, decimal>();
 
                 foreach (var itemDto in orderDto.OrderItems)
                 {
-                    if (itemDto.IsDeleted == true) continue;
-
                     var item = await _itemRepository.GetByUuidAsync(itemDto.ItemUuid);
                     if (item == null)
                         throw new ArgumentException($"Item with UUID {itemDto.ItemUuid} not found");
 
-                    // Check stock availability
-                    if (item.StockQuantity < itemDto.Quantity)
+                    // Check stock availability (respect AllowZeroStock setting)
+                    if (!allowZeroStock && item.StockQuantity < itemDto.Quantity)
                         throw new ArgumentException($"Insufficient stock for item {item.PrintName}. Available: {item.StockQuantity}, Requested: {itemDto.Quantity}");
 
                     // Add to tracking dictionary
                     itemsToUpdate[item] = itemDto.Quantity;
 
-                    var basePrice = orderDto.SaleType == SaleType.Wholesale ? item.WholesalePrice : item.RetailPrice;
-                    var discountRatio = orderDto.SaleType == SaleType.Wholesale ?
-                        item.WholesaleDiscountRatio : item.RetailDiscountRatio;
-
-                    if (itemDto.DiscountRatio > 0)
-                        discountRatio = itemDto.DiscountRatio;
-
-                    var priceAfterDiscount = basePrice * (1 - discountRatio / 100);
-                    var lineTotal = itemDto.Quantity * priceAfterDiscount;
+                    // Use frontend-provided prices directly
+                    var markedPrice = itemDto.MarkedPrice;
+                    var salePrice   = itemDto.SalePrice;
+                    var lineTotal   = itemDto.LineTotal;
+                    var discountRatio = itemDto.DiscountRatio;
 
                     var orderItem = new OrderItem
                     {
@@ -236,37 +242,67 @@ namespace pos_service.Services
                         AllowsDecimalQuantities = item.AllowsDecimalQuantities,
                         PrintName               = item.PrintName,
                         Quantity                = itemDto.Quantity,
-                        PriceAtSale             = basePrice,
-                        DiscountRatioAtSale     = discountRatio,
+                        PriceAtSale             = salePrice,
+                        MarkedPriceAtSale       = markedPrice,
                         CostAtSale              = item.BuyingPrice,
                         LineTotal               = lineTotal
                     };
 
                     existingOrder.OrderItems.Add(orderItem);
 
-                    grossAmount += itemDto.Quantity * basePrice;
-                    totalDiscount += itemDto.Quantity * basePrice * (discountRatio / 100);
+                    // Only accumulate cost for profit calculation; trust frontend for gross/discount/net/itemCount
                     totalCost += itemDto.Quantity * item.BuyingPrice;
-                    itemCount++;
                 }
 
                 // Update item quantities
                 foreach (var (item, quantity) in itemsToUpdate)
                 {
-                    item.StockQuantity -= quantity;
+                    if (allowZeroStock)
+                    {
+                        var deduct = Math.Min(item.StockQuantity, quantity);
+                        item.StockQuantity -= deduct;
+                    }
+                    else
+                    {
+                        item.StockQuantity -= quantity;
+                    }
+
                     _context.Items.Update(item);
                 }
 
+                // Use frontend-provided (required) order totals
+                grossAmount   = orderDto.GrossAmount;
+                totalDiscount = orderDto.TotalDiscount;
+                var netAmount = orderDto.NetAmount;
+
                 // Update order totals
                 existingOrder.PaymentMethod = orderDto.PaymentMethod;
-                existingOrder.SaleType = orderDto.SaleType;
-                existingOrder.ItemCount = itemCount;
-                existingOrder.GrossAmount = grossAmount;
+                existingOrder.SaleType      = orderDto.SaleType;
+                existingOrder.ItemCount     = itemCount;
+                existingOrder.GrossAmount   = grossAmount;
                 existingOrder.TotalDiscount = totalDiscount;
-                existingOrder.NetAmount = grossAmount - totalDiscount;
-                existingOrder.TotalCost = totalCost;
-                existingOrder.AmountPaid = orderDto.AmountPaid;
-                existingOrder.Balance = orderDto.AmountPaid - (grossAmount - totalDiscount);
+                existingOrder.NetAmount     = netAmount;
+                existingOrder.TotalCost     = totalCost;
+                existingOrder.AmountPaid    = orderDto.AmountPaid;
+                existingOrder.Balance       = orderDto.AmountPaid - netAmount;
+
+                // Enforce loan setting on update
+                if (existingOrder.Balance < 0 && !allowOrdersForLoan)
+                    throw new InvalidOperationException("Negative balance not allowed. Enable setting AllowOrdesForsLoan to allow credit/loan sales.");
+
+                // Set status: Loan for negative balance when allowed, Paid when fully settled, otherwise Pending
+                if (existingOrder.Balance < 0 && allowOrdersForLoan)
+                {
+                    existingOrder.Status = OrderStatus.Loan;
+                }
+                else if (existingOrder.Balance >= 0 && existingOrder.AmountPaid >= existingOrder.NetAmount)
+                {
+                    existingOrder.Status = OrderStatus.Paid;
+                }
+                else
+                {
+                    existingOrder.Status = OrderStatus.Pending;
+                }
                 existingOrder.CustomerId = orderDto.CustomerId;
 
                 var updatedOrder = await _orderRepository.UpdateAsync(existingOrder);
@@ -293,17 +329,23 @@ namespace pos_service.Services
             {
                 var order = await _orderRepository.GetByIdAsync(id, isActiveOnly);
                 if (order == null) return false;
-
-                // Restore quantities from order items
+                // Restore quantities from order items only when order is active and we care about stock
                 if (order.IsActive)
                 {
+                    var allowZeroStockSetting = await _settingService.GetByKeyAsync(SettingKey.AllowZeroStock, currentUser);
+                    var allowZeroStock = allowZeroStockSetting?.SettingValue ?? false;
+
                     foreach (var orderItem in order.OrderItems)
                     {
                         var item = await _itemRepository.GetByUuidAsync(orderItem.OriginalItemUuid);
                         if (item != null)
                         {
-                            item.StockQuantity += orderItem.Quantity;
-                            _context.Items.Update(item);
+                            // If AllowZeroStock is enabled, do not increase stock when deleting orders (since we may not have reduced it previously)
+                            if (!allowZeroStock)
+                            {
+                                item.StockQuantity += orderItem.Quantity;
+                                _context.Items.Update(item);
+                            }
                         }
                     }
 
@@ -333,6 +375,9 @@ namespace pos_service.Services
 
             try
             {
+                var allowZeroStockSetting = await _settingService.GetByKeyAsync(SettingKey.AllowZeroStock, currentUser);
+                var allowZeroStock = allowZeroStockSetting?.SettingValue ?? false;
+
                 var order = await _orderRepository.GetByIdAsync(id);
                 if (order == null)
                     throw new ArgumentException($"Order with ID {id} not found");
@@ -346,8 +391,12 @@ namespace pos_service.Services
                         var item = await _itemRepository.GetByUuidAsync(orderItem.OriginalItemUuid);
                         if (item != null)
                         {
-                            item.StockQuantity += orderItem.Quantity;
-                            _context.Items.Update(item);
+                            // Only restore stock when we had previously deducted it (i.e. AllowZeroStock disabled)
+                            if (!allowZeroStock)
+                            {
+                                item.StockQuantity += orderItem.Quantity;
+                                _context.Items.Update(item);
+                            }
                         }
                     }
                 }
@@ -357,15 +406,28 @@ namespace pos_service.Services
                     foreach (var orderItem in order.OrderItems)
                     {
                         var item = await _itemRepository.GetByUuidAsync(orderItem.OriginalItemUuid);
-                        if (item != null && item.StockQuantity < orderItem.Quantity)
+                        if (!allowZeroStock)
                         {
-                            throw new InvalidOperationException($"Insufficient stock for item {item.PrintName}. Available: {item.StockQuantity}, Required: {orderItem.Quantity}");
-                        }
+                            if (item != null && item.StockQuantity < orderItem.Quantity)
+                            {
+                                throw new InvalidOperationException($"Insufficient stock for item {item.PrintName}. Available: {item.StockQuantity}, Required: {orderItem.Quantity}");
+                            }
 
-                        if (item != null)
+                            if (item != null)
+                            {
+                                item.StockQuantity -= orderItem.Quantity;
+                                _context.Items.Update(item);
+                            }
+                        }
+                        else
                         {
-                            item.StockQuantity -= orderItem.Quantity;
-                            _context.Items.Update(item);
+                            // allowZeroStock: only deduct available quantity, never go below zero
+                            if (item != null)
+                            {
+                                var deduct = Math.Min(item.StockQuantity, orderItem.Quantity);
+                                item.StockQuantity -= deduct;
+                                _context.Items.Update(item);
+                            }
                         }
                     }
                 }

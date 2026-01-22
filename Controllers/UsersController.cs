@@ -1,10 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using pos_service.Controllers.Base;
-using pos_service.Models;
-using pos_service.Models.DTO.User;
+using pos_service.Models.DTO.Users;
 using pos_service.Services;
-using System.Security.Claims;
 
 namespace pos_service.Controllers
 {
@@ -14,9 +12,11 @@ namespace pos_service.Controllers
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class UsersController : SystemBaseController
     {
         private readonly IUserService _userService;
+        private readonly ICurrentUserService _currentUserService;
 
         /// <summary>
         /// Initializes a new instance of the UsersController class.
@@ -25,6 +25,7 @@ namespace pos_service.Controllers
         public UsersController(IUserService userService, ICurrentUserService currentUserService) : base(currentUserService)
         {
             _userService = userService;
+            _currentUserService = currentUserService;
         }
 
         /// <summary>
@@ -43,6 +44,17 @@ namespace pos_service.Controllers
             }
             // Typically return an object containing the User details and the Token
             return Ok(new { User = result.User, Token = result.Token });
+        }
+
+        /// <summary>
+        /// Logs out the current user by invalidating their cached data.
+        /// Note: JWTs are stateless so this only clears server-side cache entries.
+        /// </summary>
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            await _userService.LogoutAsync(_currentUser.Uuid);
+            return Ok("Logged out");
         }
 
         /// <summary>
@@ -109,7 +121,7 @@ namespace pos_service.Controllers
         /// <param name="id">The unique identifier of the user to update.</param>
         /// <param name="userDto">The user data transfer object containing updated information.</param>
         /// <returns>The updated user details if successful, otherwise returns NotFound.</returns>
-        [HttpPut("{id:int}")]
+        [HttpPatch("{id:int}")]
         public async Task<IActionResult> UpdateUser(int id, [FromBody] UserReqDto userDto)
         {
             try

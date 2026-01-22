@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using pos_service.Data;
 using pos_service.Models;
+using pos_service.Models.Enums;
 
 namespace pos_service.Repositories.Permissions
 {
@@ -29,10 +30,26 @@ namespace pos_service.Repositories.Permissions
 
         public async Task<bool> AddPermissionToRoleAsync(int roleId, string permissionName)
         {
-            var perm = await _context.Permissions.SingleOrDefaultAsync(p => p.Name == permissionName);
+            if (!Enum.TryParse<PermissionType>(permissionName, true, out var permType))
+                throw new ArgumentException("Invalid permission type", nameof(permissionName));
+
+            var perm = await _context.Permissions.SingleOrDefaultAsync(p => p.PermissionType == permType);
             if (perm == null)
             {
-                perm = new Permission { Name = permissionName, Uuid = Guid.NewGuid().ToString() };
+                var val = (int)permType;
+                var cat = val switch
+                {
+                    >= 100 and < 200 => PermissionCatagory.ORDER,
+                    >= 200 and < 300 => PermissionCatagory.ITEM,
+                    >= 300 and < 400 => PermissionCatagory.USER,
+                    >= 400 and < 500 => PermissionCatagory.SUPPLIER,
+                    >= 500 and < 600 => PermissionCatagory.CONTACT,
+                    >= 600 and < 650 => PermissionCatagory.PERMISSION,
+                    >= 650 and < 700 => PermissionCatagory.ROLE,
+                    _ => PermissionCatagory.DEFAULT
+                };
+
+                perm = new Permission { Id = val, PermissionType = permType, PermissionCatagory = cat };
                 _context.Permissions.Add(perm);
                 await _context.SaveChangesAsync();
             }
@@ -48,7 +65,10 @@ namespace pos_service.Repositories.Permissions
 
         public async Task<bool> RemovePermissionFromRoleAsync(int roleId, string permissionName)
         {
-            var perm = await _context.Permissions.SingleOrDefaultAsync(p => p.Name == permissionName);
+            if (!Enum.TryParse<PermissionType>(permissionName, true, out var permType))
+                return false;
+
+            var perm = await _context.Permissions.SingleOrDefaultAsync(p => p.PermissionType == permType);
             if (perm == null)
                 return false;
 

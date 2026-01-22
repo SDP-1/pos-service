@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using pos_service.Controllers.Base;
 using pos_service.Models;
-using pos_service.Models.DTO.Order;
+using pos_service.Models.DTO.Orders;
 using pos_service.Models.Enums;
 using pos_service.Services;
 using pos_service.Authorization;
@@ -39,19 +39,8 @@ namespace pos_service.Controllers
         [Permission(PermissionType.ORDER_ADD)]
         public async Task<ActionResult<OrderResDto>> CreateOrder([FromBody] OrderReqDto orderDto)
         {
-            try
-            {
-                var order = await _orderService.CreateOrderAsync(orderDto, _currentUser);
-                return CreatedAtAction(nameof(GetOrder), new { id = order.Id }, order);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+           var order = await _orderService.CreateOrderAsync(orderDto, _currentUser);
+           return CreatedAtAction(nameof(GetOrder), new { id = order.Id }, order);
         }
 
         /// <summary>
@@ -63,18 +52,11 @@ namespace pos_service.Controllers
         [Permission(PermissionType.ORDER_VIEW)]
         public async Task<ActionResult<OrderResDto>> GetOrder(int id)
         {
-            try
-            {
-                var order = await _orderService.GetOrderAsync(id, _currentUser);
-                if (order == null)
-                    return Ok("Order not found");
+           var order = await _orderService.GetOrderAsync(id, _currentUser);
+           if (order == null)
+               return Ok("Order not found");
 
-                return Ok(order);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+           return Ok(order);
         }
 
         /// <summary>
@@ -86,18 +68,11 @@ namespace pos_service.Controllers
         [Permission(PermissionType.ORDER_VIEW)]
         public async Task<ActionResult<OrderResDto>> GetOrderByUuid(string uuid)
         {
-            try
-            {
-                var order = await _orderService.GetOrderByUuidAsync(uuid, _currentUser);
-                if (order == null)
-                    return Ok("Order not found");
+           var order = await _orderService.GetOrderByUuidAsync(uuid, _currentUser);
+           if (order == null)
+               return Ok("Order not found");
 
-                return Ok(order);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+           return Ok(order);
         }
 
         /// <summary>
@@ -109,18 +84,11 @@ namespace pos_service.Controllers
         [Permission(PermissionType.ORDER_VIEW)]
         public async Task<ActionResult<OrderResDto>> GetOrderByOrderNumber(string number)
         {
-            try
-            {
-                var order = await _orderService.GetOrderByOrderNumberAsync(number, _currentUser);
-                if (order == null)
-                    return Ok("Order not found");
-
-                return Ok(order);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            var order = await _orderService.GetOrderByOrderNumberAsync(number, _currentUser);
+            if (order == null)
+                return Ok("Order not found");
+           
+            return Ok(order);
         }
 
         /// <summary>
@@ -132,15 +100,8 @@ namespace pos_service.Controllers
         [Permission(PermissionType.ORDER_VIEW)]
         public async Task<ActionResult<OrderListResDto>> GetOrders([FromQuery] OrderQueryDto query)
         {
-            try
-            {
-                var orders = await _orderService.GetOrdersAsync(query, _currentUser);
-                return Ok(orders);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            var orders = await _orderService.GetOrdersAsync(query, _currentUser);
+            return Ok(orders);
         }
 
         /// <summary>
@@ -153,23 +114,8 @@ namespace pos_service.Controllers
         [Permission(PermissionType.ORDER_UPDATE)]
         public async Task<ActionResult<OrderResDto>> UpdateOrder(int id, [FromBody] OrderReqDto orderDto)
         {
-            try
-            {
-                var order = await _orderService.UpdateOrderAsync(id, orderDto, _currentUser);
-                return Ok(order);
-            }
-            catch (ArgumentException ex)
-            {
-                return NotFound(ex.Message);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+           var order = await _orderService.UpdateOrderAsync(id, orderDto, _currentUser);
+           return Ok(order);
         }
 
         /// <summary>
@@ -181,23 +127,14 @@ namespace pos_service.Controllers
         [Permission(PermissionType.ORDER_DELETE)]
         public async Task<ActionResult> DeleteOrder(int id, bool permanent = false)
         {
-            try
-            {
-                if (permanent)
-                {
-                    try { EnsurePermission(PermissionType.ORDER_DELETE_PERMANENTLY); } catch (UnauthorizedAccessException) { return Forbid(); }
-                }
+            if (permanent)
+                EnsurePermission(PermissionType.ORDER_DELETE_PERMANENTLY);
 
-                var result = await _orderService.DeleteOrderAsync(id, _currentUser, permanent);
-                if (!result)
-                    return NotFound("Order not found");
+            var result = await _orderService.DeleteOrderAsync(id, _currentUser, permanent);
+            if (!result)
+                return NotFound("Order not found");
 
-                return Ok("Successfully deleted");
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            return Ok("Successfully deleted");
         }
 
         /// <summary>
@@ -213,19 +150,8 @@ namespace pos_service.Controllers
             if (status == OrderStatus.Default)
                 return BadRequest("status is required.");
 
-            try
-            {
                 var order = await _orderService.UpdateOrderStatusAsync(id, status, _currentUser);
                 return Ok(order);
-            }
-            catch (ArgumentException ex)
-            {
-                return NotFound(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
         }
     }
 }

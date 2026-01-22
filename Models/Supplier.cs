@@ -23,9 +23,10 @@ namespace pos_service.Models
         public string? Address                       { get; set; }
 
         /// <summary>
-        /// A collection of items provided by this supplier.
+        /// A collection of ItemSupplier join entities for this supplier.
+        /// Use the `ItemSupplier` entity when you need additional columns on the relationship.
         /// </summary>
-        public virtual ICollection<Item> Items       { get; set; } = new List<Item>();
+        public virtual ICollection<ItemSupplier> ItemSuppliers { get; set; } = new List<ItemSupplier>();
 
         /// <summary>
         /// A collection of contacts associated with this supplier.

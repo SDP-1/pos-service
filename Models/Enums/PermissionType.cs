@@ -1,50 +1,73 @@
 namespace pos_service.Models.Enums
 {
-    // Permission enum values MUST match Permission.Id values in the database.
+    // PermissionCatagory enum values start from 1
+    public enum PermissionCatagory  //This set automaticaly -> AddPermissionToRoleAsync
+    {
+        DEFAULT    = 0,
+
+        ORDER      = 1,
+        ITEM       = 2,
+        USER       = 3,
+        SUPPLIER   = 4,
+        CONTACT    = 5,
+        PERMISSION = 6,
+        ROLE       = 7
+    }
+
+    // PermissionType enum values MUST match Permission.Id values in the database.
+    // Start values at 100 as requested.
     public enum PermissionType
     {
-        // Orders
-        ORDER_VIEW               = 1,
-        ORDER_ADD                = 2,
-        ORDER_UPDATE             = 3,
-        ORDER_DELETE             = 4,
-        ORDER_DELETE_PERMANENTLY = 5,
-        ORDER_UPDATE_STATUS      = 6,
+        DEFAULT                  = 0,
 
-        // Items
-        ITEM_VIEW                = 10,
-        ITEM_ADD                 = 11,
-        ITEM_UPDATE              = 12,
-        ITEM_DELETE              = 13,
-        ITEM_ADD_STOCK           = 14,
+        // Orders (start at 100)
+        ORDER_VIEW               = 100,
+        ORDER_ADD                = 101,
+        ORDER_UPDATE             = 102,
+        ORDER_DELETE             = 103,
+        ORDER_DELETE_PERMANENTLY = 104,
+        ORDER_UPDATE_STATUS      = 105,
 
-        // Users
-        USER_VIEW                = 20,
-        USER_CREATE              = 21,
-        USER_UPDATE              = 22,
-        USER_DEACTIVATE          = 23,
-        USER_DELETE              = 24,
-        USER_CHANGE_PASSWORD     = 25,
-        USER_MANAGE              = 26,
+        // Items (start at 200)
+        ITEM_VIEW                = 200,
+        ITEM_ADD                 = 201,
+        ITEM_UPDATE              = 202,
+        ITEM_DELETE              = 203,
+        ITEM_ADD_STOCK           = 204,
 
-        // Suppliers
-        SUPPLIER_VIEW            = 30,
-        SUPPLIER_CREATE          = 31,
-        SUPPLIER_UPDATE          = 32,
-        SUPPLIER_DELETE          = 33,
+        // Users (start at 300)
+        USER_VIEW                = 300,
+        USER_CREATE              = 301,
+        USER_UPDATE              = 302,
+        USER_DEACTIVATE          = 303,
+        USER_DELETE              = 304,
+        USER_CHANGE_PASSWORD     = 305,
+        USER_MANAGE              = 306,
 
-        // Contacts
-        CONTACT_VIEW             = 40,
-        CONTACT_CREATE           = 41,
-        CONTACT_UPDATE           = 42,
-        CONTACT_DELETE           = 43,
+        // Suppliers (start at 400)
+        SUPPLIER_VIEW            = 400,
+        SUPPLIER_CREATE          = 401,
+        SUPPLIER_UPDATE          = 402,
+        SUPPLIER_DELETE          = 403,
 
-        // Permissions & Roles
-        PERMISSION_VIEW          = 50,
-        PERMISSION_ASSIGN        = 51,
-        ROLE_VIEW                = 60,
-        ROLE_CREATE              = 61,
-        ROLE_UPDATE              = 62,
-        ROLE_DELETE              = 63
+        // Contacts (start at 500)
+        CONTACT_VIEW             = 500,
+        CONTACT_CREATE           = 501,
+        CONTACT_UPDATE           = 502,
+        CONTACT_DELETE           = 503,
+
+        // Permissions (start at 600)
+        PERMISSION_VIEW          = 600,
+        PERMISSION_ASSIGN        = 601,
+
+        //Roles (start at 650)
+        ROLE_VIEW                = 650,
+        ROLE_CREATE              = 651,
+        ROLE_UPDATE              = 652,
+        ROLE_DELETE              = 653,
+
+        // Only for SYS Admin (start at 1000 - 1050)
+        // Special permission to allow viewing existence/details of the SystemAdmin role (id=1)
+        PERMISSION_SYSADMIN_VIEW = 1000,
     }
 }

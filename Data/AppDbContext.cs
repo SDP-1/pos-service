@@ -1,11 +1,8 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using pos_service.Models;
 using pos_service.Models.Audit;
-using pos_service.Security;
-using pos_service.Services;
-using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
+using System.Linq;
 
 namespace pos_service.Data
 {
@@ -27,11 +24,13 @@ namespace pos_service.Data
         public DbSet<Customer> Customers   { get; set; }
         public DbSet<Supplier> Suppliers   { get; set; }
         public DbSet<Item> Items           { get; set; }
+        public DbSet<ItemSupplier> ItemSuppliers { get; set; }
         public DbSet<Order> Orders         { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
         public DbSet<Permission> Permissions { get; set; }
         public DbSet<RolePermission> RolePermissions { get; set; }
         public DbSet<Role> Roles { get; set; }
+        public DbSet<Setting> Settings { get; set; }
 
         /// <summary>
         /// This method is used to configure the database model using the Fluent API.
@@ -40,6 +39,48 @@ namespace pos_service.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // Add database-side defaults for IAuditable timestamps so the database will populate
+            // CreatedAt and UpdatedAt when not supplied by the application.
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes()
+                         .Where(t => t.ClrType != null && typeof(IAuditable).IsAssignableFrom(t.ClrType)))
+            {
+                var entity = modelBuilder.Entity(entityType.ClrType);
+
+                // Let the database populate CreatedAt and UpdatedAt using CURRENT_TIMESTAMP.
+                // EF will treat these as store-generated values so DB defaults and ON UPDATE apply.
+                entity
+                    .Property<DateTime>(nameof(IAuditable.CreatedAt))
+                    .HasColumnType("datetime(6)")
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP(6)")
+                    .ValueGeneratedOnAdd();
+
+                entity
+                    .Property<DateTime?>(nameof(IAuditable.UpdatedAt))
+                    .HasColumnType("datetime(6)")
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)")
+                    .ValueGeneratedOnAddOrUpdate();
+
+                // CreatedBy is optional and has no DB default; application may set it or leave null.
+                entity
+                    .Property<string?>(nameof(IAuditable.CreatedBy))
+                    .HasColumnType("varchar(255)")
+                    .HasMaxLength(255)
+                    .IsRequired(false);
+
+                // UpdatedBy is optional and has no DB default; application may set it or leave null.
+                entity
+                    .Property<string?>(nameof(IAuditable.UpdatedBy))
+                    .HasColumnType("varchar(255)")
+                    .HasMaxLength(255);
+
+                // IsActive defaults to true
+                entity
+                    .Property<bool>(nameof(IAuditable.IsActive))
+                    .HasColumnType("tinyint(1)")
+                    .HasDefaultValue(true)
+                    .ValueGeneratedOnAdd();
+            }
 
             // --- Role configuration ---
             modelBuilder.Entity<Role>(entity =>
@@ -52,9 +93,12 @@ namespace pos_service.Data
             // --- Permission configuration ---
             modelBuilder.Entity<Permission>(entity =>
             {
-                entity.HasIndex(p => p.Name).IsUnique();
+                // index on PermissionType to ensure uniqueness of enum mapping
+                entity.HasIndex(p => p.PermissionType).IsUnique();
 
-                entity.HasAlternateKey(p => p.Uuid);
+                // store enums as ints
+                entity.Property(p => p.PermissionType).HasConversion<string>();
+                entity.Property(p => p.PermissionCatagory).HasConversion<string>();
             });
 
             modelBuilder.Entity<RolePermission>(entity =>
@@ -65,7 +109,7 @@ namespace pos_service.Data
                       .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasOne(rp => rp.Role)
-                      .WithMany(r => r.RolePermissions)
+                      .WithMany()
                       .HasForeignKey(rp => rp.RoleId)
                       .OnDelete(DeleteBehavior.Cascade);
 
@@ -127,13 +171,43 @@ namespace pos_service.Data
             {
                 // Define the composite primary key using both Id and SubId.
                 entity.HasKey(i => new { i.Id, i.SubId });
-
-                // Configure the many-to-many relationship between Item and Supplier.
-                // EF Core will create a junction table automatically.
-                entity.HasMany(i => i.Suppliers)
-                      .WithMany(s => s.Items);
+                // Configure one-to-many to the explicit join entity ItemSupplier.
+                entity.HasMany(i => i.ItemSuppliers)
+                      .WithOne(isu => isu.Item)
+                      .HasForeignKey(isu => new { isu.ItemsId, isu.ItemsSubId })
+                      .IsRequired()
+                      .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasAlternateKey(i => i.Uuid);   // creates unique constraint
+            });
+
+            // --- Settings Configuration ---
+            modelBuilder.Entity<Setting>(entity =>
+            {
+                entity.HasIndex(s => s.SettingKey).IsUnique();
+                entity.Property(s => s.SettingKey).HasConversion<string>();
+                entity.Property(s => s.Description).HasMaxLength(500);
+                entity.HasAlternateKey(s => s.Uuid);
+            });
+
+            // --- ItemSupplier Configuration ---
+            modelBuilder.Entity<ItemSupplier>(entity =>
+            {
+                entity.HasKey(e => new { e.SuppliersId, e.ItemsId, e.ItemsSubId });
+
+                entity.HasOne(e => e.Supplier)
+                      .WithMany(s => s.ItemSuppliers)
+                      .HasForeignKey(e => e.SuppliersId)
+                      .IsRequired()
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Item)
+                      .WithMany(i => i.ItemSuppliers)
+                      .HasForeignKey(e => new { e.ItemsId, e.ItemsSubId })
+                      .IsRequired()
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasAlternateKey(e => e.Uuid);
             });
 
             modelBuilder.Entity<Contact>(entity =>
@@ -151,6 +225,7 @@ namespace pos_service.Data
                 // Convert enums to strings for readability in the database.
                 entity.Property(o => o.Status).HasConversion<string>();
                 entity.Property(o => o.PaymentMethod).HasConversion<string>();
+                entity.Property(o => o.SaleType).HasConversion<string>();
 
                 // Configure the relationship to the User (Cashier).
                 entity.HasOne(o => o.Cashier)
@@ -222,13 +297,13 @@ namespace pos_service.Data
                     // ignore and use SYSTEM
                 }
 
-                auditableEntity.UpdatedAt = DateTime.UtcNow;
+                // Do not set CreatedAt/UpdatedAt in application when DB is configured to generate them
+                // Database will populate CreatedAt on insert and UpdatedAt on update via CURRENT_TIMESTAMP.
                 auditableEntity.UpdatedBy = userUuid;
 
                 if (entityEntry.State == EntityState.Added)
                 {
-                    if(auditableEntity.Uuid == null) auditableEntity.Uuid = Guid.NewGuid().ToString();
-                    auditableEntity.CreatedAt = DateTime.UtcNow;
+                    if (auditableEntity.Uuid == null) auditableEntity.Uuid = Guid.NewGuid().ToString();
                     auditableEntity.CreatedBy = userUuid;
                 }
             }

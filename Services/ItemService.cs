@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using pos_service.Models;
-using pos_service.Models.DTO.Item;
+using pos_service.Models.DTO.Items;
 using pos_service.Repositories;
 
 namespace pos_service.Services
@@ -56,15 +56,43 @@ namespace pos_service.Services
         /// <returns>The newly created item details if successful, otherwise null.</returns>
         public async Task<ItemResDto?> CreateItemAsync(ItemReqDto itemDto, CurrentUser currentUser)
         {
-            if (await _itemRepository.ItemExistsAsync(itemDto.Id, itemDto.SubId))
+            // Determine Id/SubId values. If not supplied, assign next available values.
+            int idToUse;
+            int subIdToUse;
+
+            if (itemDto.Id.HasValue && itemDto.SubId.HasValue)
             {
-                // An item with this composite key already exists.
-                return null;
+                idToUse = itemDto.Id.Value;
+                subIdToUse = itemDto.SubId.Value;
+
+                if (await _itemRepository.ItemExistsAsync(idToUse, subIdToUse))
+                {
+                    return null; // already exists
+                }
+            }
+            else if (itemDto.Id.HasValue && !itemDto.SubId.HasValue)
+            {
+                idToUse = itemDto.Id.Value;
+                // compute next sub id for this main id
+                subIdToUse = await _itemRepository.GetNextSubIdAsync(idToUse);
+
+                if (await _itemRepository.ItemExistsAsync(idToUse, subIdToUse))
+                {
+                    return null; // unlikely but safe
+                }
+            }
+            else
+            {
+                // No Id provided. Get next main id and start subId at 0
+                idToUse = await _itemRepository.GetNextMainIdAsync();
+                subIdToUse = 0;
             }
 
             var item = _mapper.Map<Item>(itemDto);
+            item.Id = idToUse;
+            item.SubId = subIdToUse;
 
-            // Handle Supplier Linking
+            // Handle Supplier Linking using ItemSupplier join entities
             if (itemDto.SupplierIds != null && itemDto.SupplierIds.Any())
             {
                 foreach (var supplierId in itemDto.SupplierIds)
@@ -72,7 +100,15 @@ namespace pos_service.Services
                     var supplier = await _supplierRepository.GetByIdAsync(supplierId);
                     if (supplier != null)
                     {
-                        item.Suppliers.Add(supplier);
+                        item.ItemSuppliers.Add(new ItemSupplier
+                        {
+                            Uuid = Guid.NewGuid().ToString(),
+                            SuppliersId = supplier.Id,
+                            ItemsId = item.Id,
+                            ItemsSubId = item.SubId,
+                            Supplier = supplier,
+                            Item = item
+                        });
                     }
                 }
             }
@@ -102,8 +138,8 @@ namespace pos_service.Services
             // Map flat properties from DTO to entity
             _mapper.Map(itemDto, itemToUpdate);
 
-            // Handle Supplier Linking
-            itemToUpdate.Suppliers.Clear(); // Clear existing links
+            // Handle Supplier Linking using ItemSupplier join entities
+            itemToUpdate.ItemSuppliers.Clear(); // Clear existing links
             if (itemDto.SupplierIds != null && itemDto.SupplierIds.Any())
             {
                 foreach (var supplierId in itemDto.SupplierIds)
@@ -111,7 +147,15 @@ namespace pos_service.Services
                     var supplier = await _supplierRepository.GetByIdAsync(supplierId);
                     if (supplier != null)
                     {
-                        itemToUpdate.Suppliers.Add(supplier);
+                        itemToUpdate.ItemSuppliers.Add(new ItemSupplier
+                        {
+                            Uuid = Guid.NewGuid().ToString(),
+                            SuppliersId = supplier.Id,
+                            ItemsId = itemToUpdate.Id,
+                            ItemsSubId = itemToUpdate.SubId,
+                            Supplier = supplier,
+                            Item = itemToUpdate
+                        });
                     }
                 }
             }
@@ -269,6 +313,15 @@ namespace pos_service.Services
         public async Task<IEnumerable<ItemResDto>> GetItemsBySupplierIdAsync(int supplierId, CurrentUser currentUser)
         {
             var items = await _itemRepository.GetBySupplierIdAsync(supplierId);
+            return _mapper.Map<IEnumerable<ItemResDto>>(items);
+        }
+
+        /// <summary>
+        /// Search items by term matching name, print name, barcode or uuid.
+        /// </summary>
+        public async Task<IEnumerable<ItemResDto>> SearchItemsAsync(string searchTerm, CurrentUser currentUser)
+        {
+            var items = await _itemRepository.GetBySearchAsync(searchTerm);
             return _mapper.Map<IEnumerable<ItemResDto>>(items);
         }
     }

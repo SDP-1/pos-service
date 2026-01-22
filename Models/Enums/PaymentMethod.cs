@@ -3,6 +3,7 @@
     public enum PaymentMethod
     {
         Default      = 0,
+
         Cash         = 1,
         Card         = 2,
         MobileWallet = 3,

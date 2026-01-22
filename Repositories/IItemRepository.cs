@@ -81,5 +81,23 @@ namespace pos_service.Repositories
         /// <param name="supplierId">The unique identifier of the supplier.</param>
         /// <returns>A list of item entities associated with the specified supplier.</returns>
         Task<IEnumerable<Item>> GetBySupplierIdAsync(int supplierId);
+
+        /// <summary>
+        /// Searches items by a term matching name, print name, barcode or uuid.
+        /// If searchTerm is null or empty returns all items.
+        /// </summary>
+        Task<IEnumerable<Item>> GetBySearchAsync(string searchTerm);
+
+        /// <summary>
+        /// Returns the next available main Id to use when creating a new item.
+        /// Typically returns max(Id) + 1 or 1 if no items exist.
+        /// </summary>
+        Task<int> GetNextMainIdAsync();
+
+        /// <summary>
+        /// Returns the next available SubId for the given main Id.
+        /// Typically returns max(SubId) + 1 or 0 if no variants exist.
+        /// </summary>
+        Task<int> GetNextSubIdAsync(int mainId);
     }
 }

@@ -1,5 +1,5 @@
 ﻿using pos_service.Models;
-using pos_service.Models.DTO.Contact;
+using pos_service.Models.DTO.Contacts;
 
 namespace pos_service.Services
 {

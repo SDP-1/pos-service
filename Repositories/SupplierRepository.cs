@@ -15,12 +15,23 @@ namespace pos_service.Repositories
                //return await _context.Suppliers.ToListAsync();
                 return await _context.Suppliers
                     .Include(s => s.Contacts)
+                    .Include(s => s.ItemSuppliers)
+                        .ThenInclude(isu => isu.Item)
                     .ToListAsync();
         }
         public async Task<Supplier?> GetByIdWithDetailsAsync(int id)
         {
             return await _context.Suppliers
-                .Include(s => s.Items)
+                .Include(s => s.ItemSuppliers)
+                    .ThenInclude(isu => isu.Item)
+                .Include(s => s.Contacts)
+                .FirstOrDefaultAsync(s => s.Id == id);
+        }
+        public async Task<Supplier?> GetSupplierWithItemsAsync(int id)
+        {
+            return await _context.Suppliers
+                .Include(s => s.ItemSuppliers)
+                    .ThenInclude(isu => isu.Item)
                 .FirstOrDefaultAsync(s => s.Id == id);
         }
         public async Task<Supplier> AddAsync(Supplier supplier)

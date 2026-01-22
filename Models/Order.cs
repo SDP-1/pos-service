@@ -22,7 +22,7 @@ namespace pos_service.Models
         /// <summary>
         /// True if it's a retail sale, false if it's a wholesale transaction.
         /// </summary>
-        public SaleType SaleType                         { get; set; } = SaleType.Reatail;
+        public SaleType SaleType                         { get; set; } = SaleType.Retail;
 
         /// <summary>
         /// The total number of unique items in the order.
@@ -84,6 +84,12 @@ namespace pos_service.Models
         /// A collection of order irem associated with this order.
         /// </summary>
         public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+
+        /// <summary>
+        /// Optional description or notes for the order.
+        /// Default is null.
+        /// </summary>
+        public string? Description                       { get; set; } = null;
 
         // --- Implementation of IAuditable ---
         public string Uuid                               { get; set; }

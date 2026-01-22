@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using pos_service.Controllers.Base;
-using pos_service.Models.DTO.Supplier;
+using pos_service.Models.DTO.Suppliers;
 using pos_service.Models.Enums;
 using pos_service.Services;
 
@@ -12,6 +12,7 @@ namespace pos_service.Controllers
     /// Provides CRUD operations for supplier information with administrative access control.
     /// </summary>
     [Route("api/[controller]")]
+    [Authorize]
     public class SuppliersController : SystemBaseController
     {
         private readonly ISupplierService _service;
@@ -42,6 +43,16 @@ namespace pos_service.Controllers
         public async Task<IActionResult> GetById(int id)
         {
             var supplier = await _service.GetSupplierByIdAsync(id, _currentUser);
+            return supplier == null ? NotFound() : Ok(supplier);
+        }
+
+        /// <summary>
+        /// Retrieves a supplier including the list of supplied items.
+        /// </summary>
+        [HttpGet("{id}/items")]
+        public async Task<IActionResult> GetSupplierWithItems(int id)
+        {
+            var supplier = await _service.GetSupplierWithItemsAsync(id, _currentUser);
             return supplier == null ? NotFound() : Ok(supplier);
         }
 

@@ -3,7 +3,7 @@
     public enum SaleType
     {
         Default    = 0,
-        Reatail    = 1,
+        Retail     = 1,
         Wholesale  = 2
     }
 }

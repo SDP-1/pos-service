@@ -1,15 +1,16 @@
-using System.Net.Sockets;
-using System.Drawing.Printing;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.ComponentModel.DataAnnotations;
+using pos_service.Models;
 using pos_service.Models.DTO.Orders;
 using pos_service.Services;
-using pos_service.Models;
+using System.Drawing.Printing;
+using System.Net.Sockets;
 
 namespace pos_service.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class PrintController : ControllerBase
     {
         private readonly IOrderService _orderService;
@@ -17,7 +18,7 @@ namespace pos_service.Controllers
 
         public PrintController(IOrderService orderService, ICurrentUserService currentUserService)
         {
-            _orderService = orderService;
+            _orderService       = orderService;
             _currentUserService = currentUserService;
         }
 
@@ -30,7 +31,7 @@ namespace pos_service.Controllers
             {
                 var currentUser = _currentUserService.GetCurrentUser();
 
-                pos_service.Models.DTO.Orders.OrderResDto? orderToPrint = null;
+                OrderResDto? orderToPrint = null;
                 if (string.IsNullOrWhiteSpace(req.OrderNumber))
                     return BadRequest("OrderNumber is required");
 
@@ -70,16 +71,5 @@ namespace pos_service.Controllers
                 return StatusCode(500, new { printed = false, error = ex.Message });
             }
         }
-    }
-
-    public record PrintRequest
-    {
-        [Required]
-        public string OrderNumber { get; init; }
-        // Whether to use network printing (TCP 9100). Defaults to false when not provided.
-        public bool UseNetwork { get; init; } = false;
-        public string? PrinterName { get; init; }
-        public string? PrinterIp { get; init; }
-        public int? Port { get; init; }
     }
 }

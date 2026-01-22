@@ -9,39 +9,8 @@ namespace pos_service.Helpers
 {
     public static class EscPosFormatter
     {
-        // Produce ESC/POS bytes for a receipt from OrderReqDto (kept for compatibility)
-        public static byte[] FormatReceipt(OrderReqDto order, int width = 48)
-        {
-            // Convert OrderReqDto to OrderResDto-lite and reuse the main formatter to avoid duplicating logic.
-            var tmp = new Models.DTO.Orders.OrderResDto
-            {
-                OrderNumber = order.Description ?? string.Empty,
-                Status = Models.Enums.OrderStatus.Pending,
-                ItemCount = order.ItemCount,
-                GrossAmount = order.GrossAmount,
-                TotalDiscount = order.TotalDiscount,
-                NetAmount = order.NetAmount,
-                AmountPaid = order.AmountPaid,
-                Balance = order.AmountPaid - order.NetAmount,
-                Description = order.Description,
-                CreatedAt = DateTime.Now,
-                OrderItems = order.OrderItems?.Select(i => new Models.DTO.OrderItems.OrderItemMiniResDto
-                {
-                    OriginalItemUuid = i.ItemUuid,
-                    PrintName = i.PrintName ?? i.ItemUuid,
-                    Quantity = i.Quantity,
-                    PriceAtSale = i.SalePrice,
-                    MarkedPriceAtSale = i.MarkedPrice,
-                    LineTotal = i.LineTotal,
-                    AllowsDecimalQuantities = true
-                }).ToList() ?? new List<Models.DTO.OrderItems.OrderItemMiniResDto>()
-            };
-
-            return FormatReceipt(tmp, width);
-        }
-
         // Produce ESC/POS bytes for a receipt from OrderResDto (used when printing saved orders)
-        public static byte[] FormatReceipt(Models.DTO.Orders.OrderResDto order, int width = 48)
+        public static byte[] FormatReceipt(OrderResDto order, int width = 48)
         {
             var lines = BuildLinesFromOrderRes(order, width);
 
@@ -87,7 +56,7 @@ namespace pos_service.Helpers
         }
 
         // Return plain text (for preview) for OrderResDto
-        public static string FormatReceiptText(Models.DTO.Orders.OrderResDto order, int width = 48)
+        public static string FormatReceiptText(OrderResDto order, int width = 48)
         {
             var lines = BuildLinesFromOrderRes(order, width);
             return string.Join("\r\n", lines.Select(l => l.Text));
@@ -95,7 +64,7 @@ namespace pos_service.Helpers
 
         private sealed record PrintLine(string Text, bool Bold = false, bool Small = false);
 
-        private static List<PrintLine> BuildLinesFromOrderRes(Models.DTO.Orders.OrderResDto order, int width)
+        private static List<PrintLine> BuildLinesFromOrderRes(OrderResDto order, int width)
         {
             static string Repeat(char ch, int n) => new string(ch, Math.Max(0, n));
             static string Center(string s, int w)

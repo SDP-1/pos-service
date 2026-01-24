@@ -125,14 +125,14 @@ namespace pos_service.Services
         /// <param name="itemDto">The item data transfer object containing updated information.</param>
         /// <param name="currentUser">The current user updating the item.</param>
         /// <returns>True if update was successful, otherwise false.</returns>
-        public async Task<bool> UpdateItemAsync(int id, int subId, ItemReqDto itemDto, CurrentUser currentUser)
+        public async Task<ItemResDto> UpdateItemAsync(int id, int subId, ItemReqDto itemDto, CurrentUser currentUser)
         {
             // Fetch the item with its related suppliers to update them
             var itemToUpdate = await _itemRepository.GetByIdWithSuppliersAsync(id, subId);
             if (itemToUpdate == null)
             {
                 // Item not found.
-                return false;
+                return null;
             }
 
             // Map flat properties from DTO to entity
@@ -160,8 +160,9 @@ namespace pos_service.Services
                 }
             }
 
-            await _itemRepository.UpdateAsync(itemToUpdate);
-            return true;
+            var result = await _itemRepository.UpdateAsync(itemToUpdate);
+
+            return _mapper.Map<ItemResDto>(result); ;
         }
 
         /// <summary>

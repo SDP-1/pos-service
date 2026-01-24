@@ -29,4 +29,29 @@
     <Folder Include="Repositories\Base\" />
   </ItemGroup>
 
+  <!-- Ensure environment-specific appsettings file is included in publish output -->
+
+
+
+  <!-- Generate a web.config during publish so IIS can pick up Production environment without manual editing -->
+  <Target Name="GenerateWebConfig" AfterTargets="Publish">
+    <ItemGroup>
+      <_WebConfigLines Include="&lt;?xml version='1.0' encoding='utf-8'?&gt;" />
+      <_WebConfigLines Include="&lt;configuration&gt;" />
+      <_WebConfigLines Include="  &lt;system.webServer&gt;" />
+      <_WebConfigLines Include="    &lt;handlers&gt;" />
+      <_WebConfigLines Include="      &lt;add name=&quot;aspNetCore&quot; path=&quot;*&quot; verb=&quot;*&quot; modules=&quot;AspNetCoreModuleV2&quot; resourceType=&quot;Unspecified&quot; /&gt;" />
+      <_WebConfigLines Include="    &lt;/handlers&gt;" />
+      <_WebConfigLines Include="    &lt;aspNetCore processPath=&quot;dotnet&quot; arguments=&quot;.\pos-service.dll&quot; stdoutLogEnabled=&quot;false&quot; stdoutLogFile=&quot;.\logs\stdout&quot; hostingModel=&quot;OutOfProcess&quot;&gt;" />
+      <_WebConfigLines Include="      &lt;environmentVariables&gt;" />
+      <_WebConfigLines Include="        &lt;environmentVariable name=&quot;ASPNETCORE_ENVIRONMENT&quot; value=&quot;Production&quot; /&gt;" />
+      <_WebConfigLines Include="      &lt;/environmentVariables&gt;" />
+      <_WebConfigLines Include="    &lt;/aspNetCore&gt;" />
+      <_WebConfigLines Include="  &lt;/system.webServer&gt;" />
+      <_WebConfigLines Include="&lt;/configuration&gt;" />
+    </ItemGroup>
+
+    <WriteLinesToFile File="$(PublishDir)web.config" Lines="@(_WebConfigLines)" Overwrite="true" Encoding="UTF-8" />
+  </Target>
+
 </Project>

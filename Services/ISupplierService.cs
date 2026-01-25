@@ -52,5 +52,12 @@ namespace pos_service.Services
         /// <param name="currentUser">The current user requesting the supplier.</param>
         /// <returns>The supplier details with items if found, otherwise null.</returns>
         Task<SupplierResDto?> GetSupplierWithItemsAsync(int id, CurrentUser currentUser);
+
+
+        /// <summary>
+        /// Retrieves lightweight supplier data for dropdowns (Id and Name only).
+        /// Returns minimal DTO to avoid mapping large SupplierResDto objects.
+        /// </summary>
+        Task<IEnumerable<SupplierDropdownDto>> GetSuppliersDropdownAsync(CurrentUser currentUser);
     }
 }

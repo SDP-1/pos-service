@@ -24,10 +24,22 @@ namespace pos_service.Repositories
         Task<Supplier?> GetSupplierWithItemsAsync(int id);
 
         /// <summary>
+        /// Retrieves a supplier entity by its Name.
+        /// Used to enforce unique supplier names.
+        /// </summary>
+        Task<Supplier?> GetByNameAsync(string name);
+
+        /// <summary>
         /// Retrieves all suppliers from the data store.
         /// </summary>
         /// <returns>A list of all supplier entities.</returns>
         Task<IEnumerable<Supplier>> GetAllAsync();
+
+        /// <summary>
+        /// Retrieves all suppliers without loading related navigation properties.
+        /// Use this for lightweight queries (e.g. dropdowns) to avoid eager-loading contacts and items.
+        /// </summary>
+        Task<IEnumerable<Supplier>> GetAllBasicAsync();
 
         /// <summary>
         /// Adds a new supplier to the data store.

@@ -46,6 +46,19 @@ namespace pos_service.Controllers
             return supplier == null ? NotFound() : Ok(supplier);
         }
 
+        // Removed non-minimal dropdown endpoint. Use GET api/Suppliers/dropdown/min for lightweight results.
+
+        /// <summary>
+        /// Retrieves minimal supplier list for dropdowns (Id and Name only).
+        /// Route: GET api/Suppliers/dropdown/min
+        /// </summary>
+        [HttpGet("dropdown/min")]
+        public async Task<IActionResult> GetDropdownMin()
+        {
+            var suppliers = await _service.GetSuppliersDropdownAsync(_currentUser);
+            return Ok(suppliers);
+        }
+
         /// <summary>
         /// Retrieves a supplier including the list of supplied items.
         /// </summary>

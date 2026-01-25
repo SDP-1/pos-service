@@ -147,6 +147,10 @@ namespace pos_service.Data
                 // UUID must be unique
                 entity.HasAlternateKey(s => s.Uuid);
 
+                // Supplier name must be unique
+                entity.HasIndex(s => s.Name)
+                      .IsUnique();
+
                 // Supplier -> Contacts (cascade)
                 entity.HasMany(s => s.Contacts)
                       .WithOne(c => c.Supplier)

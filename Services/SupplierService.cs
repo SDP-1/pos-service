@@ -44,6 +44,13 @@ namespace pos_service.Services
 
         public async Task<SupplierResDto> CreateSupplierAsync(SupplierReqDto dto, CurrentUser currentUser)
         {
+            // Enforce unique supplier name
+            var existing = await _supplierRepo.GetByNameAsync(dto.Name);
+            if (existing != null)
+            {
+                throw new ArgumentException("This supplier name already exists.");
+            }
+
             var supplier = _mapper.Map<Supplier>(dto);
 
             // Handle Contacts if provided
@@ -92,6 +99,15 @@ namespace pos_service.Services
         {
             var supplierToUpdate = await _supplierRepo.GetByIdWithDetailsAsync(id);
             if (supplierToUpdate == null) return false;
+            // Check for name conflicts with other suppliers
+            if (!string.Equals(supplierToUpdate.Name, dto.Name, StringComparison.Ordinal))
+            {
+                var other = await _supplierRepo.GetByNameAsync(dto.Name);
+                if (other != null && other.Id != id)
+                {
+                    throw new ArgumentException("This supplier name already exists.");
+                }
+            }
 
             _mapper.Map(dto, supplierToUpdate);
 
@@ -136,6 +152,20 @@ namespace pos_service.Services
 
             await _supplierRepo.UpdateAsync(supplierToUpdate);
             return true;
+        }
+
+        // Removed GetSuppliersForDropdownAsync - use GetSuppliersDropdownAsync which returns a minimal DTO.
+
+        public async Task<IEnumerable<SupplierDropdownDto>> GetSuppliersDropdownAsync(CurrentUser currentUser)
+        {
+            var suppliers = await _supplierRepo.GetAllBasicAsync();
+
+            // Project directly into minimal DTO to avoid unnecessary mapping
+            return suppliers.Select(s => new SupplierDropdownDto
+            {
+                Id = s.Id,
+                Name = s.Name
+            });
         }
 
         public async Task<bool> DeleteSupplierAsync(int id, CurrentUser currentUser)

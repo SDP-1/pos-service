@@ -6,9 +6,15 @@ namespace pos_service.Models.DTO.Suppliers
 {
     public class SupplierReqDto : IReqAuditDto
     {
+        private string _name;
+
         [Required]
         [MaxLength(150)]
-        public string Name     { get; set; }
+        public string Name
+        {
+            get => _name;
+            set => _name = value?.ToUpperInvariant();
+        }
 
         public string? Address { get; set; }
 

@@ -13,13 +13,25 @@ namespace pos_service.Models.DTO.Items
         // SubId for the given main Id (or 0 for a newly created main Id).
         public int? SubId                     { get; set; }
 
+        // Backing fields to normalize values on set
+        private string _name;
+        private string _printName;
+
         [Required]
         [StringLength(200)]
-        public string Name                    { get; set; }
+        public string Name
+        {
+            get => _name;
+            set => _name = value?.ToUpperInvariant();
+        }
 
         [Required]
         [StringLength(40)]
-        public string PrintName               { get; set; }
+        public string PrintName
+        {
+            get => _printName;
+            set => _printName = value?.ToUpperInvariant();
+        }
 
         [StringLength(100)]
         public string? BarCode                { get; set; }

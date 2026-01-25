@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using System.Linq;
 using pos_service.Models;
 using pos_service.Models.DTO.Contacts;
 using pos_service.Models.DTO.Items;
@@ -24,7 +25,6 @@ namespace pos_service.Profiles
             CreateMap<ItemReqDto, Item>()
                 .ForMember(d => d.Id, opt => opt.Ignore())
                 .ForMember(d => d.SubId, opt => opt.Ignore());
-            CreateMap<Item, ItemResDto>();
 
             // Contact Mappings
             CreateMap<Contact, ContactResDto>();

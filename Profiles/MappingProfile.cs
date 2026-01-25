@@ -33,7 +33,11 @@ namespace pos_service.Profiles
             // Supplier Mappings
             CreateMap<Supplier, SupplierResDto>()
                 .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.ItemSuppliers.Select(isu => isu.Item)));
-            CreateMap<SupplierReqDto, Supplier>();
+            // When mapping request DTO -> entity, ignore navigation collections because
+            // service code will manage Contacts and ItemSuppliers explicitly.
+            CreateMap<SupplierReqDto, Supplier>()
+                .ForMember(dest => dest.Contacts, opt => opt.Ignore())
+                .ForMember(dest => dest.ItemSuppliers, opt => opt.Ignore());
 
             // User Mappings
             CreateMap<User, UserResDto>();

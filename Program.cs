@@ -74,6 +74,11 @@ builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();
 builder.Services.AddScoped<pos_service.Repositories.Roles.IRoleRepository, pos_service.Repositories.Roles.RoleRepository>();
 builder.Services.AddScoped<ISettingRepository, SettingRepository>();
 builder.Services.AddScoped<ISettingService, SettingService>();
+// Backup schedule repository
+builder.Services.AddScoped<IBackupScheduleRepository, BackupScheduleRepository>();
+builder.Services.AddScoped<IBackupLocationRepository, BackupLocationRepository>();
+builder.Services.AddScoped<IBackupHistoryRepository, BackupHistoryRepository>();
+// BackupService dependencies are registered; BackupService registered below
 
 // FIXED: DbContext registration with all dependencies
 builder.Services.AddDbContext<AppDbContext>((provider, options) =>
@@ -84,6 +89,10 @@ builder.Services.AddDbContext<AppDbContext>((provider, options) =>
 // This scans your project for classes that inherit from AutoMapper.Profile
 // and registers their mapping configurations.
 builder.Services.AddAutoMapper(typeof(Program));
+
+// Register backup services
+builder.Services.AddScoped<pos_service.Services.Backup.IBackupService, pos_service.Services.Backup.BackupService>();
+builder.Services.AddHostedService<pos_service.Services.Backup.BackupSchedulerService>();
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi

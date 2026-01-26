@@ -31,6 +31,9 @@ namespace pos_service.Data
         public DbSet<RolePermission> RolePermissions { get; set; }
         public DbSet<Role> Roles { get; set; }
         public DbSet<Setting> Settings { get; set; }
+        public DbSet<BackupSchedule> BackupSchedules { get; set; }
+        public DbSet<BackupLocation> BackupLocations { get; set; }
+        public DbSet<BackupHistory> BackupHistories { get; set; }
 
         /// <summary>
         /// This method is used to configure the database model using the Fluent API.
@@ -49,6 +52,7 @@ namespace pos_service.Data
 
                 // Let the database populate CreatedAt and UpdatedAt using CURRENT_TIMESTAMP.
                 // EF will treat these as store-generated values so DB defaults and ON UPDATE apply.
+                // Let the database populate CreatedAt and UpdatedAt using CURRENT_TIMESTAMP.
                 entity
                     .Property<DateTime>(nameof(IAuditable.CreatedAt))
                     .HasColumnType("datetime(6)")
@@ -194,6 +198,64 @@ namespace pos_service.Data
                 entity.HasAlternateKey(s => s.Uuid);
             });
 
+            // --- BackupSchedule Configuration ---
+            modelBuilder.Entity<BackupSchedule>(entity =>
+            {
+                entity.HasKey(b => b.Id);
+                entity.HasAlternateKey(b => b.Uuid);
+                entity.Property(b => b.Schedule)
+                      .IsRequired()
+                      .HasMaxLength(255)
+                      .HasColumnType("varchar(255)");
+
+                entity.Property(b => b.Name)
+                      .HasMaxLength(255)
+                      .HasColumnType("varchar(255)");
+
+                entity.Property(b => b.BackupPath)
+                      .HasColumnType("longtext");
+
+                entity.Property(b => b.RetentionDays)
+                      .HasColumnType("int");
+
+                entity.Property(b => b.LastRunAt)
+                      .HasColumnType("datetime(6)");
+
+                // BackupLocationUuid: store the UUID of the BackupLocation (optional)
+                entity.Property(b => b.BackupLocationUuid)
+                      .HasMaxLength(255)
+                      .HasColumnType("varchar(255)")
+                      .IsRequired(false);
+
+                // Relationship: BackupSchedule -> BackupLocation (many schedules may reference one location)
+                entity.HasOne(b => b.BackupLocation)
+                      .WithMany() // do not expose inverse navigation collection
+                      .HasPrincipalKey(l => l.Uuid)
+                      .HasForeignKey(b => b.BackupLocationUuid)
+                      .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasIndex(b => b.Schedule);
+                //entity.ToTable("BackupSchedules");
+            });
+
+            modelBuilder.Entity<BackupLocation>(entity =>
+            {
+                entity.HasAlternateKey(b => b.Uuid);
+                entity.Property(b => b.Name).HasMaxLength(255).HasColumnType("varchar(255)");
+                entity.Property(b => b.Path).HasColumnType("longtext");
+                //entity.ToTable("BackupLocations");
+            });
+
+            modelBuilder.Entity<BackupHistory>(entity =>
+            {
+                entity.HasAlternateKey(b => b.Uuid);
+                entity.Property(b => b.ScheduleUuid).HasMaxLength(255).HasColumnType("varchar(255)");
+                entity.Property(b => b.LocationUuid).HasMaxLength(255).HasColumnType("varchar(255)");
+                entity.Property(b => b.Message).HasColumnType("longtext");
+                entity.Property(b => b.FilePath).HasColumnType("longtext");
+                //entity.ToTable("BackupHistories");
+            });
+
             // --- ItemSupplier Configuration ---
             modelBuilder.Entity<ItemSupplier>(entity =>
             {
@@ -301,8 +363,7 @@ namespace pos_service.Data
                     // ignore and use SYSTEM
                 }
 
-                // Do not set CreatedAt/UpdatedAt in application when DB is configured to generate them
-                // Database will populate CreatedAt on insert and UpdatedAt on update via CURRENT_TIMESTAMP.
+                // Only set non-timestamp audit fields here. CreatedAt/UpdatedAt are DB-generated.
                 auditableEntity.UpdatedBy = userUuid;
 
                 if (entityEntry.State == EntityState.Added)

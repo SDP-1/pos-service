@@ -36,5 +36,17 @@ namespace pos_service.Repositories
         /// </summary>
         /// <param name="contact">The contact entity to delete.</param>
         Task DeleteAsync(Contact contact);
+
+        /// <summary>
+        /// Delete all contacts that reference the given supplier id using a set-based DB operation.
+        /// </summary>
+        Task DeleteBySupplierIdAsync(int supplierId);
+
+        /// <summary>
+        /// Add multiple contacts in a single operation.
+        /// </summary>
+        /// <param name="contacts">The collection of contact entities to add.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        Task AddRangeAsync(IEnumerable<Contact> contacts);
     }
 }

@@ -97,60 +97,52 @@ namespace pos_service.Services
 
         public async Task<bool> UpdateSupplierAsync(int id, SupplierReqDto dto, CurrentUser currentUser)
         {
-            var supplierToUpdate = await _supplierRepo.GetByIdWithDetailsAsync(id);
-            if (supplierToUpdate == null) return false;
+            // Ensure supplier exists with a lightweight check
+            var existing = await _supplierRepo.GetByIdAsync(id);
+            if (existing == null)
+                throw new ArgumentException($"Supplier with ID {id} was not found.");
+
             // Check for name conflicts with other suppliers
-            if (!string.Equals(supplierToUpdate.Name, dto.Name, StringComparison.Ordinal))
+            if (!string.Equals(existing.Name, dto.Name, StringComparison.Ordinal))
             {
                 var other = await _supplierRepo.GetByNameAsync(dto.Name);
                 if (other != null && other.Id != id)
-                {
                     throw new ArgumentException("This supplier name already exists.");
-                }
             }
 
-            _mapper.Map(dto, supplierToUpdate);
+            // Map scalar fields into a transient Supplier instance for repository update
+            var supplierForUpdate = _mapper.Map<Supplier>(dto);
+            supplierForUpdate.Id = id;
+            supplierForUpdate.UpdatedBy = currentUser?.UserName ?? string.Empty;
 
-            // Contacts: only modify if DTO provides list
+            List<Contact>? contactsToSave = null;
+            IEnumerable<string>? itemUuidsToSave = null;
+
+            // If DTO provided contacts explicitly, map them (empty list means clear)
             if (dto.Contacts != null)
             {
-                // clear existing contacts and recreate
-                supplierToUpdate.Contacts.Clear();
-                foreach (var c in dto.Contacts)
+                contactsToSave = dto.Contacts.Select(c =>
                 {
                     var contact = _mapper.Map<Contact>(c);
                     contact.Uuid = Guid.NewGuid().ToString();
-                    contact.SupplierId = supplierToUpdate.Id;
-                    supplierToUpdate.Contacts.Add(contact);
-                }
+                    contact.SupplierId = id;
+                    return contact;
+                }).ToList();
             }
 
-            // Item associations: only modify if DTO provides list
+            // If DTO provided item uuids explicitly, use them (empty list means clear)
             if (dto.ItemUuids != null)
             {
-                supplierToUpdate.ItemSuppliers.Clear();
-                if (dto.ItemUuids.Any())
-                {
-                    foreach (var itemUuid in dto.ItemUuids)
-                    {
-                        var item = await _itemRepo.GetByUuidAsync(itemUuid);
-                        if (item != null)
-                        {
-                            supplierToUpdate.ItemSuppliers.Add(new ItemSupplier
-                            {
-                                Uuid        = Guid.NewGuid().ToString(),
-                                SuppliersId = supplierToUpdate.Id,
-                                ItemsId     = item.Id,
-                                ItemsSubId  = item.SubId,
-                                Supplier    = supplierToUpdate,
-                                Item        = item
-                            });
-                        }
-                    }
-                }
+                itemUuidsToSave = dto.ItemUuids;
             }
 
-            await _supplierRepo.UpdateAsync(supplierToUpdate);
+            // Delegate atomic update to repository which will replace associations as requested
+            await _supplierRepo.UpdateWithAssociationsAsync(
+                supplierForUpdate,
+                contactsToSave  ?? Enumerable.Empty<Contact>(),
+                itemUuidsToSave ?? Enumerable.Empty<string>()
+            );
+
             return true;
         }
 

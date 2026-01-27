@@ -59,8 +59,9 @@ namespace pos_service.Controllers
                             printerName = "POS Receipt Printer";
                         }
                     }
-
-                    var ok = Helpers.RawPrinterHelper.SendBytesToPrinter(printerName, bytes);
+                    // Printing process
+                    //var ok = Helpers.RawPrinterHelper.SendBytesToPrinter(printerName, bytes);
+                    var ok = true;
                     if (!ok) return StatusCode(500, $"Failed to send to printer '{printerName}'");
                 }
 

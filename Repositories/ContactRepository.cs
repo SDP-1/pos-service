@@ -29,5 +29,17 @@ namespace pos_service.Repositories
             _context.Contacts.Remove(contact);
             await _context.SaveChangesAsync();
         }
+
+        public async Task DeleteBySupplierIdAsync(int supplierId)
+        {
+            // Use EF Core set-based delete to avoid loading rows into memory
+            await _context.Contacts.Where(c => c.SupplierId == supplierId).ExecuteDeleteAsync();
+        }
+
+        public async Task AddRangeAsync(IEnumerable<Contact> contacts)
+        {
+            await _context.Contacts.AddRangeAsync(contacts);
+            await _context.SaveChangesAsync();
+        }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using pos_service.Models.DTO.Contacts;
+using System.ComponentModel.DataAnnotations;
 
 namespace pos_service.Models.DTO.Users
 { 
@@ -24,5 +25,9 @@ namespace pos_service.Models.DTO.Users
         [MaxLength(12)]
         public string? NIC { get; set; }
 
+        // Optional list of contacts to create/update for this user.
+        // If null, service will not modify contacts.
+        // Existing contacts are identified by uuid; new ones have null uuid.
+        public ICollection<ContactReqDto>? Contacts { get; set; }
     }
 }

@@ -76,6 +76,13 @@ namespace pos_service.Repositories
         Task<Item?> GetByUuidAsync(string uuid);
 
         /// <summary>
+        /// Gets multiple items by their unique Guids (Uuids).
+        /// </summary>
+        /// <param name="uuids">The collection of UUIDs to retrieve.</param>
+        /// <returns>A list of item entities matching the provided UUIDs.</returns>
+        Task<IEnumerable<Item>> GetByUuidsAsync(IEnumerable<string> uuids);
+
+        /// <summary>
         /// Gets all items that are supplied by the specified supplier ID.
         /// </summary>
         /// <param name="supplierId">The unique identifier of the supplier.</param>

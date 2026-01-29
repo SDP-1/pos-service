@@ -60,11 +60,16 @@ namespace pos_service.Repositories
         /// </summary>
         /// <param name="supplier">The supplier entity to delete.</param>
         Task DeleteAsync(Supplier supplier);
-        
+
         /// <summary>
-        /// Update supplier scalar fields and replace associated contacts and item associations
-        /// in a single atomic operation.
+        /// Deletes all item associations for a supplier using a set-based DB operation.
         /// </summary>
-        Task<Supplier> UpdateWithAssociationsAsync(Supplier supplier, IEnumerable<Contact> contacts, IEnumerable<string> itemUuids);
+        Task DeleteItemAssociationsBySupplierId(int supplierId);
+
+        /// <summary>
+        /// Adds multiple item associations in a single operation.
+        /// </summary>
+        /// <param name="itemSuppliers">The collection of item supplier entities to add.</param>
+        Task AddItemAssociationsAsync(IEnumerable<ItemSupplier> itemSuppliers);
     }
 }

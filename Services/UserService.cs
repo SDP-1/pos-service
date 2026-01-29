@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using pos_service.Models;
 using pos_service.Models.DTO.Users;
+using pos_service.Models.Enums;
 using pos_service.Repositories;
 using pos_service.Security;
 using pos_service.Services.Common;
@@ -11,15 +12,27 @@ namespace pos_service.Services
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
+        private readonly IContactService _contactService;
+        private readonly IContactRepository _contactRepository;
         private readonly IMapper _mapper;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IJwtGenerator _jwtGenerator;
         private readonly IFileStorageService _fileStorageService;
         private readonly ICacheService _cacheService;
 
-        public UserService(IUserRepository repo, IMapper mapper, IPasswordHasher hasher, IJwtGenerator jwt, IFileStorageService fileStorageService, Services.Common.Cache.ICacheService cacheService)
+        public UserService(
+            IUserRepository repo, 
+            IContactService contactService,
+            IContactRepository contactRepository,
+            IMapper mapper, 
+            IPasswordHasher hasher, 
+            IJwtGenerator jwt, 
+            IFileStorageService fileStorageService, 
+            Services.Common.Cache.ICacheService cacheService)
         {
             _userRepository     = repo;
+            _contactService     = contactService;
+            _contactRepository  = contactRepository;
             _mapper             = mapper;
             _passwordHasher     = hasher;
             _jwtGenerator       = jwt;
@@ -83,6 +96,21 @@ namespace pos_service.Services
             }
 
             var newUser = await _userRepository.AddAsync(user);
+
+            // 3. Create associated contacts if provided
+            if (userDto.Contacts != null && userDto.Contacts.Any())
+            {
+                foreach (var contactDto in userDto.Contacts)
+                {
+                    var contact       = _mapper.Map<Contact>(contactDto);
+                    contact.Uuid      = Guid.NewGuid().ToString();
+                    contact.UserId    = newUser.Id;
+                    contact.IsActive  = contactDto.IsActive;
+
+                    await _contactRepository.AddAsync(contact);
+                }
+            }
+
             return _mapper.Map<UserResDto>(newUser);
         }
 
@@ -267,6 +295,11 @@ namespace pos_service.Services
                 userToUpdate.PasswordHash = _passwordHasher.HashPassword(userDto.Password);
 
             var data = await _userRepository.UpdateAsync(userToUpdate);
+
+            // 4. Merge contacts: update existing, add new, delete removed
+            if (userDto.Contacts != null)
+                await _contactService.MergeContactsAsync(ContactOwnerType.User, id, userDto.Contacts);
+
             return _mapper.Map<UserResDto>(data);
         }
 

@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using pos_service.Models;
 using pos_service.Models.DTO.Suppliers;
+using pos_service.Models.Enums;
 using pos_service.Repositories;
 
 namespace pos_service.Services
@@ -9,19 +10,19 @@ namespace pos_service.Services
     {
         private readonly ISupplierRepository _supplierRepo;
         private readonly IItemRepository     _itemRepo;
-        private readonly IContactRepository  _contactRepo;
+        private readonly IContactService     _contactService;
         private readonly IMapper             _mapper;
 
         public SupplierService(
             ISupplierRepository supplierRepo,
             IItemRepository itemRepo,
-            IContactRepository contactRepo,
+            IContactService contactService,
             IMapper mapper)
         {
-            _supplierRepo = supplierRepo;
-            _itemRepo     = itemRepo;
-            _contactRepo  = contactRepo;
-            _mapper       = mapper;
+            _supplierRepo   = supplierRepo;
+            _itemRepo       = itemRepo;
+            _contactService = contactService;
+            _mapper         = mapper;
         }
 
         public async Task<IEnumerable<SupplierResDto>> GetAllSuppliersAsync(CurrentUser currentUser)
@@ -110,40 +111,47 @@ namespace pos_service.Services
                     throw new ArgumentException("This supplier name already exists.");
             }
 
-            // Map scalar fields into a transient Supplier instance for repository update
-            var supplierForUpdate = _mapper.Map<Supplier>(dto);
-            supplierForUpdate.Id = id;
-            supplierForUpdate.UpdatedBy = currentUser?.UserName ?? string.Empty;
+            // Update supplier scalar fields
+            existing.Name      = dto.Name;
+            existing.Address   = dto.Address;
+            existing.IsActive  = dto.IsActive;
+            existing.UpdatedBy = currentUser?.UserName ?? string.Empty;
 
-            List<Contact>? contactsToSave = null;
-            IEnumerable<string>? itemUuidsToSave = null;
+            await _supplierRepo.UpdateAsync(existing);
 
-            // If DTO provided contacts explicitly, map them (empty list means clear)
+            // Merge contacts: update existing, add new, delete removed
             if (dto.Contacts != null)
-            {
-                contactsToSave = dto.Contacts.Select(c =>
-                {
-                    var contact = _mapper.Map<Contact>(c);
-                    contact.Uuid = Guid.NewGuid().ToString();
-                    contact.SupplierId = id;
-                    return contact;
-                }).ToList();
-            }
+                await _contactService.MergeContactsAsync(ContactOwnerType.Supplier, id, dto.Contacts);
 
-            // If DTO provided item uuids explicitly, use them (empty list means clear)
+            // Update item associations if provided
             if (dto.ItemUuids != null)
-            {
-                itemUuidsToSave = dto.ItemUuids;
-            }
-
-            // Delegate atomic update to repository which will replace associations as requested
-            await _supplierRepo.UpdateWithAssociationsAsync(
-                supplierForUpdate,
-                contactsToSave  ?? Enumerable.Empty<Contact>(),
-                itemUuidsToSave ?? Enumerable.Empty<string>()
-            );
+                await UpdateItemAssociationsAsync(id, dto.ItemUuids);
 
             return true;
+        }
+
+        /// <summary>
+        /// Updates item associations for a supplier.
+        /// Deletes existing associations and creates new ones based on item UUIDs.
+        /// </summary>
+        private async Task UpdateItemAssociationsAsync(int supplierId, IEnumerable<string> itemUuids)
+        {
+            await _supplierRepo.DeleteItemAssociationsBySupplierId(supplierId);
+
+            if (itemUuids.Any())
+            {
+                var items = await _itemRepo.GetByUuidsAsync(itemUuids);
+                var itemSuppliers = items.Select(it => new ItemSupplier
+                {
+                    Uuid        = Guid.NewGuid().ToString(),
+                    SuppliersId = supplierId,
+                    ItemsId     = it.Id,
+                    ItemsSubId  = it.SubId
+                }).ToList();
+
+                if (itemSuppliers.Any())
+                    await _supplierRepo.AddItemAssociationsAsync(itemSuppliers);
+            }
         }
 
         // Removed GetSuppliersForDropdownAsync - use GetSuppliersDropdownAsync which returns a minimal DTO.

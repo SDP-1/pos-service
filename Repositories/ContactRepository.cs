@@ -11,6 +11,21 @@ namespace pos_service.Repositories
 
         public async Task<Contact?> GetByIdAsync(int id) => await _context.Contacts.FindAsync(id);
         public async Task<IEnumerable<Contact>> GetAllAsync() => await _context.Contacts.ToListAsync();
+        
+        public async Task<IEnumerable<Contact>> GetContactsBySupplierId(int supplierId)
+        {
+            return await _context.Contacts
+                .Where(c => c.SupplierId == supplierId)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Contact>> GetContactsByUserId(int userId)
+        {
+            return await _context.Contacts
+                .Where(c => c.UserId == userId)
+                .ToListAsync();
+        }
+
         public async Task<Contact> AddAsync(Contact contact)
         {
             contact.Uuid = Guid.NewGuid().ToString();
@@ -34,6 +49,12 @@ namespace pos_service.Repositories
         {
             // Use EF Core set-based delete to avoid loading rows into memory
             await _context.Contacts.Where(c => c.SupplierId == supplierId).ExecuteDeleteAsync();
+        }
+
+        public async Task DeleteByUserIdAsync(int userId)
+        {
+            // Use EF Core set-based delete to avoid loading rows into memory
+            await _context.Contacts.Where(c => c.UserId == userId).ExecuteDeleteAsync();
         }
 
         public async Task AddRangeAsync(IEnumerable<Contact> contacts)

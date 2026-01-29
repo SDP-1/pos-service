@@ -100,6 +100,16 @@ namespace pos_service.Repositories
                 .FirstOrDefaultAsync(i => i.Uuid == uuid);
         }
 
+        public async Task<IEnumerable<Item>> GetByUuidsAsync(IEnumerable<string> uuids)
+        {
+            var uuidList = uuids.ToList();
+            return await _context.Items
+                .Include(i => i.ItemSuppliers)
+                    .ThenInclude(isu => isu.Supplier)
+                .Where(i => uuidList.Contains(i.Uuid))
+                .ToListAsync();
+        }
+
         /// <summary>
         /// Gets all items that are supplied by the specified supplier ID.
         /// </summary>

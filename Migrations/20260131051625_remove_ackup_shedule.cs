@@ -7,59 +7,12 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace pos_service.Migrations
 {
     /// <inheritdoc />
-    public partial class Baseline : Migration
+    public partial class remove_ackup_shedule : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AlterDatabase()
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "BackupSchedules",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    Uuid = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Name = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Schedule = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Enabled = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    BackupPath = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    RetentionDays = table.Column<int>(type: "int", nullable: true),
-                    LastRunAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    BackupLocationUuid = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP(6)"),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)")
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.ComputedColumn),
-                    CreatedBy = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    UpdatedBy = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: true),
-                    BackupLocationId = table.Column<int>(type: "int", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_BackupSchedules", x => x.Id);
-                    table.UniqueConstraint("AK_BackupSchedules_Uuid", x => x.Uuid);
-                    table.ForeignKey(
-                        name: "FK_BackupSchedules_BackupLocations_BackupLocationId",
-                        column: x => x.BackupLocationId,
-                        principalTable: "BackupLocations",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_BackupSchedules_BackupLocations_BackupLocationUuid",
-                        column: x => x.BackupLocationUuid,
-                        principalTable: "BackupLocations",
-                        principalColumn: "Uuid",
-                        onDelete: ReferentialAction.SetNull);
-                })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
@@ -571,21 +524,6 @@ namespace pos_service.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateIndex(
-                name: "IX_BackupSchedules_BackupLocationId",
-                table: "BackupSchedules",
-                column: "BackupLocationId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_BackupSchedules_BackupLocationUuid",
-                table: "BackupSchedules",
-                column: "BackupLocationUuid");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_BackupSchedules_Schedule",
-                table: "BackupSchedules",
-                column: "Schedule");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Contacts_SupplierId",
                 table: "Contacts",
                 column: "SupplierId");
@@ -685,7 +623,7 @@ namespace pos_service.Migrations
                 name: "BackupHistories");
 
             migrationBuilder.DropTable(
-                name: "BackupSchedules");
+                name: "BackupLocations");
 
             migrationBuilder.DropTable(
                 name: "Contacts");
@@ -701,9 +639,6 @@ namespace pos_service.Migrations
 
             migrationBuilder.DropTable(
                 name: "Settings");
-
-            migrationBuilder.DropTable(
-                name: "BackupLocations");
 
             migrationBuilder.DropTable(
                 name: "Suppliers");

@@ -75,7 +75,6 @@ builder.Services.AddScoped<pos_service.Repositories.Roles.IRoleRepository, pos_s
 builder.Services.AddScoped<ISettingRepository, SettingRepository>();
 builder.Services.AddScoped<ISettingService, SettingService>();
 // Backup schedule repository
-builder.Services.AddScoped<IBackupScheduleRepository, BackupScheduleRepository>();
 builder.Services.AddScoped<IBackupLocationRepository, BackupLocationRepository>();
 builder.Services.AddScoped<IBackupHistoryRepository, BackupHistoryRepository>();
 // BackupService dependencies are registered; BackupService registered below
@@ -92,7 +91,6 @@ builder.Services.AddAutoMapper(typeof(Program));
 
 // Register backup services
 builder.Services.AddScoped<pos_service.Services.Backup.IBackupService, pos_service.Services.Backup.BackupService>();
-builder.Services.AddHostedService<pos_service.Services.Backup.BackupSchedulerService>();
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi

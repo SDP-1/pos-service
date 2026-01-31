@@ -31,7 +31,6 @@ namespace pos_service.Data
         public DbSet<RolePermission> RolePermissions { get; set; }
         public DbSet<Role> Roles { get; set; }
         public DbSet<Setting> Settings { get; set; }
-        public DbSet<BackupSchedule> BackupSchedules { get; set; }
         public DbSet<BackupLocation> BackupLocations { get; set; }
         public DbSet<BackupHistory> BackupHistories { get; set; }
 
@@ -196,46 +195,6 @@ namespace pos_service.Data
                 entity.Property(s => s.SettingKey).HasConversion<string>();
                 entity.Property(s => s.Description).HasMaxLength(500);
                 entity.HasAlternateKey(s => s.Uuid);
-            });
-
-            // --- BackupSchedule Configuration ---
-            modelBuilder.Entity<BackupSchedule>(entity =>
-            {
-                entity.HasKey(b => b.Id);
-                entity.HasAlternateKey(b => b.Uuid);
-                entity.Property(b => b.Schedule)
-                      .IsRequired()
-                      .HasMaxLength(255)
-                      .HasColumnType("varchar(255)");
-
-                entity.Property(b => b.Name)
-                      .HasMaxLength(255)
-                      .HasColumnType("varchar(255)");
-
-                entity.Property(b => b.BackupPath)
-                      .HasColumnType("longtext");
-
-                entity.Property(b => b.RetentionDays)
-                      .HasColumnType("int");
-
-                entity.Property(b => b.LastRunAt)
-                      .HasColumnType("datetime(6)");
-
-                // BackupLocationUuid: store the UUID of the BackupLocation (optional)
-                entity.Property(b => b.BackupLocationUuid)
-                      .HasMaxLength(255)
-                      .HasColumnType("varchar(255)")
-                      .IsRequired(false);
-
-                // Relationship: BackupSchedule -> BackupLocation (many schedules may reference one location)
-                entity.HasOne(b => b.BackupLocation)
-                      .WithMany() // do not expose inverse navigation collection
-                      .HasPrincipalKey(l => l.Uuid)
-                      .HasForeignKey(b => b.BackupLocationUuid)
-                      .OnDelete(DeleteBehavior.SetNull);
-
-                entity.HasIndex(b => b.Schedule);
-                //entity.ToTable("BackupSchedules");
             });
 
             modelBuilder.Entity<BackupLocation>(entity =>

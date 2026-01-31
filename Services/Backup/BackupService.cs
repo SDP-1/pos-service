@@ -20,7 +20,6 @@ namespace pos_service.Services.Backup
         private readonly IWebHostEnvironment _env;
         private readonly IConfiguration _config;
         private readonly ILogger<BackupService> _logger;
-        private readonly IBackupScheduleRepository _scheduleRepository;
         private readonly IBackupLocationRepository _locationRepository;
         private readonly IBackupHistoryRepository _historyRepository;
 
@@ -28,14 +27,12 @@ namespace pos_service.Services.Backup
             IWebHostEnvironment env,
             IConfiguration config,
             ILogger<BackupService> logger,
-            IBackupScheduleRepository scheduleRepository,
             IBackupLocationRepository locationRepository,
             IBackupHistoryRepository historyRepository)
         {
             _env = env;
             _config = config;
             _logger = logger;
-            _scheduleRepository = scheduleRepository;
             _locationRepository = locationRepository;
             _historyRepository = historyRepository;
             EnsureBackupFolder();
@@ -59,25 +56,10 @@ namespace pos_service.Services.Backup
             return await CreateBackupAsync(null, null, null, cancellationToken);
         }
 
-        // Main implementation - scheduleUuid and locationUuid optional
+        // Main implementation - locationUuid optional
         public async Task<BackupResponseDto> CreateBackupAsync(string? scheduleUuid, string? locationUuid, string? targetPath = null, CancellationToken cancellationToken = default)
         {
             var executedAt = DateTime.Now;
-
-            // Build label from schedule (Name (Schedule)) when scheduleUuid provided
-            string label = string.Empty;
-            if (!string.IsNullOrWhiteSpace(scheduleUuid))
-            {
-                try
-                {
-                    var sched = await _scheduleRepository.GetByUuidAsync(scheduleUuid);
-                    if (sched != null)
-                    {
-                        label = string.IsNullOrWhiteSpace(sched.Name) ? sched.Schedule : $"{sched.Name} ({sched.Schedule})";
-                    }
-                }
-                catch { }
-            }
 
             // sanitize label for filename
             static string SanitizeLabel(string s)
@@ -91,7 +73,7 @@ namespace pos_service.Services.Backup
                 return tmp;
             }
 
-            var safeLabel = SanitizeLabel(label);
+            var safeLabel = SanitizeLabel(string.Empty);
             var fileName = string.IsNullOrWhiteSpace(safeLabel)
                 ? $"backup_{DateTime.Now:yyyyMMdd_HHmmss}.sql"
                 : $"{safeLabel}_{DateTime.Now:yyyyMMdd_HHmmss}.sql";
@@ -213,38 +195,6 @@ namespace pos_service.Services.Backup
             }
         }
 
-        public async Task<IEnumerable<ScheduleDto>> GetSchedulesAsync()
-        {
-            var schedules = await _scheduleRepository.GetAllAsync();
-            return schedules.Select(s => new ScheduleDto
-            {
-                Uuid = s.Uuid,
-                Schedule = s.Schedule,
-                Name = s.Name,
-                Enabled = s.Enabled,
-                BackupLocationUuid = s.BackupLocationUuid
-            });
-        }
-
-        public async Task AddScheduleAsync(ScheduleDto dto)
-        {
-            if (!string.IsNullOrWhiteSpace(dto.BackupLocationUuid))
-            {
-                var loc = await _locationRepository.GetByUuidAsync(dto.BackupLocationUuid);
-                if (loc == null) throw new ArgumentException("Backup location not found");
-            }
-
-            var entity = new BackupSchedule
-            {
-                Name = dto.Name,
-                Schedule = dto.Schedule,
-                Enabled = dto.Enabled,
-                BackupLocationUuid = dto.BackupLocationUuid
-            };
-
-            await _scheduleRepository.AddAsync(entity);
-        }
-
         public async Task<Models.BackupLocation?> SaveOrGetLocationAsync(Models.DTO.Backup.BackupLocationDto dto)
         {
             if (dto == null) return null;
@@ -295,27 +245,6 @@ namespace pos_service.Services.Backup
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to record backup history");
-            }
-        }
-
-        public async Task RemoveScheduleAsync(string schedule)
-        {
-            var all = (await _scheduleRepository.GetAllAsync()).ToList();
-            var toRemove = all.FirstOrDefault(s => s.Schedule == schedule);
-            if (toRemove != null)
-            {
-                await _scheduleRepository.DeleteAsync(toRemove);
-            }
-        }
-        public async Task UpdateScheduleLastRunAsync(string scheduleUuid, DateTime lastRunAt)
-        {
-            var all = (await _scheduleRepository.GetAllAsync()).ToList();
-            var item = all.FirstOrDefault(s => s.Uuid == scheduleUuid);
-            if (item != null)
-            {
-                // Store local system time for LastRunAt to match backup ExecutedAt which uses DateTime.Now
-                item.LastRunAt = DateTime.Now;
-                await _scheduleRepository.UpdateAsync(item);
             }
         }
     }

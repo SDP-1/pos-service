@@ -17,7 +17,5 @@ namespace pos_service.Models
         public string? CreatedBy { get; set; }
         public string? UpdatedBy { get; set; }
         public bool IsActive { get; set; } = true;
-
-        public ICollection<BackupSchedule> Schedules { get; set; } = new List<BackupSchedule>();
     }
 }

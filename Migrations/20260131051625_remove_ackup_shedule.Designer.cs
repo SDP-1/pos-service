@@ -12,8 +12,8 @@ using pos_service.Data;
 namespace pos_service.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260125165611_AddBackupTables")]
-    partial class AddBackupTables
+    [Migration("20260131051625_remove_ackup_shedule")]
+    partial class remove_ackup_shedule
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -147,85 +147,9 @@ namespace pos_service.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("BackupLocations");
-                });
-
-            modelBuilder.Entity("pos_service.Models.BackupSchedule", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int?>("BackupLocationId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("BackupLocationUuid")
-                        .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<string>("BackupPath")
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime(6)")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
-
-                    b.Property<string>("CreatedBy")
-                        .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<bool>("Enabled")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("tinyint(1)")
-                        .HasDefaultValue(true);
-
-                    b.Property<DateTime?>("LastRunAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<int?>("RetentionDays")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Schedule")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("datetime(6)")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlComputedColumn(b.Property<DateTime?>("UpdatedAt"));
-
-                    b.Property<string>("UpdatedBy")
-                        .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<string>("Uuid")
-                        .IsRequired()
-                        .HasColumnType("varchar(255)");
-
-                    b.HasKey("Id");
-
                     b.HasAlternateKey("Uuid");
 
-                    b.HasIndex("BackupLocationId");
-
-                    b.HasIndex("BackupLocationUuid");
-
-                    b.HasIndex("Schedule");
-
-                    b.ToTable("BackupSchedules");
+                    b.ToTable("BackupLocations");
                 });
 
             modelBuilder.Entity("pos_service.Models.Contact", b =>
@@ -1006,21 +930,6 @@ namespace pos_service.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("pos_service.Models.BackupSchedule", b =>
-                {
-                    b.HasOne("pos_service.Models.BackupLocation", null)
-                        .WithMany("Schedules")
-                        .HasForeignKey("BackupLocationId");
-
-                    b.HasOne("pos_service.Models.BackupLocation", "BackupLocation")
-                        .WithMany()
-                        .HasForeignKey("BackupLocationUuid")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("BackupLocation");
-                });
-
             modelBuilder.Entity("pos_service.Models.Contact", b =>
                 {
                     b.HasOne("pos_service.Models.Supplier", "Supplier")
@@ -1122,11 +1031,6 @@ namespace pos_service.Migrations
                         .IsRequired();
 
                     b.Navigation("Role");
-                });
-
-            modelBuilder.Entity("pos_service.Models.BackupLocation", b =>
-                {
-                    b.Navigation("Schedules");
                 });
 
             modelBuilder.Entity("pos_service.Models.Customer", b =>

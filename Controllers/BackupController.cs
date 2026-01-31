@@ -7,7 +7,6 @@ namespace pos_service.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
     public class BackupController : ControllerBase
     {
         private readonly IBackupService _backupService;
@@ -35,28 +34,6 @@ namespace pos_service.Controllers
             var res = await _backupService.CreateBackupAsync(null, locUuid, path);
             if (!res.Success) return StatusCode(500, res);
             return Ok(res);
-        }
-
-        [HttpGet("schedules")]
-        public async Task<IActionResult> GetSchedules()
-        {
-            var list = await _backupService.GetSchedulesAsync();
-            return Ok(list);
-        }
-
-        [HttpPost("schedules")]
-        public async Task<IActionResult> AddSchedule(ScheduleDto dto)
-        {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-            await _backupService.AddScheduleAsync(dto);
-            return NoContent();
-        }
-
-        [HttpDelete("schedules")]
-        public async Task<IActionResult> RemoveSchedule([FromQuery] string schedule)
-        {
-            await _backupService.RemoveScheduleAsync(schedule);
-            return NoContent();
         }
     }
 }

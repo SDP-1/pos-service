@@ -197,22 +197,25 @@ namespace pos_service.Repositories
         public async Task<string> GenerateOrderNumberAsync()
         {
             var today = DateTime.UtcNow;
-            var year = today.Year;
-            var month = today.Month.ToString("D2");
+            var yearMonth = today.ToString("yyyyMM"); // e.g., 202602
 
-            // Get the last order number for today
+            // Get the last order number for this month
             var lastOrder = await _context.Orders
-                .Where(o => o.OrderNumber.StartsWith($"ORD-{year}-{month}"))
+                .Where(o => o.OrderNumber.StartsWith($"ORD{yearMonth}"))
                 .OrderByDescending(o => o.OrderNumber)
                 .FirstOrDefaultAsync();
 
-            if (lastOrder == null)
+            int nextNumber = 1;
+
+            if (lastOrder != null)
             {
-                return $"ORD-{year}-{month}-00001";
+                // Extract last 5 digits as number
+                var lastNumberPart = lastOrder.OrderNumber.Substring(lastOrder.OrderNumber.Length - 5);
+                nextNumber = int.Parse(lastNumberPart) + 1;
             }
 
-            var lastNumber = int.Parse(lastOrder.OrderNumber.Split('-').Last());
-            return $"ORD-{year}-{month}-{(lastNumber + 1):D5}";
+            // Format as ORDYYYYMM00001
+            return $"ORD{yearMonth}{nextNumber:D5}";
         }
 
         /// <summary>

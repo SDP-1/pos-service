@@ -60,6 +60,7 @@ namespace pos_service.Helpers
                 // Set report parameters
                 report.SetParameterValue("date", order.CreatedAt.ToString("yyyy/MM/dd"));
                 report.SetParameterValue("time", order.CreatedAt.ToString("h:mm:ss tt"));
+                report.SetParameterValue("DateTime", order.CreatedAt.ToString());
                 report.SetParameterValue("invoceNo", order.OrderNumber);
                 report.SetParameterValue("TotalAmount", order.NetAmount.ToString("F2"));
                 report.SetParameterValue("Discount", order.TotalDiscount.ToString("F2"));

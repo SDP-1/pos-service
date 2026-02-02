@@ -60,8 +60,8 @@ namespace pos_service.Controllers
                         }
                     }
                     // Printing process
-                    //var ok = Helpers.RawPrinterHelper.SendBytesToPrinter(printerName, bytes);
-                    var ok = true;
+                    var ok = Helpers.RawPrinterHelper.SendBytesToPrinter(printerName, bytes);
+                    //var ok = true;
                     if (!ok) return StatusCode(500, $"Failed to send to printer '{printerName}'");
                 }
 

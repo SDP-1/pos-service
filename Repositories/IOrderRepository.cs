@@ -1,5 +1,6 @@
 ﻿using pos_service.Models;
 using pos_service.Models.DTO.Orders;
+using pos_service.Models.Enums;
 
 namespace pos_service.Repositories
 {
@@ -67,5 +68,22 @@ namespace pos_service.Repositories
         /// </summary>
         /// <returns>A unique order number string.</returns>
         Task<string> GenerateOrderNumberAsync();
+
+
+        /// <summary>
+        /// Retrieves orders filtered by date range and status.
+        /// Key behaviors:
+        /// - If StartDate is null, defaults to today's date
+        /// - If StartDate > EndDate, automatically swaps the dates
+        /// - Returns all active orders in the given date range
+        /// - Status filter is optional; if null, returns all statuses
+        /// - Results are ordered by CreatedAt in descending order
+        /// - Includes related data: OrderItems, Cashier, and Customer
+        /// </summary>
+        /// <param name="startDate">Start date for the date range filter. Defaults to today if not provided.</param>
+        /// <param name="endDate">End date for the date range filter. If null, includes all dates from startDate onwards.</param>
+        /// <param name="status">Order status filter. If null, returns all statuses.</param>
+        /// <returns>List of active orders matching the criteria, ordered by CreatedAt descending.</returns>
+        Task<List<Order>> GetOrdersByDateAndStatusAsync(DateTime? startDate, DateTime? endDate, OrderStatus? status);
     }
 }

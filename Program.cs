@@ -74,10 +74,11 @@ builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();
 builder.Services.AddScoped<pos_service.Repositories.Roles.IRoleRepository, pos_service.Repositories.Roles.RoleRepository>();
 builder.Services.AddScoped<ISettingRepository, SettingRepository>();
 builder.Services.AddScoped<ISettingService, SettingService>();
-// Backup schedule repository
+// Backup repositories - only location and history needed for manual backups
 builder.Services.AddScoped<IBackupLocationRepository, BackupLocationRepository>();
 builder.Services.AddScoped<IBackupHistoryRepository, BackupHistoryRepository>();
-// BackupService dependencies are registered; BackupService registered below
+// Stored Procedure Executor
+builder.Services.AddScoped<pos_service.Repositories.Base.IStoredProcedureExecutor, pos_service.Repositories.Base.StoredProcedureExecutor>();
 
 // FIXED: DbContext registration with all dependencies
 builder.Services.AddDbContext<AppDbContext>((provider, options) =>

@@ -1,10 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using pos_service.Helpers;
 using pos_service.Models;
-using pos_service.Models.DTO.Orders;
+using pos_service.Models.DTO.Bills;
 using pos_service.Services;
-using System.Drawing.Printing;
-using System.Net.Sockets;
 
 namespace pos_service.Controllers
 {
@@ -15,11 +14,16 @@ namespace pos_service.Controllers
     {
         private readonly IOrderService _orderService;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IWebHostEnvironment _env;
 
-        public PrintController(IOrderService orderService, ICurrentUserService currentUserService)
+        public PrintController(
+            IOrderService orderService, 
+            ICurrentUserService currentUserService,
+            IWebHostEnvironment env)
         {
-            _orderService       = orderService;
+            _orderService = orderService;
             _currentUserService = currentUserService;
+            _env = env;
         }
 
         [HttpPost]
@@ -27,49 +31,74 @@ namespace pos_service.Controllers
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
+
             try
             {
                 var currentUser = _currentUserService.GetCurrentUser();
 
-                OrderResDto? orderToPrint = null;
                 if (string.IsNullOrWhiteSpace(req.OrderNumber))
                     return BadRequest("OrderNumber is required");
 
-                orderToPrint = await _orderService.GetOrderByOrderNumberAsync(req.OrderNumber!, currentUser);
+                var orderToPrint = await _orderService.GetOrderByOrderNumberAsync(req.OrderNumber!, currentUser);
                 if (orderToPrint == null)
                     return NotFound($"Order with number '{req.OrderNumber}' not found");
 
-                var bytes = Helpers.EscPosFormatter.FormatReceipt(orderToPrint!);
-
-                if (req.UseNetwork && !string.IsNullOrWhiteSpace(req.PrinterIp))
+                var printerName = req.PrinterName ?? FastReportPrintHelper.GetDefaultPrinter();
+                if (string.IsNullOrWhiteSpace(printerName))
                 {
-                    await Helpers.NetworkPrinter.SendAsync(req.PrinterIp, req.Port ?? 9100, bytes);
+                    return StatusCode(500, "No installed printer found. Set a default printer or provide PrinterName.");
                 }
-                else
+
+                var reportPath = Path.Combine(_env.ContentRootPath, "posbill.frx");
+                var success = await FastReportPrintHelper.PrintReceiptAsync(orderToPrint, printerName, reportPath);
+
+                if (!success)
                 {
-                    var printerName = req.PrinterName;
-                    if (string.IsNullOrWhiteSpace(printerName))
+                    return StatusCode(500, new PrintResponseDto
                     {
-                        try
-                        {
-                            printerName = new PrinterSettings().PrinterName;
-                        }
-                        catch
-                        {
-                            printerName = "POS Receipt Printer";
-                        }
-                    }
-                    // Printing process
-                    var ok = Helpers.RawPrinterHelper.SendBytesToPrinter(printerName, bytes);
-                    //var ok = true;
-                    if (!ok) return StatusCode(500, $"Failed to send to printer '{printerName}'");
+                        Printed = false,
+                        OrderNumber = orderToPrint.OrderNumber,
+                        Status = orderToPrint.Status.ToString(),
+                        Printer = printerName,
+                        Error = $"Failed to send to printer '{printerName}'"
+                    });
                 }
 
-                return Ok(new { printed = true, orderNumber = orderToPrint!.OrderNumber, status = orderToPrint.Status.ToString() });
+                return Ok(new PrintResponseDto
+                { 
+                    Printed = true, 
+                    OrderNumber = orderToPrint.OrderNumber, 
+                    Status = orderToPrint.Status.ToString(),
+                    Printer = printerName
+                });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { printed = false, error = ex.Message });
+                return StatusCode(500, new PrintResponseDto
+                {
+                    Printed = false,
+                    Error = ex.Message
+                });
+            }
+        }
+
+        [HttpGet("printers")]
+        public IActionResult GetPrinters()
+        {
+            try
+            {
+                var printers = FastReportPrintHelper.GetAvailablePrinters();
+                var defaultPrinter = FastReportPrintHelper.GetDefaultPrinter();
+
+                return Ok(new PrintersResponseDto
+                {
+                    Printers = printers,
+                    DefaultPrinter = defaultPrinter
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
             }
         }
     }

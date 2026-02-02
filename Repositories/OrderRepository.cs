@@ -67,7 +67,7 @@ namespace pos_service.Repositories
                 .Include(o => o.OrderItems)
                 .Include(o => o.Cashier)
                 .Include(o => o.Customer)
-                .FirstOrDefaultAsync(o => o.OrderNumber == orderNumber && o.IsActive);
+                .FirstOrDefaultAsync(o => o.OrderNumber == orderNumber);
         }
 
         public async Task<Order?> GetByUuidAsync(string uuid)

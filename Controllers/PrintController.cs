@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using pos_service.Helpers;
-using pos_service.Models;
 using pos_service.Models.DTO.Bills;
 using pos_service.Services;
+using System.Drawing;
 
 namespace pos_service.Controllers
 {
@@ -13,63 +13,62 @@ namespace pos_service.Controllers
     public class PrintController : ControllerBase
     {
         private readonly IOrderService _orderService;
+        private readonly IItemService _itemService;
         private readonly ICurrentUserService _currentUserService;
         private readonly IWebHostEnvironment _env;
 
         public PrintController(
-            IOrderService orderService, 
+            IOrderService orderService,
+            IItemService itemService,
             ICurrentUserService currentUserService,
             IWebHostEnvironment env)
         {
             _orderService = orderService;
+            _itemService = itemService;
             _currentUserService = currentUserService;
             _env = env;
         }
 
+        /// <summary>
+        /// Prints the bill for the given order number.
+        /// </summary>
+        /// <param name="orderNumber">The order number to print the bill for.</param>
+        /// <returns>A response indicating the result of the print operation.</returns>
         [HttpPost]
-        public async Task<IActionResult> Print([FromBody] PrintRequest req)
+        public async Task<IActionResult> PrintBill([FromQuery] string orderNumber)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            if (string.IsNullOrWhiteSpace(orderNumber))
+                return BadRequest("OrderNumber is required");
 
             try
             {
                 var currentUser = _currentUserService.GetCurrentUser();
 
-                if (string.IsNullOrWhiteSpace(req.OrderNumber))
-                    return BadRequest("OrderNumber is required");
-
-                var orderToPrint = await _orderService.GetOrderByOrderNumberAsync(req.OrderNumber!, currentUser);
+                var orderToPrint = await _orderService.GetOrderByOrderNumberAsync(orderNumber, currentUser);
                 if (orderToPrint == null)
-                    return NotFound($"Order with number '{req.OrderNumber}' not found");
+                    return NotFound($"Order with number '{orderNumber}' not found");
 
-                var printerName = req.PrinterName ?? FastReportPrintHelper.GetDefaultPrinter();
-                if (string.IsNullOrWhiteSpace(printerName))
+                var printer = FastReportPrintHelper.GetDefaultPrinter();
+                if (string.IsNullOrWhiteSpace(printer))
                 {
-                    return StatusCode(500, "No installed printer found. Set a default printer or provide PrinterName.");
+                    return StatusCode(500, "No installed printer found. Set a default printer.");
                 }
 
-                var reportPath = Path.Combine(_env.ContentRootPath, "posbill.frx");
-                var success = await FastReportPrintHelper.PrintReceiptAsync(orderToPrint, printerName, reportPath);
+                var reportPath = Path.Combine(_env.ContentRootPath, "Bills/posbill.frx");
+                var success = await FastReportPrintHelper.PrintReceiptAsync(orderToPrint, printer, reportPath);
 
                 if (!success)
                 {
                     return StatusCode(500, new PrintResponseDto
                     {
                         Printed = false,
-                        OrderNumber = orderToPrint.OrderNumber,
-                        Status = orderToPrint.Status.ToString(),
-                        Printer = printerName,
-                        Error = $"Failed to send to printer '{printerName}'"
+                        Error = $"Failed to send to printer '{printer}'"
                     });
                 }
 
                 return Ok(new PrintResponseDto
                 { 
-                    Printed = true, 
-                    OrderNumber = orderToPrint.OrderNumber, 
-                    Status = orderToPrint.Status.ToString(),
-                    Printer = printerName
+                    Printed = true
                 });
             }
             catch (Exception ex)
@@ -82,6 +81,71 @@ namespace pos_service.Controllers
             }
         }
 
+        /// <summary>
+        /// Prints the barcode for the given item UUID.
+        /// </summary>
+        /// <param name="itemUuid">The UUID of the item to print the barcode for.</param>
+        /// <returns>A response indicating the result of the print operation.</returns>
+        [HttpPost("barcode/{itemUuid}")]
+        public async Task<IActionResult> PrintBarcode(string itemUuid)
+        {
+            if (string.IsNullOrWhiteSpace(itemUuid))
+                return BadRequest("ItemUuid is required");
+
+            try
+            {
+                var currentUser = _currentUserService.GetCurrentUser();
+
+                var item = await _itemService.GetItemByUuidAsync(itemUuid, currentUser);
+                if (item == null)
+                    return NotFound($"Item with UUID '{itemUuid}' not found");
+
+                if (string.IsNullOrWhiteSpace(item.BarCode))
+                {
+                    return BadRequest(new PrintResponseDto
+                    {
+                        Printed = false,
+                        Error = "This item does not have a barcode assigned"
+                    });
+                }
+
+                var printer = FastReportPrintHelper.GetDefaultPrinter();
+                if (string.IsNullOrWhiteSpace(printer))
+                {
+                    return StatusCode(500, "No installed printer found. Set a default printer.");
+                }
+
+                var reportPath = Path.Combine(_env.ContentRootPath, "Bills/item_barcode.frx");
+                var success = await FastReportPrintHelper.PrintBarcodeAsync(item, printer, reportPath);
+
+                if (!success)
+                {
+                    return StatusCode(500, new PrintResponseDto
+                    {
+                        Printed = false,
+                        Error = $"Failed to send to printer '{printer}'"
+                    });
+                }
+
+                return Ok(new PrintResponseDto
+                { 
+                    Printed = true
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new PrintResponseDto
+                {
+                    Printed = false,
+                    Error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// Retrieves the list of available printers and the default printer.
+        /// </summary>
+        /// <returns>A response containing the list of printers and the default printer.</returns>
         [HttpGet("printers")]
         public IActionResult GetPrinters()
         {

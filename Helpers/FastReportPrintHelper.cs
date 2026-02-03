@@ -1,6 +1,7 @@
 using FastReport;
 using FastReport.Export.Image;
 using pos_service.Models.DTO.Orders;
+using pos_service.Models.DTO.Items;
 using System.Drawing.Printing;
 
 namespace pos_service.Helpers
@@ -12,37 +13,8 @@ namespace pos_service.Helpers
             string printerName, 
             string reportTemplatePath)
         {
-            return await Task.Run(() =>
+            return await PrintReportAsync(reportTemplatePath, printerName, report =>
             {
-                try
-                {
-                    var report = PrepareReceipt(order, reportTemplatePath);
-                    if (report == null)
-                        return false;
-
-                    PrintReport(report, printerName);
-                    return true;
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"FastReport printing error: {ex.Message}");
-                    return false;
-                }
-            });
-        }
-
-        private static Report? PrepareReceipt(OrderResDto order, string reportTemplatePath)
-        {
-            try
-            {
-                if (!File.Exists(reportTemplatePath))
-                {
-                    throw new FileNotFoundException($"Report template not found at {reportTemplatePath}");
-                }
-
-                var report = new Report();
-                report.Load(reportTemplatePath);
-
                 // Prepare report items data
                 var items = order.OrderItems.Select((item, index) => new
                 {
@@ -67,6 +39,63 @@ namespace pos_service.Helpers
                 report.SetParameterValue("Cash", order.AmountPaid.ToString("F2"));
                 report.SetParameterValue("Balance", order.Balance.ToString("F2"));
                 report.SetParameterValue("GrosAmount", order.GrossAmount.ToString("F2"));
+            });
+        }
+
+        public static async Task<bool> PrintBarcodeAsync(
+            ItemResDto item, 
+            string printerName, 
+            string reportTemplatePath)
+        {
+            return await PrintReportAsync(reportTemplatePath, printerName, report =>
+            {
+                // Set barcode parameters
+                report.SetParameterValue("Name", item.Name.ToString());
+                report.SetParameterValue("PrintName", item.PrintName.ToString());
+                report.SetParameterValue("BarCode", item.BarCode.ToString());
+                //report.SetParameterValue("Price", item.RetailPrice.ToString("F2"));
+                report.SetParameterValue("ItemId", $"{item.Id}-{item.SubId}");
+            });
+        }
+
+        private static async Task<bool> PrintReportAsync(
+            string reportTemplatePath, 
+            string printerName, 
+            Action<Report> configureReport)
+        {
+            return await Task.Run(() =>
+            {
+                try
+                {
+                    var report = LoadAndPrepareReport(reportTemplatePath, configureReport);
+                    if (report == null)
+                        return false;
+
+                    PrintReport(report, printerName);
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"FastReport printing error: {ex.Message}");
+                    return false;
+                }
+            });
+        }
+
+        private static Report? LoadAndPrepareReport(string reportTemplatePath, Action<Report> configureReport)
+        {
+            try
+            {
+                if (!File.Exists(reportTemplatePath))
+                {
+                    throw new FileNotFoundException($"Report template not found at {reportTemplatePath}");
+                }
+
+                var report = new Report();
+                report.Load(reportTemplatePath);
+
+                // Configure report with specific parameters
+                configureReport(report);
 
                 // Prepare the report
                 if (!report.Prepare())

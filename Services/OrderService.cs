@@ -79,14 +79,14 @@ namespace pos_service.Services
                         Quantity                = itemDto.Quantity,
                         PriceAtSale             = salePrice,
                         MarkedPriceAtSale       = markedPrice,
-                        CostAtSale              = item.BuyingPrice,
+                        CostAtSale              = item.Price?.BuyingPrice ?? 0,
                         LineTotal               = lineTotal
                     };
 
                     orderItems.Add(orderItem);
 
                     // Only accumulate cost for profit calculation; trust frontend for gross/discount/net/itemCount
-                    totalCost += itemDto.Quantity * item.BuyingPrice;
+                    totalCost += itemDto.Quantity * (item.Price?.BuyingPrice ?? 0);
                 }
 
                 // Use frontend-provided (required) order-level totals and item count
@@ -253,14 +253,14 @@ namespace pos_service.Services
                         Quantity                = itemDto.Quantity,
                         PriceAtSale             = salePrice,
                         MarkedPriceAtSale       = markedPrice,
-                        CostAtSale              = item.BuyingPrice,
+                        CostAtSale              = item.Price?.BuyingPrice ?? 0,
                         LineTotal               = lineTotal
                     };
 
                     existingOrder.OrderItems.Add(orderItem);
 
                     // Only accumulate cost for profit calculation; trust frontend for gross/discount/net/itemCount
-                    totalCost += itemDto.Quantity * item.BuyingPrice;
+                    totalCost += itemDto.Quantity * (item.Price?.BuyingPrice ?? 0);
                 }
 
                 // Update item quantities

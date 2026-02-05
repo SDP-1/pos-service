@@ -39,6 +39,7 @@
 
   <ItemGroup>
     <Folder Include="Migrations\" />
+    <Folder Include="Tests\Services\" />
   </ItemGroup>
 
   <!-- Ensure environment-specific appsettings file is included in publish output -->

@@ -15,13 +15,20 @@ namespace pos_service.Repositories
 
         public async Task<Item?> GetByIdAsync(int id, int subId)
         {
-            return await _context.Items.FindAsync(id, subId);
+            return await _context.Items
+                .Include(i => i.Price)
+                .Include(i => i.ExpDates)
+                .Include(i => i.ItemSuppliers)
+                    .ThenInclude(isu => isu.Supplier)
+                .FirstOrDefaultAsync(i => i.Id == id && i.SubId == subId);
         }
 
         public async Task<IEnumerable<Item>> GetAllAsync()
         {
             //return await _context.Items.ToListAsync();
             return await _context.Items
+                .Include(i => i.Price)
+                .Include(i => i.ExpDates)
                 .Include(i => i.ItemSuppliers)
                     .ThenInclude(isu => isu.Supplier)
                 .ToListAsync();
@@ -29,7 +36,10 @@ namespace pos_service.Repositories
 
         public async Task<Item> AddAsync(Item item)
         {
-            item.Uuid = Guid.NewGuid().ToString();
+            if (string.IsNullOrWhiteSpace(item.Uuid))
+            {
+                item.Uuid = Guid.NewGuid().ToString();
+            }
             _context.Items.Add(item);
             await _context.SaveChangesAsync();
             return item;
@@ -69,6 +79,8 @@ namespace pos_service.Repositories
         {
             // Eagerly loads the related Suppliers data
             return await _context.Items
+                .Include(i => i.Price)
+                .Include(i => i.ExpDates)
                 .Include(i => i.ItemSuppliers)
                     .ThenInclude(isu => isu.Supplier)
                 .FirstOrDefaultAsync(i => i.Id == id && i.SubId == subId);
@@ -77,6 +89,8 @@ namespace pos_service.Repositories
         public async Task<IEnumerable<Item>> GetByMainIdAsync(int id)
         {
             return await _context.Items
+                .Include(i => i.Price)
+                .Include(i => i.ExpDates)
                 .Include(i => i.ItemSuppliers)
                     .ThenInclude(isu => isu.Supplier)
                 .Where(i => i.Id == id)
@@ -86,6 +100,8 @@ namespace pos_service.Repositories
         public async Task<IEnumerable<Item>> GetByBarCodeAsync(string barCode)
         {
             return await _context.Items
+                .Include(i => i.Price)
+                .Include(i => i.ExpDates)
                 .Include(i => i.ItemSuppliers)
                     .ThenInclude(isu => isu.Supplier)
                 .Where(i => i.BarCode == barCode)
@@ -95,6 +111,8 @@ namespace pos_service.Repositories
         public async Task<Item?> GetByUuidAsync(string uuid)
         {
             return await _context.Items
+                .Include(i => i.Price)
+                .Include(i => i.ExpDates)
                 .Include(i => i.ItemSuppliers)
                     .ThenInclude(isu => isu.Supplier)
                 .FirstOrDefaultAsync(i => i.Uuid == uuid);
@@ -104,6 +122,8 @@ namespace pos_service.Repositories
         {
             var uuidList = uuids.ToList();
             return await _context.Items
+                .Include(i => i.Price)
+                .Include(i => i.ExpDates)
                 .Include(i => i.ItemSuppliers)
                     .ThenInclude(isu => isu.Supplier)
                 .Where(i => uuidList.Contains(i.Uuid))
@@ -116,6 +136,8 @@ namespace pos_service.Repositories
         public async Task<IEnumerable<Item>> GetBySupplierIdAsync(int supplierId)
         {
             return await _context.Items
+                .Include(i => i.Price)
+                .Include(i => i.ExpDates)
                 .Where(i => i.ItemSuppliers.Any(isu => isu.SuppliersId == supplierId))
                 .Include(i => i.ItemSuppliers)
                     .ThenInclude(isu => isu.Supplier)
@@ -125,6 +147,8 @@ namespace pos_service.Repositories
         public async Task<IEnumerable<Item>> GetBySearchAsync(string searchTerm)
         {
             var query = _context.Items
+                .Include(i => i.Price)
+                .Include(i => i.ExpDates)
                 .Include(i => i.ItemSuppliers)
                     .ThenInclude(isu => isu.Supplier)
                 .AsQueryable();

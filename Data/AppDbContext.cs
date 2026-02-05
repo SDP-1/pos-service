@@ -24,6 +24,8 @@ namespace pos_service.Data
         public DbSet<Customer> Customers   { get; set; }
         public DbSet<Supplier> Suppliers   { get; set; }
         public DbSet<Item> Items           { get; set; }
+        public DbSet<ItemPrice> ItemPrices { get; set; }
+        public DbSet<ItemExpiry> ItemExpiries { get; set; }
         public DbSet<ItemSupplier> ItemSuppliers { get; set; }
         public DbSet<Order> Orders         { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
@@ -185,7 +187,32 @@ namespace pos_service.Data
                       .IsRequired()
                       .OnDelete(DeleteBehavior.Cascade);
 
+                entity.HasOne(i => i.Price)
+                      .WithOne(p => p.Item)
+                      .HasForeignKey<ItemPrice>(p => new { p.ItemsId, p.ItemsSubId })
+                      .IsRequired()
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(i => i.ExpDates)
+                      .WithOne(e => e.Item)
+                      .HasForeignKey(e => new { e.ItemsId, e.ItemsSubId })
+                      .IsRequired()
+                      .OnDelete(DeleteBehavior.Cascade);
+
                 entity.HasAlternateKey(i => i.Uuid);   // creates unique constraint
+            });
+
+            modelBuilder.Entity<ItemPrice>(entity =>
+            {
+                entity.HasKey(p => new { p.ItemsId, p.ItemsSubId });
+                entity.Property(p => p.ItemUuid).HasMaxLength(255).IsRequired();
+                entity.HasAlternateKey(p => p.ItemUuid);
+            });
+
+            modelBuilder.Entity<ItemExpiry>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.ItemUuid).HasMaxLength(255).IsRequired();
             });
 
             // --- Settings Configuration ---

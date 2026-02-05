@@ -306,9 +306,6 @@ namespace pos_service.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
 
-                    b.Property<decimal>("BuyingPrice")
-                        .HasColumnType("decimal(18, 2)");
-
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime(6)")
@@ -318,16 +315,10 @@ namespace pos_service.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("varchar(255)");
 
-                    b.Property<DateTime?>("ExpDate")
-                        .HasColumnType("date");
-
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("tinyint(1)")
                         .HasDefaultValue(true);
-
-                    b.Property<decimal>("MarkedPrice")
-                        .HasColumnType("decimal(18, 2)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -338,12 +329,6 @@ namespace pos_service.Migrations
                         .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("varchar(40)");
-
-                    b.Property<decimal>("RetailDiscountRatio")
-                        .HasColumnType("decimal(5, 2)");
-
-                    b.Property<decimal>("RetailPrice")
-                        .HasColumnType("decimal(18, 2)");
 
                     b.Property<decimal>("StockQuantity")
                         .HasColumnType("decimal(18, 3)");
@@ -363,15 +348,137 @@ namespace pos_service.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
+                    b.HasKey("Id", "SubId");
+
+                    b.ToTable("Items");
+                });
+
+            modelBuilder.Entity("pos_service.Models.ItemExpiry", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTime>("ExpDate")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("ItemUuid")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<int>("ItemsId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ItemsSubId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("NotifyBeforeDays")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlComputedColumn(b.Property<DateTime?>("UpdatedAt"));
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("Uuid")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ItemsId", "ItemsSubId");
+
+                    b.ToTable("ItemExpiries");
+                });
+
+            modelBuilder.Entity("pos_service.Models.ItemPrice", b =>
+                {
+                    b.Property<int>("ItemsId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ItemsSubId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("BuyingPrice")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("ItemUuid")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<decimal>("MarkedPrice")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<decimal>("RetailDiscountRatio")
+                        .HasColumnType("decimal(5, 2)");
+
+                    b.Property<decimal>("RetailPrice")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlComputedColumn(b.Property<DateTime?>("UpdatedAt"));
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("Uuid")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<decimal>("WholesaleDiscountRatio")
                         .HasColumnType("decimal(5, 2)");
 
                     b.Property<decimal>("WholesalePrice")
                         .HasColumnType("decimal(18, 2)");
 
-                    b.HasKey("Id", "SubId");
+                    b.HasKey("ItemsId", "ItemsSubId");
 
-                    b.ToTable("Items");
+                    b.HasAlternateKey("ItemUuid");
+
+                    b.ToTable("ItemPrices");
                 });
 
             modelBuilder.Entity("pos_service.Models.ItemSupplier", b =>
@@ -944,6 +1051,28 @@ namespace pos_service.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("pos_service.Models.ItemExpiry", b =>
+                {
+                    b.HasOne("pos_service.Models.Item", "Item")
+                        .WithMany("ExpDates")
+                        .HasForeignKey("ItemsId", "ItemsSubId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Item");
+                });
+
+            modelBuilder.Entity("pos_service.Models.ItemPrice", b =>
+                {
+                    b.HasOne("pos_service.Models.Item", "Item")
+                        .WithOne("Price")
+                        .HasForeignKey("pos_service.Models.ItemPrice", "ItemsId", "ItemsSubId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Item");
+                });
+
             modelBuilder.Entity("pos_service.Models.ItemSupplier", b =>
                 {
                     b.HasOne("pos_service.Models.Supplier", "Supplier")
@@ -1037,7 +1166,11 @@ namespace pos_service.Migrations
 
             modelBuilder.Entity("pos_service.Models.Item", b =>
                 {
+                    b.Navigation("ExpDates");
+
                     b.Navigation("ItemSuppliers");
+
+                    b.Navigation("Price");
                 });
 
             modelBuilder.Entity("pos_service.Models.Order", b =>

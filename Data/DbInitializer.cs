@@ -144,6 +144,7 @@ namespace pos_service.Data
                 if (supplier == null)
                     throw new Exception("Supplier not found");
 
+                var item1Uuid = Guid.NewGuid().ToString();
                 var item1 = new Item
                 {
                     Id = 1,
@@ -151,16 +152,25 @@ namespace pos_service.Data
                     Name = "Item 1",
                     StockQuantity = 200,
                     PrintName = "Item 1",
-                    RetailPrice = 100,
-                    BuyingPrice = 90,
-                    MarkedPrice = 100,
-                    Uuid = Guid.NewGuid().ToString(),
+                    Uuid = item1Uuid,
+                    Price = new ItemPrice
+                    {
+                        ItemsId = 1,
+                        ItemsSubId = 0,
+                        ItemUuid = item1Uuid,
+                        BuyingPrice = 90,
+                        MarkedPrice = 100,
+                        RetailPrice = 100,
+                        WholesalePrice = 100,
+                        Uuid = Guid.NewGuid().ToString()
+                    },
                     ItemSuppliers = new List<ItemSupplier>()
                     {
                         new ItemSupplier { SuppliersId = supplier.Id, ItemsId = 1, ItemsSubId = 0,Uuid = Guid.NewGuid().ToString(), Supplier = supplier }
                     }
                 };
 
+                var item2Uuid = Guid.NewGuid().ToString();
                 var item2 = new Item
                 {
                     Id = 2,
@@ -168,10 +178,18 @@ namespace pos_service.Data
                     Name = "Item 2",
                     StockQuantity = 200,
                     PrintName = "Item 2",
-                    RetailPrice = 200,
-                    BuyingPrice = 90,
-                    MarkedPrice = 100,
-                    Uuid = Guid.NewGuid().ToString(),
+                    Uuid = item2Uuid,
+                    Price = new ItemPrice
+                    {
+                        ItemsId = 2,
+                        ItemsSubId = 0,
+                        ItemUuid = item2Uuid,
+                        BuyingPrice = 90,
+                        MarkedPrice = 100,
+                        RetailPrice = 200,
+                        WholesalePrice = 200,
+                        Uuid = Guid.NewGuid().ToString()
+                    },
                     ItemSuppliers = suppliers.Select(s => new ItemSupplier { SuppliersId = s.Id, ItemsId = 2, Uuid = Guid.NewGuid().ToString(), ItemsSubId = 0, Supplier = s }).ToList()
                 };
 
@@ -273,8 +291,12 @@ namespace pos_service.Data
                 if (admin == null)
                     throw new Exception("Admin user not found for seeding orders");
 
-                var item1 = await context.Items.FindAsync(1, 0);
-                var item2 = await context.Items.FindAsync(2, 0);
+                var item1 = await context.Items
+                    .Include(i => i.Price)
+                    .FirstOrDefaultAsync(i => i.Id == 1 && i.SubId == 0);
+                var item2 = await context.Items
+                    .Include(i => i.Price)
+                    .FirstOrDefaultAsync(i => i.Id == 2 && i.SubId == 0);
                 if (item1 == null || item2 == null)
                     throw new Exception("Seed items not found when creating sample orders");
 
@@ -287,10 +309,10 @@ namespace pos_service.Data
                         OriginalItemUuid = item1.Uuid,
                         PrintName = item1.PrintName,
                         Quantity = 2,
-                        PriceAtSale = item1.RetailPrice,
-                        MarkedPriceAtSale = item1.MarkedPrice,
-                        CostAtSale = item1.BuyingPrice,
-                        LineTotal = 2 * item1.RetailPrice
+                        PriceAtSale = item1.Price?.RetailPrice ?? 0,
+                        MarkedPriceAtSale = item1.Price?.MarkedPrice ?? 0,
+                        CostAtSale = item1.Price?.BuyingPrice ?? 0,
+                        LineTotal = 2 * (item1.Price?.RetailPrice ?? 0)
                     },
                     new OrderItem
                     {
@@ -298,10 +320,10 @@ namespace pos_service.Data
                         OriginalItemUuid = item2.Uuid,
                         PrintName = item2.PrintName,
                         Quantity = 1,
-                        PriceAtSale = item2.RetailPrice,
-                        MarkedPriceAtSale = item2.MarkedPrice,
-                        CostAtSale = item2.BuyingPrice,
-                        LineTotal = 1 * item2.RetailPrice
+                        PriceAtSale = item2.Price?.RetailPrice ?? 0,
+                        MarkedPriceAtSale = item2.Price?.MarkedPrice ?? 0,
+                        CostAtSale = item2.Price?.BuyingPrice ?? 0,
+                        LineTotal = 1 * (item2.Price?.RetailPrice ?? 0)
                     }
                 };
 
@@ -339,10 +361,10 @@ namespace pos_service.Data
                         OriginalItemUuid = item2.Uuid,
                         PrintName = item2.PrintName,
                         Quantity = 3,
-                        PriceAtSale = item2.RetailPrice,
-                        MarkedPriceAtSale = item2.MarkedPrice,
-                        CostAtSale = item2.BuyingPrice,
-                        LineTotal = 3 * item2.RetailPrice
+                        PriceAtSale = item2.Price?.RetailPrice ?? 0,
+                        MarkedPriceAtSale = item2.Price?.MarkedPrice ?? 0,
+                        CostAtSale = item2.Price?.BuyingPrice ?? 0,
+                        LineTotal = 3 * (item2.Price?.RetailPrice ?? 0)
                     }
                 };
 

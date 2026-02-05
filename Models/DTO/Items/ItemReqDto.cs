@@ -42,28 +42,9 @@ namespace pos_service.Models.DTO.Items
         public bool AllowsDecimalQuantities   { get; set; } = false;
 
         [Required]
-        [Range(0, double.MaxValue)]
-        public decimal BuyingPrice            { get; set; }
+        public ItemPriceDto Price              { get; set; }
 
-        [Required]
-        [Range(0, double.MaxValue)]
-        public decimal MarkedPrice            { get; set; }
-
-        public DateTime? ExpDate { get; set; }
-
-        [Required]
-        [Range(0, double.MaxValue)]
-        public decimal RetailPrice            { get; set; }
-
-        [Required]
-        [Range(0, double.MaxValue)]
-        public decimal WholesalePrice         { get; set; }
-
-        [Range(0, 100)]
-        public decimal RetailDiscountRatio    { get; set; } = 0.0m;
-
-        [Range(0, 100)]
-        public decimal WholesaleDiscountRatio { get; set; } = 0.0m;
+        public ICollection<ItemExpiryDto> ExpDates { get; set; } = new List<ItemExpiryDto>();
 
         /// <summary>
         /// A list of supplier IDs to associate with this item.

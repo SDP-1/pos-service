@@ -17,6 +17,7 @@ namespace pos_service.Models
         /// PART 2 of the Composite Key.
         /// The sub-identifier for a variant.
         /// </summary>
+        [Required]
         public int SubId                       { get; set; } = 0;
 
         /// <summary>
@@ -54,48 +55,14 @@ namespace pos_service.Models
         // --- Pricing Information ---
 
         /// <summary>
-        /// The cost price of the item from the supplier.
+        /// Pricing details for this item.
         /// </summary>
-        [Column(TypeName = "decimal(18, 2)")]
-        public decimal BuyingPrice             { get; set; }
+        public virtual ItemPrice? Price        { get; set; }
 
         /// <summary>
-        /// The marked retail price (MRP) printed on the product label.
+        /// Expiry dates for this item.
         /// </summary>
-        [Column(TypeName = "decimal(18, 2)")]
-        public decimal MarkedPrice            { get; set; }
-
-        /// <summary>
-        /// The base selling price for retail customers before any discount.
-        /// </summary>
-        [Required]
-        [Column(TypeName = "decimal(18, 2)")]
-        public decimal RetailPrice            { get; set; }
-
-        /// <summary>
-        /// The base price for wholesale customers before any discount.
-        /// </summary>
-        [Column(TypeName = "decimal(18, 2)")]
-        public decimal WholesalePrice         { get; set; }
-
-        /// <summary>
-        /// The discount percentage for retail sales (e.g., 5.5 for 5.5%).
-        /// </summary>
-        [Column(TypeName = "decimal(5, 2)")]
-        public decimal RetailDiscountRatio    { get; set; } = 0.0m;
-
-        /// <summary>
-        /// The discount percentage for wholesale sales (e.g., 10.0 for 10%).
-        /// </summary>
-        [Column(TypeName = "decimal(5, 2)")]
-        public decimal WholesaleDiscountRatio { get; set; } = 0.0m;
-
-        /// <summary>
-        /// Optional expiry date for the item (null if not applicable).
-        /// Stored as a date only in the database.
-        /// </summary>
-        [Column(TypeName = "date")]
-        public DateTime? ExpDate { get; set; }
+        public virtual ICollection<ItemExpiry> ExpDates { get; set; } = new List<ItemExpiry>();
 
         /// <summary>
         /// Junction entities linking this item to suppliers.

@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace pos_service.Migrations
 {
     /// <inheritdoc />
-    public partial class remove_ackup_shedule : Migration
+    public partial class updatedatabaseArcitecture : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -128,13 +128,6 @@ namespace pos_service.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     StockQuantity = table.Column<decimal>(type: "decimal(18,3)", nullable: false),
                     AllowsDecimalQuantities = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    BuyingPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    MarkedPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    RetailPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    WholesalePrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    RetailDiscountRatio = table.Column<decimal>(type: "decimal(5,2)", nullable: false),
-                    WholesaleDiscountRatio = table.Column<decimal>(type: "decimal(5,2)", nullable: false),
-                    ExpDate = table.Column<DateTime>(type: "date", nullable: true),
                     Uuid = table.Column<string>(type: "varchar(255)", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP(6)"),
@@ -254,6 +247,79 @@ namespace pos_service.Migrations
                 {
                     table.PrimaryKey("PK_Suppliers", x => x.Id);
                     table.UniqueConstraint("AK_Suppliers_Uuid", x => x.Uuid);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "ItemExpiries",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    ItemsId = table.Column<int>(type: "int", nullable: false),
+                    ItemsSubId = table.Column<int>(type: "int", nullable: false),
+                    ItemUuid = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ExpDate = table.Column<DateTime>(type: "date", nullable: false),
+                    NotifyBeforeDays = table.Column<int>(type: "int", nullable: false),
+                    Uuid = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP(6)"),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)")
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.ComputedColumn),
+                    CreatedBy = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    UpdatedBy = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ItemExpiries", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ItemExpiries_Items_ItemsId_ItemsSubId",
+                        columns: x => new { x.ItemsId, x.ItemsSubId },
+                        principalTable: "Items",
+                        principalColumns: new[] { "Id", "SubId" },
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "ItemPrices",
+                columns: table => new
+                {
+                    ItemsId = table.Column<int>(type: "int", nullable: false),
+                    ItemsSubId = table.Column<int>(type: "int", nullable: false),
+                    ItemUuid = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    BuyingPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    MarkedPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    RetailPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    WholesalePrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    RetailDiscountRatio = table.Column<decimal>(type: "decimal(5,2)", nullable: false),
+                    WholesaleDiscountRatio = table.Column<decimal>(type: "decimal(5,2)", nullable: false),
+                    Uuid = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP(6)"),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true, defaultValueSql: "CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)")
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.ComputedColumn),
+                    CreatedBy = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    UpdatedBy = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false, defaultValue: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ItemPrices", x => new { x.ItemsId, x.ItemsSubId });
+                    table.UniqueConstraint("AK_ItemPrices_ItemUuid", x => x.ItemUuid);
+                    table.ForeignKey(
+                        name: "FK_ItemPrices_Items_ItemsId_ItemsSubId",
+                        columns: x => new { x.ItemsId, x.ItemsSubId },
+                        principalTable: "Items",
+                        principalColumns: new[] { "Id", "SubId" },
+                        onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -540,6 +606,11 @@ namespace pos_service.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_ItemExpiries_ItemsId_ItemsSubId",
+                table: "ItemExpiries",
+                columns: new[] { "ItemsId", "ItemsSubId" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ItemSuppliers_ItemsId_ItemsSubId",
                 table: "ItemSuppliers",
                 columns: new[] { "ItemsId", "ItemsSubId" });
@@ -627,6 +698,12 @@ namespace pos_service.Migrations
 
             migrationBuilder.DropTable(
                 name: "Contacts");
+
+            migrationBuilder.DropTable(
+                name: "ItemExpiries");
+
+            migrationBuilder.DropTable(
+                name: "ItemPrices");
 
             migrationBuilder.DropTable(
                 name: "ItemSuppliers");

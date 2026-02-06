@@ -15,8 +15,22 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Bills\item_barcode.frx" />
+    <None Remove="Bills\posbill.frx" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="Repositories\Base\IStoredProcedureExecutor.cs" />
     <Compile Include="Repositories\Base\StoredProcedureExecutor.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Bills\item_barcode.frx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Bills\posbill.frx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

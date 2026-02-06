@@ -94,5 +94,17 @@ namespace pos_service.Controllers
             if (!deleted) return NotFound();
             return NoContent();
         }
+
+        [HttpPut("{id:int}/status")]
+        [Permission(PermissionType.ROLE_UPDATE)]
+        public async Task<IActionResult> SetActiveStatus(int id, [FromBody] bool isActive)
+        {
+            if (id == 1 && !(_currentUser.HasPermission(PermissionType.PERMISSION_SYSADMIN_VIEW)))
+                throw new PermissionDeniedException("Insufficient permission to modify SystemAdmin role");
+
+            var updated = await _roleService.SetActiveStatusAsync(id, isActive);
+            if (updated == null) return NotFound();
+            return Ok(updated);
+        }
     }
 }

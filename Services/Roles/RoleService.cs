@@ -69,5 +69,18 @@ namespace pos_service.Services.Roles
             await _repo.DeleteAsync(existing);
             return true;
         }
+
+        public async Task<RoleResDto?> SetActiveStatusAsync(int id, bool isActive)
+        {
+            var existing = await _repo.GetByIdAsync(id);
+            if (existing == null) return null;
+
+            if (existing.Id == 1) return null; // don't allow modifying SystemAdmin
+
+            existing.IsActive = isActive;
+
+            var result = await _repo.UpdateAsync(existing);
+            return _mapper.Map<RoleResDto>(result);
+        }
     }
 }

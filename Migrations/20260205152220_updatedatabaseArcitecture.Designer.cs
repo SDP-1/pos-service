@@ -992,7 +992,6 @@ namespace pos_service.Migrations
                         .HasColumnType("varchar(50)");
 
                     b.Property<string>("NIC")
-                        .IsRequired()
                         .HasMaxLength(12)
                         .HasColumnType("varchar(12)");
 

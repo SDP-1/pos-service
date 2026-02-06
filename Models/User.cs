@@ -63,7 +63,7 @@ namespace pos_service.Models
         // The user's Sri Lankan National Identity Card number.
         /// </summary>
         [MaxLength(12)]
-        public string NIC              { get; set; }
+        public string? NIC              { get; set; }
 
         /// <summary>
         /// A collection of contacts associated with this user.

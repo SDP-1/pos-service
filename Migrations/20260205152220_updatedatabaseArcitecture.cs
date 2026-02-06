@@ -378,7 +378,7 @@ namespace pos_service.Migrations
                     RoleId = table.Column<int>(type: "int", nullable: false),
                     ProfileImageUrl = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    NIC = table.Column<string>(type: "varchar(12)", maxLength: 12, nullable: false)
+                    NIC = table.Column<string>(type: "varchar(12)", maxLength: 12, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Uuid = table.Column<string>(type: "varchar(255)", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),

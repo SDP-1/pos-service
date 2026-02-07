@@ -4,7 +4,6 @@ using pos_service.Models.DTO.Users;
 using pos_service.Models.Enums;
 using pos_service.Repositories;
 using pos_service.Security;
-using pos_service.Services.Common;
 using pos_service.Services.Common.Cache;
 
 namespace pos_service.Services
@@ -17,7 +16,6 @@ namespace pos_service.Services
         private readonly IMapper _mapper;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IJwtGenerator _jwtGenerator;
-        private readonly IFileStorageService _fileStorageService;
         private readonly ICacheService _cacheService;
 
         public UserService(
@@ -27,7 +25,6 @@ namespace pos_service.Services
             IMapper mapper, 
             IPasswordHasher hasher, 
             IJwtGenerator jwt, 
-            IFileStorageService fileStorageService, 
             Services.Common.Cache.ICacheService cacheService)
         {
             _userRepository     = repo;
@@ -36,8 +33,30 @@ namespace pos_service.Services
             _mapper             = mapper;
             _passwordHasher     = hasher;
             _jwtGenerator       = jwt;
-            _fileStorageService = fileStorageService;
             _cacheService       = cacheService;
+        }
+
+        /// <summary>
+        /// Converts an IFormFile to base64 encoded string.
+        /// </summary>
+        private async Task<string?> ConvertFileToBase64Async(IFormFile? file)
+        {
+            if (file == null || file.Length == 0)
+                return null;
+
+            try
+            {
+                using (var memoryStream = new MemoryStream())
+                {
+                    await file.CopyToAsync(memoryStream);
+                    byte[] fileBytes = memoryStream.ToArray();
+                    return Convert.ToBase64String(fileBytes);
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
         public async Task<IEnumerable<UserResDto>> GetAllUsersAsync(CurrentUser currentUser)
@@ -60,44 +79,21 @@ namespace pos_service.Services
                 return null; // Conflict: User already exists
             }
 
-            // 1.5 Handle File Upload
-            string? savedPath = null;
-            if (!string.IsNullOrEmpty(userDto.ProfileImageUrl)) // Check the new DTO property
+            // 2. Convert profile image to base64 if provided
+            string? profileImageBase64 = null;
+            if (userDto.ProfileImage != null)
             {
-                try
-                {
-                    // Copy the file from the local path and get the relative path
-                    savedPath = await _fileStorageService.CopyAndSaveFileAsync(userDto.ProfileImageUrl, "users/profiles");
-                }
-                catch (FileNotFoundException)
-                {
-                    // Let the controller decide how to respond to missing files
-                    throw;
-                }
-                catch (Exception)
-                {
-                    // Rethrow so controller can return 500
-                    throw;
-                }
+                profileImageBase64 = await ConvertFileToBase64Async(userDto.ProfileImage);
             }
 
-            // 2. Map DTO to Entity and Hash Password
+            // 3. Map DTO to Entity and Hash Password
             var user = _mapper.Map<User>(userDto);
             user.PasswordHash = _passwordHasher.HashPassword(userDto.Password);
-
-            // Set the saved path on the model only when available, otherwise prefer DTO URL, otherwise default
-            if (!string.IsNullOrEmpty(savedPath))
-            {
-                user.ProfileImageUrl = savedPath;
-            }
-            else
-            {
-                user.ProfileImageUrl = null;
-            }
+            user.ProfileImage = profileImageBase64;
 
             var newUser = await _userRepository.AddAsync(user);
 
-            // 3. Create associated contacts if provided
+            // 4. Create associated contacts if provided
             if (userDto.Contacts != null && userDto.Contacts.Any())
             {
                 foreach (var contactDto in userDto.Contacts)
@@ -221,7 +217,7 @@ namespace pos_service.Services
         }
 
         /// <summary>
-        /// Updates an existing user's details, including mapping contacts and handling the password/profile image path.
+        /// Updates an existing user's details, including mapping contacts and handling the password/profile image.
         /// </summary>
         public async Task<UserResDto?> UpdateUserAsync(int id, UserReqDto userDto, CurrentUser currentUser)
         {
@@ -243,60 +239,30 @@ namespace pos_service.Services
                 }
             }
 
-            // Handle File Copy/Replacement using local path string
-            if (!string.IsNullOrEmpty(userDto.ProfileImageUrl))
+            // 2. Handle profile image update (convert to base64 if provided)
+            if (userDto.ProfileImage != null)
             {
-                try
+                var profileImageBase64 = await ConvertFileToBase64Async(userDto.ProfileImage);
+                if (!string.IsNullOrEmpty(profileImageBase64))
                 {
-                    // Delete the old file if one exists
-                    if (!string.IsNullOrEmpty(userToUpdate.ProfileImageUrl))
-                    {
-                        _fileStorageService.DeleteFile(userToUpdate.ProfileImageUrl);
-                    }
-
-                    // Copy the file from the local path and save the new path
-                    var copied = await _fileStorageService.CopyAndSaveFileAsync(
-                        userDto.ProfileImageUrl,
-                        "users/profiles"
-                    );
-
-                    if (!string.IsNullOrEmpty(copied))
-                    {
-                        userDto.ProfileImageUrl = copied;
-                    }
-                }
-                catch (FileNotFoundException)
-                {
-                    // Let controller decide how to respond
-                    throw;
-                }
-                catch (Exception)
-                {
-                    throw;
+                    userToUpdate.ProfileImage = profileImageBase64;
                 }
             }
-            else 
-            {
-                userToUpdate.ProfileImageUrl = null;
-            }
 
-                // Map incoming DTO into existing entity (this will set flat properties)
-                //_mapper.Map(userDto, userToUpdate);
-
+            // 3. Map incoming DTO properties into existing entity
             if (userDto.FirstName != null      ) userToUpdate.FirstName         = userDto.FirstName;
             if (userDto.LastName != null       ) userToUpdate.LastName          = userDto.LastName;
             if (userDto.NIC != null            ) userToUpdate.NIC               = userDto.NIC;
-            if (userDto.ProfileImageUrl != null) userToUpdate.ProfileImageUrl   = userDto.ProfileImageUrl;
             if (userDto.RoleId != null         ) userToUpdate.RoleId            = userDto.RoleId.Value;
             if (userDto.UserName != null       ) userToUpdate.UserName          = userDto.UserName;
 
-            // 3. Handle password change
+            // 4. Handle password change
             if (!string.IsNullOrEmpty(userDto.Password))
                 userToUpdate.PasswordHash = _passwordHasher.HashPassword(userDto.Password);
 
             var data = await _userRepository.UpdateAsync(userToUpdate);
 
-            // 4. Merge contacts: update existing, add new, delete removed
+            // 5. Merge contacts: update existing, add new, delete removed
             if (userDto.Contacts != null)
                 await _contactService.MergeContactsAsync(ContactOwnerType.User, id, userDto.Contacts);
 
@@ -320,13 +286,7 @@ namespace pos_service.Services
             //clear all system cache wen user delete
             _cacheService.ClearAll();
 
-            // 1. Delete the associated file from storage
-            if (!string.IsNullOrEmpty(userToDelete.ProfileImageUrl))
-            {
-                _fileStorageService.DeleteFile(userToDelete.ProfileImageUrl);
-            }
-
-            // 2. Perform the permanent deletion
+            // Perform the permanent deletion
             await _userRepository.DeleteAsync(userToDelete);
             return true;
         }

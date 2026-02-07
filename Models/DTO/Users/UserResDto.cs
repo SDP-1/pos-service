@@ -24,7 +24,7 @@ namespace pos_service.Models.DTO.Users
         public int RoleId { get; set; }
         public Role Role { get; set; }
 
-        public string? ProfileImageUrl { get; set; }
+        public string? ProfileImage { get; set; }
         public string? NIC { get; set; }
         public bool IsActive { get; set; }
 

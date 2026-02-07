@@ -9,7 +9,6 @@ using pos_service.Repositories;
 using pos_service.Repositories.Permissions;
 using pos_service.Security;
 using pos_service.Services;
-using pos_service.Services.Common;
 using pos_service.Services.Common.Cache;
 using pos_service.Services.Permissions;
 using System.Text;
@@ -62,7 +61,6 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<pos_service.Services.Roles.IRoleService, pos_service.Services.Roles.RoleService>();
 
-builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 builder.Services.AddScoped<IItemRepository, ItemRepository>();

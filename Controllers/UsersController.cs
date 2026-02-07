@@ -86,61 +86,39 @@ namespace pos_service.Controllers
 
         /// <summary>
         /// Creates a new user in the system.
+        /// Accepts multipart/form-data to support file uploads for profile image.
         /// </summary>
-        /// <param name="userDto">The user data transfer object containing user information.</param>
+        /// <param name="userDto">The user data transfer object containing user information and profile image file.</param>
         /// <returns>The newly created user details with location header.</returns>
         [HttpPost]
-        public async Task<ActionResult<UserResDto>> CreateUser([FromBody] UserReqDto userDto)
+        public async Task<ActionResult<UserResDto>> CreateUser([FromForm] UserReqDto userDto)
         {
-            try
+            var newUser = await _userService.CreateUserAsync(userDto, _currentUser);
+            if (newUser == null)
             {
-                var newUser = await _userService.CreateUserAsync(userDto, _currentUser);
-                if (newUser == null)
-                {
-                    return Conflict("A user with this username already exists.");
-                }
+                return Conflict("A user with this username already exists.");
+            }
 
-                // Use the User's Id as the route parameter
-                return CreatedAtAction(nameof(GetUserById), new { id = newUser.Id }, newUser);
-            }
-            catch (FileNotFoundException ex)
-            {
-                // Missing source file provided by client
-                return BadRequest($"Profile image not found: {ex.FileName}");
-            }
-            catch (Exception ex)
-            {
-                // Generic server error when saving/copying images
-                return StatusCode(500, $"Error saving profile image: {ex.Message}");
-            }
+            // Use the User's Id as the route parameter
+            return CreatedAtAction(nameof(GetUserById), new { id = newUser.Id }, newUser);
         }
 
         /// <summary>
         /// Updates an existing user's details.
+        /// Accepts multipart/form-data to support file uploads for profile image.
         /// </summary>
         /// <param name="id">The unique identifier of the user to update.</param>
-        /// <param name="userDto">The user data transfer object containing updated information.</param>
+        /// <param name="userDto">The user data transfer object containing updated information and optional profile image file.</param>
         /// <returns>The updated user details if successful, otherwise returns NotFound.</returns>
         [HttpPatch("{id:int}")]
-        public async Task<IActionResult> UpdateUser(int id, [FromBody] UserReqDto userDto)
+        public async Task<IActionResult> UpdateUser(int id, [FromForm] UserReqDto userDto)
         {
-            try
+            var user = await _userService.UpdateUserAsync(id, userDto, _currentUser);
+            if (user == null)
             {
-                var user = await _userService.UpdateUserAsync(id, userDto, _currentUser);
-                if (user == null)
-                {
-                    return NotFound();
-                }
-                return Ok(user);
+                return NotFound();
             }
-            catch (FileNotFoundException ex)
-            {
-                return BadRequest($"Profile image not found: {ex.FileName}");
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Error saving profile image: {ex.Message}");
-            }
+            return Ok(user);
         }
 
         /// <summary>
@@ -185,7 +163,6 @@ namespace pos_service.Controllers
         [Authorize] // Any logged-in user
         public async Task<IActionResult> ChangePassword(int id, [FromBody] ChangePasswordDto passwordDto)
         {
-            // Assuming ChangePasswordDto contains OldPassword and NewPassword
             var success = await _userService.ChangePasswordAsync(id, passwordDto.OldPassword, passwordDto.NewPassword, _currentUser);
             if (!success)
             {

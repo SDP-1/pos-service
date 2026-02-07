@@ -55,9 +55,10 @@ namespace pos_service.Models
         public virtual Role? Role      { get; set; }
 
         /// <summary>
-        /// The URL or file path to the user's profile picture.
+        /// The user's profile picture stored as base64 encoded string.
         /// </summary>
-        public string? ProfileImageUrl { get; set; }
+        [Column(TypeName = "longtext")]
+        public string? ProfileImage    { get; set; }
 
         /// <summary>
         // The user's Sri Lankan National Identity Card number.

@@ -1,5 +1,6 @@
 ﻿using pos_service.Models.DTO.Contacts;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
 
 namespace pos_service.Models.DTO.Users
 { 
@@ -19,8 +20,8 @@ namespace pos_service.Models.DTO.Users
 
         public int? RoleId { get; set; }
 
-        // The client provides a URL to the profile image; may be null if no image.
-        public string? ProfileImageUrl { get; set; }
+        // The client provides the profile image as a file;
+        public IFormFile? ProfileImage { get; set; }
 
         [MaxLength(12)]
         public string? NIC { get; set; }

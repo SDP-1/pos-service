@@ -996,7 +996,7 @@ namespace pos_service.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("ProfileImageUrl")
+                    b.Property<string>("ProfileImage")
                         .HasColumnType("longtext");
 
                     b.Property<int>("RoleId")
@@ -1096,7 +1096,7 @@ namespace pos_service.Migrations
                     b.HasOne("pos_service.Models.User", "Cashier")
                         .WithMany()
                         .HasForeignKey("CashierId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.SetNull)
                         .IsRequired();
 
                     b.HasOne("pos_service.Models.Customer", "Customer")

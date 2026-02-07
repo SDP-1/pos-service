@@ -12,8 +12,8 @@ using pos_service.Data;
 namespace pos_service.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260205152220_updatedatabaseArcitecture")]
-    partial class updatedatabaseArcitecture
+    [Migration("20260207115358_table_updates")]
+    partial class table_updates
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -999,7 +999,7 @@ namespace pos_service.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("ProfileImageUrl")
+                    b.Property<string>("ProfileImage")
                         .HasColumnType("longtext");
 
                     b.Property<int>("RoleId")
@@ -1099,7 +1099,7 @@ namespace pos_service.Migrations
                     b.HasOne("pos_service.Models.User", "Cashier")
                         .WithMany()
                         .HasForeignKey("CashierId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.SetNull)
                         .IsRequired();
 
                     b.HasOne("pos_service.Models.Customer", "Customer")

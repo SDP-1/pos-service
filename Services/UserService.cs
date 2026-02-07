@@ -252,7 +252,7 @@ namespace pos_service.Services
             // 3. Map incoming DTO properties into existing entity
             if (userDto.FirstName != null      ) userToUpdate.FirstName         = userDto.FirstName;
             if (userDto.LastName != null       ) userToUpdate.LastName          = userDto.LastName;
-            if (userDto.NIC != null            ) userToUpdate.NIC               = userDto.NIC;
+            userToUpdate.NIC = userDto.NIC;
             if (userDto.RoleId != null         ) userToUpdate.RoleId            = userDto.RoleId.Value;
             if (userDto.UserName != null       ) userToUpdate.UserName          = userDto.UserName;
 

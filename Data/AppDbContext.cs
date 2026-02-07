@@ -282,7 +282,8 @@ namespace pos_service.Data
                 // Configure the relationship to the User (Cashier).
                 entity.HasOne(o => o.Cashier)
                       .WithMany() // A User can have many Orders, but we don't need a navigation property on User.
-                      .HasForeignKey(o => o.CashierId);
+                      .HasForeignKey(o => o.CashierId)
+                      .OnDelete(DeleteBehavior.SetNull); // do not delete set as null
 
                 // Configure the optional relationship to the Customer.
                 entity.HasOne(o => o.Customer)

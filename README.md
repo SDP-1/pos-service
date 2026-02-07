@@ -5,11 +5,6 @@ dotnet ef migrations add message
 dotnet ef database update
 -->
 
-<!-- 
-ALTER TABLE `pos-system`.`users` 
-CHANGE COLUMN `ProfileImageUrl` `ProfileImage` LONGTEXT CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NULL DEFAULT NULL ;
--->
-
 # 🛒 POS Backend Service Technical Architecture
 
 This repository hosts the backend service for a Point of Sale (POS) system, built on ASP.NET Core Web API. The service is designed to be a robust, scalable, and secure microservice managing core business domains like Inventory, Sales, and User Management.

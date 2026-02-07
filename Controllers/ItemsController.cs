@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using pos_service.Authorization;
 using pos_service.Controllers.Base;
 using pos_service.Models;
 using pos_service.Models.DTO.Items;
+using pos_service.Models.Enums;
 using pos_service.Services;
 
 namespace pos_service.Controllers
@@ -203,6 +205,7 @@ namespace pos_service.Controllers
         /// <param name="itemDto">The item data transfer object containing updated information.</param>
         /// <returns>NoContent if successful, BadRequest if IDs don't match, or NotFound if item doesn't exist.</returns>
         [HttpPut("{id:int}/{subId:int}")]
+        [Permission(PermissionType.ITEM_UPDATE)]
         public async Task<ActionResult<ItemResDto>> UpdateItem(int id, int subId, [FromBody] ItemReqDto itemDto)
         {
             // For updates the body must include Id and SubId and they must match the route.
@@ -230,6 +233,7 @@ namespace pos_service.Controllers
         /// <param name="subId">The sub-identifier of the item to delete.</param>
         /// <returns>NoContent if successful, otherwise returns NotFound.</returns>
         [HttpDelete("{id:int}/{subId:int}")]
+        [Permission(PermissionType.ITEM_DELETE)]
         public async Task<IActionResult> DeleteItem(int id, int subId)
         {
             var success = await _itemService.DeleteItemAsync(id, subId, _currentUser);

@@ -77,6 +77,12 @@ ADD CONSTRAINT `FK_Orders_Users_CashierId`
             original_item.Quantity, 
             original_item.PriceAtSale;
 
+-- contact
+--
+ALTER TABLE `pos-system`.`customers` 
+ADD UNIQUE INDEX `Email_UNIQUE` (`Email` ASC) VISIBLE;
+;
+
 
 
 

@@ -38,6 +38,22 @@ namespace pos_service.Controllers
             return Ok(roles);
         }
 
+        [HttpGet("active")]
+        public async Task<IActionResult> GetActiveRoles()
+        {
+            EnsurePermission(PermissionType.ROLE_VIEW);
+            var roles = await _roleService.GetActiveAsync();
+
+            // hide SystemAdmin from users who do not have PERMISSION_SYSADMIN_VIEW
+            var canSeeSysAdmin = _currentUser.HasPermission(PermissionType.PERMISSION_SYSADMIN_VIEW);
+            if (!canSeeSysAdmin)
+            {
+                roles = roles.Where(r => r.Id != 1);
+            }
+
+            return Ok(roles);
+        }
+
         [HttpGet("{id:int}")]
         [Permission(PermissionType.ROLE_VIEW)]
         public async Task<IActionResult> Get(int id)

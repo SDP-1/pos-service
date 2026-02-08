@@ -23,6 +23,12 @@ namespace pos_service.Services.Roles
             return _mapper.Map<IEnumerable<RoleResDto>>(roles);
         }
 
+        public async Task<IEnumerable<RoleResDto>> GetActiveAsync()
+        {
+            var roles = await _repo.GetActiveAsync();
+            return _mapper.Map<IEnumerable<RoleResDto>>(roles);
+        }
+
         public async Task<RoleResDto?> GetByIdAsync(int id) 
         {
             var role = await _repo.GetByIdAsync(id);
@@ -52,8 +58,9 @@ namespace pos_service.Services.Roles
             // protect SystemAdmin
             if (existing.Id == 1) return null;  // don't allow updating SystemAdmin
 
-            existing.Name = roleDto.Name;
+            existing.Name        = roleDto.Name;
             existing.Description = roleDto.Description;
+            existing.IsActive    = roleDto.IsActive;
 
             var result = await _repo.UpdateAsync(existing);
             return _mapper.Map<RoleResDto>(result);

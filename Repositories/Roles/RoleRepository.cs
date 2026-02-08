@@ -18,6 +18,11 @@ namespace pos_service.Repositories.Roles
             return await _context.Roles.AsNoTracking().ToListAsync();
         }
 
+        public async Task<IEnumerable<Role>> GetActiveAsync()
+        {
+            return await _context.Roles.AsNoTracking().Where(r => r.IsActive).ToListAsync();
+        }
+
         public async Task<Role?> GetByIdAsync(int id)
         {
             return await _context.Roles.FindAsync(id);

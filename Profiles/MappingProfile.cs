@@ -80,6 +80,11 @@ namespace pos_service.Profiles
             // Role Mapper
             CreateMap<Role, RoleResDto>();
             CreateMap<RoleReqDto, Role>();
+
+            // Customer mappings
+            CreateMap<Customer, Models.DTO.Customers.CustomerResDto>()
+                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName));
+            CreateMap<Models.DTO.Customers.CustomerReqDto, Customer>();
         }
     }
 }

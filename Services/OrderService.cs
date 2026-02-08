@@ -113,7 +113,7 @@ namespace pos_service.Services
 
                 OrderStatus initialStatus;
                 if (hasReturnItems)
-                    initialStatus = OrderStatus.Retun;
+                    initialStatus = OrderStatus.Return;
                 else if (balance < 0 && allowOrdersForLoan)
                     initialStatus = OrderStatus.Loan;
                 else if (balance >= 0 && orderDto.AmountPaid >= netAmount)

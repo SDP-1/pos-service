@@ -170,6 +170,9 @@ namespace pos_service.Data
                 // Make the PhoneNumber unique as it's the primary identifier for customers.
                 entity.HasIndex(c => c.PhoneNumber).IsUnique();
 
+                // Make Email unique when provided.
+                entity.HasIndex(c => c.Email).IsUnique();
+
                 // 1. Define Uuid as a unique, alternate key.
                 // This is REQUIRED to use it as a foreign key target.
                 entity.HasAlternateKey(u => u.Uuid);

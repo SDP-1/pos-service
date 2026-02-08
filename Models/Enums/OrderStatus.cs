@@ -8,6 +8,6 @@
         Paid      = 2,   // The order has been fully paid
         Loan      = 3,   // The order is sold on credit
         Cancelled = 4,
-        Retun     = 5,   // The order contains return/refund items
+        Return    = 5,   // The order contains return/refund items
     }
 }

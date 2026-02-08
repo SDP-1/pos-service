@@ -32,7 +32,7 @@ namespace pos_service.Models.DTO.Orders
         public string CustomerPhone { get; set; }
 
         // Order items
-        public List<OrderItemMiniResDto> OrderItems { get; set; } = new List<OrderItemMiniResDto>();
+        public List<OrderItemResDto> OrderItems { get; set; } = new List<OrderItemResDto>();
 
         // Audit fields
         public string Uuid { get; set; }

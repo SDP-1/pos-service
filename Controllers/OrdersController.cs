@@ -92,6 +92,20 @@ namespace pos_service.Controllers
         }
 
         /// <summary>
+        /// Returns the order and enriches each order item with returned quantity and remaining quantity.
+        /// </summary>
+        [HttpGet("number/{number}/with-returns")]
+        [Permission(PermissionType.ORDER_VIEW)]
+        public async Task<ActionResult<OrderResDto>> GetOrderByOrderNumberWithReturns(string number)
+        {
+            var order = await _orderService.GetOrderWithReturnedItemsAsync(number, _currentUser);
+            if (order == null)
+                return Ok("Order not found");
+
+            return Ok(order);
+        }
+
+        /// <summary>
         /// Retrieves a list of orders based on the specified query parameters.
         /// </summary>
         /// <param name="query">The query parameters for filtering and paginating orders.</param>
@@ -139,7 +153,7 @@ namespace pos_service.Controllers
 
         /// <summary>
         /// Updates the status of an existing order.
-        /// </summary>
+        /// /// </summary>
         /// <param name="id">The unique identifier of the order to update.</param>
         /// <param name="status"> New status.</param>
         /// <returns>The updated order details if successful.</returns>

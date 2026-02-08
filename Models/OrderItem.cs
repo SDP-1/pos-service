@@ -66,6 +66,26 @@ namespace pos_service.Models
         [Column(TypeName = "decimal(18, 2)")]
         public decimal LineTotal            { get; set; }
 
+        /// <summary>
+        /// Indicates if this order item is a return/refund.
+        /// When true, the quantity was added back to the original item instead of being deducted.
+        /// </summary>
+        public bool IsReturnItem            { get; set; } = false;
+
+        /// <summary>
+        /// The UUID of the returned OrderItem (reference to the original line being returned).
+        /// Used to track returns against the specific original OrderItem.
+        /// </summary>
+        [MaxLength(36)]
+        public string? ReturnedOrderItemUuid { get; set; }
+
+        /// <summary>
+        /// Optional description for this item line.
+        /// Can be used to provide additional context or notes for any item.
+        /// </summary>
+        [MaxLength(500)]
+        public string? Description          { get; set; }
+
         // --- Implementation of IAuditable ---
         public string Uuid                  { get; set; }
         public DateTime CreatedAt           { get; set; }

@@ -1,4 +1,5 @@
 ﻿using pos_service.Models.DTO.Audits;
+using pos_service.Models.DTO.ReturnedItems;
 
 namespace pos_service.Models.DTO.OrderItems
 {
@@ -14,6 +15,12 @@ namespace pos_service.Models.DTO.OrderItems
         public decimal CostAtSale { get; set; }
         public decimal LineTotal { get; set; }
         public bool AllowsDecimalQuantities { get; set; }
+        public bool IsReturnItem { get; set; }
+        public string? Description { get; set; }
+        public string? ReturnedOrderItemUuid { get; set; }
+
+        // Return summary (populated when requesting order with returns)
+        public ReturnedItemsSummaryResDto? ReturnSummary { get; set; }
 
         // Audit fields
         public string Uuid { get; set; }

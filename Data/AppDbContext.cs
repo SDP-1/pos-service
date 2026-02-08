@@ -313,6 +313,13 @@ namespace pos_service.Data
 
                 entity.HasAlternateKey(i => i.Uuid);   // creates unique constraint
             });
+
+            // --- ReturnedItemsSummary DB view mapping (keyless) ---
+            modelBuilder.Entity<ReturnedItemsSummary>(eb =>
+            {
+                eb.HasNoKey();
+                eb.ToView("View_ReturnedItemsSummary");
+            });
         }
 
         /// <summary>

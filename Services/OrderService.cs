@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using pos_service.Data;
 using System.Linq;
 using pos_service.Models;
@@ -6,6 +6,7 @@ using pos_service.Models.DTO.Orders;
 using pos_service.Models.Enums;
 using pos_service.Repositories;
 using Microsoft.Extensions.Logging;
+using pos_service.Models.DTO.ReturnedItems;
 
 namespace pos_service.Services
 {
@@ -49,6 +50,7 @@ namespace pos_service.Services
                 int itemCount = 0;
 
                 var itemsToUpdate = new Dictionary<Item, decimal>();
+                var itemReturnFlags = new Dictionary<Item, bool>();
 
                 foreach (var itemDto in orderDto.OrderItems)
                 {
@@ -59,16 +61,21 @@ namespace pos_service.Services
                     if (!item.AllowsDecimalQuantities && itemDto.Quantity % 1 != 0)
                         throw new ArgumentException($"Item {item.PrintName} does not allow decimal quantities");
 
-                    if (!allowZeroStock && item.StockQuantity < itemDto.Quantity)
+                    // Stock validation only for non-return items
+                    if (!itemDto.IsReturnItem && !allowZeroStock && item.StockQuantity < itemDto.Quantity)
                         throw new ArgumentException($"Insufficient stock for item {item.PrintName}. Available: {item.StockQuantity}, Requested: {itemDto.Quantity}");
 
+                    // Validate ReturnedOrderItemUuid for return items
+                    if (itemDto.IsReturnItem && string.IsNullOrWhiteSpace(itemDto.ReturnedOrderItemUuid))
+                        throw new ArgumentException($"ReturnedOrderItemUuid is required for return item {item.PrintName}");
+
                     itemsToUpdate[item] = itemDto.Quantity;
+                    itemReturnFlags[item] = itemDto.IsReturnItem;
 
                     // Frontend-provided prices and totals (required)
                     var markedPrice   = itemDto.MarkedPrice;
                     var salePrice     = itemDto.SalePrice;
                     var lineTotal     = itemDto.LineTotal;
-                    var discountRatio = itemDto.DiscountRatio;
 
                     var orderItem = new OrderItem
                     {
@@ -80,7 +87,10 @@ namespace pos_service.Services
                         PriceAtSale             = salePrice,
                         MarkedPriceAtSale       = markedPrice,
                         CostAtSale              = item.Price?.BuyingPrice ?? 0,
-                        LineTotal               = lineTotal
+                        LineTotal               = lineTotal,
+                        IsReturnItem            = itemDto.IsReturnItem,
+                        Description             = itemDto.Description,
+                        ReturnedOrderItemUuid   = itemDto.ReturnedOrderItemUuid
                     };
 
                     orderItems.Add(orderItem);
@@ -96,11 +106,15 @@ namespace pos_service.Services
                 itemCount     = orderDto.ItemCount;
                 var balance   = orderDto.AmountPaid - netAmount;
 
+                bool hasReturnItems = orderDto.OrderItems.Any(item => item.IsReturnItem);
+
                 if (balance < 0 && !allowOrdersForLoan)
                     throw new InvalidOperationException("Negative balance not allowed. Enable setting AllowOrdesForsLoan to allow credit/loan sales.");
 
                 OrderStatus initialStatus;
-                if (balance < 0 && allowOrdersForLoan)
+                if (hasReturnItems)
+                    initialStatus = OrderStatus.Retun;
+                else if (balance < 0 && allowOrdersForLoan)
                     initialStatus = OrderStatus.Loan;
                 else if (balance >= 0 && orderDto.AmountPaid >= netAmount)
                     initialStatus = OrderStatus.Paid;
@@ -130,14 +144,25 @@ namespace pos_service.Services
 
                 foreach (var (item, quantity) in itemsToUpdate)
                 {
-                    if (allowZeroStock)
+                    bool isReturn = itemReturnFlags[item];
+
+                    if (isReturn)
                     {
-                        var deduct = Math.Min(item.StockQuantity, quantity);
-                        item.StockQuantity -= deduct;
+                        // For return items, add the quantity back to stock
+                        item.StockQuantity += quantity;
                     }
                     else
                     {
-                        item.StockQuantity -= quantity;
+                        // For regular sales, deduct from stock
+                        if (allowZeroStock)
+                        {
+                            var deduct = Math.Min(item.StockQuantity, quantity);
+                            item.StockQuantity -= deduct;
+                        }
+                        else
+                        {
+                            item.StockQuantity -= quantity;
+                        }
                     }
                     _context.Items.Update(item);
                 }
@@ -163,6 +188,39 @@ namespace pos_service.Services
         {
             var order = await _orderRepository.GetByOrderNumberAsync(orderNumber);
             return order == null ? null : _mapper.Map<OrderResDto>(order);
+        }
+
+        /// <summary>
+        /// Returns order header with order items enriched with returned quantities from the view.
+        /// Uses LINQ to query the view-mapped keyless entity and joins in-memory after mapping order.
+        /// </summary>
+        public async Task<OrderResDto?> GetOrderWithReturnedItemsAsync(string orderNumber, CurrentUser currentUser)
+        {
+            var order = await _orderRepository.GetByOrderNumberAsync(orderNumber);
+            if (order == null) return null;
+
+            var dto = _mapper.Map<OrderResDto>(order);
+
+            // Load returned items summary rows for this order via repository
+            var returnedRows = await _orderRepository.GetReturnedItemsSummaryByOrderNumberAsync(orderNumber);
+
+            // Map returned summary to order items by ReturnedOrderItemUuid. If no return exists, keep ReturnSummary as null.
+            foreach (var item in dto.OrderItems)
+            {
+                if (!string.IsNullOrEmpty(item.Uuid))
+                {
+                    var match = returnedRows.FirstOrDefault(r => r.ReturnedOrderItemUuid == item.Uuid);
+                    item.ReturnSummary = match != null
+                        ? _mapper.Map<ReturnedItemsSummaryResDto>(match)
+                        : null;
+                }
+                else
+                {
+                    item.ReturnSummary = null;
+                }
+            }
+
+            return dto;
         }
 
         public async Task<OrderResDto?> GetOrderByUuidAsync(string uuid, CurrentUser currentUser)
@@ -224,6 +282,7 @@ namespace pos_service.Services
                 int itemCount = 0;
 
                 var itemsToUpdate = new Dictionary<Item, decimal>();
+                var itemReturnFlags = new Dictionary<Item, bool>();
 
                 foreach (var itemDto in orderDto.OrderItems)
                 {
@@ -237,12 +296,12 @@ namespace pos_service.Services
 
                     // Add to tracking dictionary
                     itemsToUpdate[item] = itemDto.Quantity;
+                    itemReturnFlags[item] = itemDto.IsReturnItem;
 
                     // Use frontend-provided prices directly
                     var markedPrice = itemDto.MarkedPrice;
                     var salePrice   = itemDto.SalePrice;
                     var lineTotal   = itemDto.LineTotal;
-                    var discountRatio = itemDto.DiscountRatio;
 
                     var orderItem = new OrderItem
                     {
@@ -254,7 +313,9 @@ namespace pos_service.Services
                         PriceAtSale             = salePrice,
                         MarkedPriceAtSale       = markedPrice,
                         CostAtSale              = item.Price?.BuyingPrice ?? 0,
-                        LineTotal               = lineTotal
+                        LineTotal               = lineTotal,
+                        IsReturnItem            = itemDto.IsReturnItem,
+                        Description             = itemDto.Description
                     };
 
                     existingOrder.OrderItems.Add(orderItem);
@@ -488,6 +549,13 @@ namespace pos_service.Services
                     currentUser.Id, startDate, endDate, status);
                 throw;
             }
+        }
+
+        public async Task<List<pos_service.Models.DTO.ReturnedItems.ReturnedItemsSummaryResDto>> GetReturnedItemsSummaryByOrderNumberAsync(string orderNumber, CurrentUser currentUser)
+        {
+            // Use repository to get view-backed rows
+            var rows = await _orderRepository.GetReturnedItemsSummaryByOrderNumberAsync(orderNumber);
+            return _mapper.Map<List<pos_service.Models.DTO.ReturnedItems.ReturnedItemsSummaryResDto>>(rows);
         }
     }
 }

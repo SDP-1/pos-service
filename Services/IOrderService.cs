@@ -42,6 +42,9 @@ namespace pos_service.Services
         /// <returns>The order details if found, otherwise null.</returns>
         Task<OrderResDto?> GetOrderByOrderNumberAsync(string uuid, CurrentUser currentUser);
 
+        // Returns order header with order items enriched with returned quantities
+        Task<OrderResDto?> GetOrderWithReturnedItemsAsync(string orderNumber, CurrentUser currentUser);
+
         /// <summary>
         /// Retrieves a list of orders based on the specified query parameters.
         /// </summary>
@@ -93,5 +96,8 @@ namespace pos_service.Services
         /// <param name="status">Order status filter. If null, returns all statuses.</param>
         /// <returns>List of active orders matching the criteria, ordered by CreatedAt descending.</returns>
         Task<List<OrderResDto>> GetOrdersByDateAndStatusAsync(DateTime? startDate, DateTime? endDate, OrderStatus? status, CurrentUser currentUser);
+
+        // Returns returned-items summary rows (from view) for given order number
+        Task<List<pos_service.Models.DTO.ReturnedItems.ReturnedItemsSummaryResDto>> GetReturnedItemsSummaryByOrderNumberAsync(string orderNumber, CurrentUser currentUser);
     }
 }

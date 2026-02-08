@@ -59,7 +59,10 @@ namespace pos_service.Profiles
             CreateMap<UserLoginReqDto, User>();
 
             // Order Maper
-            CreateMap<Order, OrderResDto>();
+            CreateMap<Order, OrderResDto>()
+                .ForMember(dest => dest.CashierName, opt => opt.MapFrom(src => src.Cashier != null ? src.Cashier.FullName : string.Empty))
+                .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Customer != null ? src.Customer.FullName  : string.Empty))
+                .ForMember(dest => dest.CustomerPhone, opt => opt.MapFrom(src => src.Customer != null ? src.Customer.PhoneNumber : string.Empty));
             CreateMap<OrderReqDto, Order>();
             CreateMap<Order, OrderSummaryResDto>();
 
@@ -70,6 +73,9 @@ namespace pos_service.Profiles
                 .ForMember(dest => dest.MarkedPriceAtSale, opt => opt.MapFrom(src => src.MarkedPrice))
                 .ForMember(dest => dest.PriceAtSale, opt => opt.MapFrom(src => src.SalePrice))
                 .ForMember(dest => dest.LineTotal, opt => opt.MapFrom(src => src.LineTotal));
+
+            // Returned items summary view mapping
+            CreateMap<pos_service.Models.ReturnedItemsSummary, pos_service.Models.DTO.ReturnedItems.ReturnedItemsSummaryResDto>();
 
             // Role Mapper
             CreateMap<Role, RoleResDto>();

@@ -53,6 +53,7 @@
 
   <ItemGroup>
     <Folder Include="Migrations\" />
+    <Folder Include="SQL\" />
     <Folder Include="Tests\Services\" />
   </ItemGroup>
 

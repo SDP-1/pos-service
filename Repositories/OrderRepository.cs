@@ -278,5 +278,20 @@ namespace pos_service.Repositories
                 throw;
             }
         }
+
+        public async Task<List<ReturnedItemsSummary>> GetReturnedItemsSummaryByOrderNumberAsync(string orderNumber)
+        {
+            try
+            {
+                return await _context.Set<ReturnedItemsSummary>()
+                    .Where(r => r.OrderNumber == orderNumber)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching returned items summary for order {OrderNumber}", orderNumber);
+                return new List<ReturnedItemsSummary>();
+            }
+        }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using pos_service.Models;
 using pos_service.Models.DTO.Contacts;
+using pos_service.Models.Enums;
 
 namespace pos_service.Services
 {
@@ -44,5 +45,14 @@ namespace pos_service.Services
         /// <param name="currentUser">The current user deleting the contact.</param>
         /// <returns>True if deletion was successful, otherwise false.</returns>
         Task<bool> DeleteContactAsync(int id, CurrentUser currentUser);
+
+        /// <summary>
+        /// Merges incoming contact DTOs with existing contacts for a specified owner (User or Supplier).
+        /// Updates existing contacts (identified by uuid), adds new ones, and deletes removed ones.
+        /// </summary>
+        /// <param name="ownerType">The type of entity that owns the contacts (User or Supplier).</param>
+        /// <param name="ownerId">The ID of the owner entity (UserId or SupplierId).</param>
+        /// <param name="incomingContacts">The list of contacts from the request (null means delete all).</param>
+        Task MergeContactsAsync(ContactOwnerType ownerType, int ownerId, IEnumerable<ContactReqDto>? incomingContacts);
     }
 }

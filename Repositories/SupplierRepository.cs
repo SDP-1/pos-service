@@ -19,9 +19,22 @@ namespace pos_service.Repositories
                         .ThenInclude(isu => isu.Item)
                     .ToListAsync();
         }
+
+        public async Task<IEnumerable<Supplier>> GetAllBasicAsync()
+        {
+            // Do not include related navigation properties to keep payload small
+            return await _context.Suppliers
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
         public async Task<Supplier?> GetByIdWithDetailsAsync(int id)
         {
+            // Return as NoTracking to avoid attaching related entities to the context
+            // This prevents "already being tracked" conflicts when callers later
+            // perform set-based deletes and re-inserts in the same DbContext.
             return await _context.Suppliers
+                .AsNoTracking()
                 .Include(s => s.ItemSuppliers)
                     .ThenInclude(isu => isu.Item)
                 .Include(s => s.Contacts)
@@ -30,9 +43,18 @@ namespace pos_service.Repositories
         public async Task<Supplier?> GetSupplierWithItemsAsync(int id)
         {
             return await _context.Suppliers
+                .AsNoTracking()
                 .Include(s => s.ItemSuppliers)
                     .ThenInclude(isu => isu.Item)
                 .FirstOrDefaultAsync(s => s.Id == id);
+        }
+
+        public async Task<Supplier?> GetByNameAsync(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return null;
+            return await _context.Suppliers
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Name == name);
         }
         public async Task<Supplier> AddAsync(Supplier supplier)
         {
@@ -47,6 +69,20 @@ namespace pos_service.Repositories
             await _context.SaveChangesAsync();
             return supplier;
         }
+
+        public async Task DeleteItemAssociationsBySupplierId(int supplierId)
+        {
+            await _context.ItemSuppliers
+                .Where(i => i.SuppliersId == supplierId)
+                .ExecuteDeleteAsync();
+        }
+
+        public async Task AddItemAssociationsAsync(IEnumerable<ItemSupplier> itemSuppliers)
+        {
+            await _context.ItemSuppliers.AddRangeAsync(itemSuppliers);
+            await _context.SaveChangesAsync();
+        }
+
         public async Task DeleteAsync(Supplier supplier)
         {
             _context.Suppliers.Remove(supplier);

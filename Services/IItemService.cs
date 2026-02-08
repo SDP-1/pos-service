@@ -37,7 +37,7 @@ namespace pos_service.Services
         /// <param name="itemDto">The item data transfer object containing updated information.</param>
         /// <param name="currentUser">The current user updating the item.</param>
         /// <returns>True if update was successful, otherwise false.</returns>
-        Task<bool> UpdateItemAsync(int id, int subId, ItemReqDto itemDto, CurrentUser currentUser);
+        Task<ItemResDto> UpdateItemAsync(int id, int subId, ItemReqDto itemDto, CurrentUser currentUser);
 
         /// <summary>
         /// Deletes an item with the specified composite identifier.

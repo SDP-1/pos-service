@@ -5,6 +5,7 @@ using pos_service.Models;
 using pos_service.Models.DTO.Orders;
 using pos_service.Models.Enums;
 using pos_service.Repositories;
+using Microsoft.Extensions.Logging;
 
 namespace pos_service.Services
 {
@@ -15,14 +16,22 @@ namespace pos_service.Services
         private readonly ISettingService _settingService;
         private readonly IMapper _mapper;
         private readonly AppDbContext _context;
+        private readonly ILogger<OrderService> _logger;
 
-        public OrderService(IOrderRepository orderRepository, IItemRepository itemRepository, ISettingService settingService, IMapper mapper, AppDbContext context)
+        public OrderService(
+            IOrderRepository orderRepository, 
+            IItemRepository itemRepository, 
+            ISettingService settingService, 
+            IMapper mapper, 
+            AppDbContext context,
+            ILogger<OrderService> logger)
         {
             _orderRepository = orderRepository;
             _itemRepository = itemRepository;
             _settingService = settingService;
             _mapper = mapper;
             _context = context;
+            _logger = logger;
         }
 
         public async Task<OrderResDto> CreateOrderAsync(OrderReqDto orderDto, CurrentUser currentUser)
@@ -70,14 +79,14 @@ namespace pos_service.Services
                         Quantity                = itemDto.Quantity,
                         PriceAtSale             = salePrice,
                         MarkedPriceAtSale       = markedPrice,
-                        CostAtSale              = item.BuyingPrice,
+                        CostAtSale              = item.Price?.BuyingPrice ?? 0,
                         LineTotal               = lineTotal
                     };
 
                     orderItems.Add(orderItem);
 
                     // Only accumulate cost for profit calculation; trust frontend for gross/discount/net/itemCount
-                    totalCost += itemDto.Quantity * item.BuyingPrice;
+                    totalCost += itemDto.Quantity * (item.Price?.BuyingPrice ?? 0);
                 }
 
                 // Use frontend-provided (required) order-level totals and item count
@@ -244,14 +253,14 @@ namespace pos_service.Services
                         Quantity                = itemDto.Quantity,
                         PriceAtSale             = salePrice,
                         MarkedPriceAtSale       = markedPrice,
-                        CostAtSale              = item.BuyingPrice,
+                        CostAtSale              = item.Price?.BuyingPrice ?? 0,
                         LineTotal               = lineTotal
                     };
 
                     existingOrder.OrderItems.Add(orderItem);
 
                     // Only accumulate cost for profit calculation; trust frontend for gross/discount/net/itemCount
-                    totalCost += itemDto.Quantity * item.BuyingPrice;
+                    totalCost += itemDto.Quantity * (item.Price?.BuyingPrice ?? 0);
                 }
 
                 // Update item quantities
@@ -448,5 +457,37 @@ namespace pos_service.Services
             }
         }
 
+
+        /// <summary>
+        /// Retrieves orders filtered by date range and status.
+        /// Key behaviors:
+        /// - If StartDate is null, defaults to today's date
+        /// - If StartDate > EndDate, automatically swaps the dates
+        /// - Returns all active orders in the given date range
+        /// - Status filter is optional; if null, returns all statuses
+        /// - Results are ordered by CreatedAt in descending order
+        /// - Includes related data: OrderItems, Cashier, and Customer
+        /// </summary>
+        /// <param name="startDate">Start date for the date range filter. Defaults to today if not provided.</param>
+        /// <param name="endDate">End date for the date range filter. If null, includes all dates from startDate onwards.</param>
+        /// <param name="status">Order status filter. If null, returns all statuses.</param>
+        /// <returns>List of active orders matching the criteria, ordered by CreatedAt descending.</returns>
+        public async Task<List<OrderResDto>> GetOrdersByDateAndStatusAsync(DateTime? startDate, DateTime? endDate, OrderStatus? status, CurrentUser currentUser)
+        {
+            try
+            {
+                // Call stored procedure via repository
+                var orders = await _orderRepository.GetOrdersByDateAndStatusAsync(startDate, endDate, status);
+
+                // Map to DTOs
+                return _mapper.Map<List<OrderResDto>>(orders);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting orders by date and status for user {UserId}: StartDate={StartDate}, EndDate={EndDate}, Status={Status}", 
+                    currentUser.Id, startDate, endDate, status);
+                throw;
+            }
+        }
     }
 }

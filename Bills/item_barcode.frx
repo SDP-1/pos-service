@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="02/03/2026 08:09:53" ReportInfo.Modified="02/03/2026 10:00:41" ReportInfo.CreatorVersion="2026.1.0.0">
+  <Dictionary>
+    <Parameter Name="Name" DataType="System.String" AsString=""/>
+    <Parameter Name="PrintName" DataType="System.String" AsString=""/>
+    <Parameter Name="ItemId" DataType="System.String" AsString=""/>
+    <Parameter Name="Barcode" DataType="System.String" AsString=""/>
+  </Dictionary>
+  <ReportPage Name="Page1" PaperWidth="80" PaperHeight="100" LeftMargin="0" TopMargin="0" RightMargin="0" BottomMargin="0" Watermark.Font="Arial, 60pt">
+    <ReportTitleBand Name="ReportTitle1" Width="302.4" Height="94.5" CanShrink="true">
+      <TextObject Name="Text3" Width="292.95" Height="28.35" CanShrink="true" Text="[IIf(String.IsNullOrEmpty([ItemId]), &quot;&quot;, &quot;Item Id - &quot; + [ItemId])]" Font="Arial, 9pt"/>
+      <TextObject Name="Text1" Top="28.35" Width="292.95" Height="28.35" CanShrink="true" Text="[IIf(String.IsNullOrEmpty([Name]), &quot;&quot;, &quot;Name - &quot; + [Name])]" Font="Arial, 9pt"/>
+      <TextObject Name="Text2" Top="56.7" Width="292.95" Height="28.35" CanShrink="true" Text="[IIf(String.IsNullOrEmpty([PrintName]), &quot;&quot;, &quot;Print Name - &quot; + [PrintName])]" Font="Arial, 9pt"/>
+    </ReportTitleBand>
+    <PageHeaderBand Name="PageHeader1" Top="97.17" Width="302.4" Height="85.05">
+      <BarcodeObject Name="Barcode1" Left="66.15" Width="147.65" Height="85.05" Text="[Barcode]" AllowExpressions="true" Barcode="EAN13"/>
+    </PageHeaderBand>
+  </ReportPage>
+</Report>

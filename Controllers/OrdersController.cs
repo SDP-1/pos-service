@@ -153,5 +153,30 @@ namespace pos_service.Controllers
                 var order = await _orderService.UpdateOrderStatusAsync(id, status, _currentUser);
                 return Ok(order);
         }
+
+        /// <summary>
+        /// Retrieves orders filtered by date range and status.
+        /// Key behaviors:
+        /// - If StartDate is null, defaults to today's date
+        /// - If StartDate > EndDate, automatically swaps the dates
+        /// - Returns all active orders in the given date range
+        /// - Status filter is optional; if null, returns all statuses
+        /// - Results are ordered by CreatedAt in descending order
+        /// - Includes related data: OrderItems, Cashier, and Customer
+        /// </summary>
+        /// <param name="startDate">Start date for the date range filter. Defaults to today if not provided.</param>
+        /// <param name="endDate">End date for the date range filter. If null, includes all dates from startDate onwards.</param>
+        /// <param name="status">Order status filter. If null, returns all statuses.</param>
+        /// <returns>List of active orders matching the criteria, ordered by CreatedAt descending.</returns>
+        [HttpGet("report/by-date-status")]
+        [Permission(PermissionType.ORDER_VIEW)]
+        public async Task<ActionResult<List<OrderResDto>>> GetOrdersByDateAndStatus(
+            [FromQuery] DateTime? startDate, 
+            [FromQuery] DateTime? endDate, 
+            [FromQuery] OrderStatus? status)
+        {
+            var orders = await _orderService.GetOrdersByDateAndStatusAsync(startDate, endDate, status, _currentUser);
+            return Ok(orders);
+        }
     }
 }

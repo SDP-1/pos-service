@@ -9,7 +9,6 @@ using pos_service.Repositories;
 using pos_service.Repositories.Permissions;
 using pos_service.Security;
 using pos_service.Services;
-using pos_service.Services.Common;
 using pos_service.Services.Common.Cache;
 using pos_service.Services.Permissions;
 using System.Text;
@@ -62,7 +61,6 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<pos_service.Services.Roles.IRoleService, pos_service.Services.Roles.RoleService>();
 
-builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 builder.Services.AddScoped<IItemRepository, ItemRepository>();
@@ -74,6 +72,11 @@ builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();
 builder.Services.AddScoped<pos_service.Repositories.Roles.IRoleRepository, pos_service.Repositories.Roles.RoleRepository>();
 builder.Services.AddScoped<ISettingRepository, SettingRepository>();
 builder.Services.AddScoped<ISettingService, SettingService>();
+// Backup repositories - only location and history needed for manual backups
+builder.Services.AddScoped<IBackupLocationRepository, BackupLocationRepository>();
+builder.Services.AddScoped<IBackupHistoryRepository, BackupHistoryRepository>();
+// Stored Procedure Executor
+builder.Services.AddScoped<pos_service.Repositories.Base.IStoredProcedureExecutor, pos_service.Repositories.Base.StoredProcedureExecutor>();
 
 // FIXED: DbContext registration with all dependencies
 builder.Services.AddDbContext<AppDbContext>((provider, options) =>
@@ -85,6 +88,9 @@ builder.Services.AddDbContext<AppDbContext>((provider, options) =>
 // and registers their mapping configurations.
 builder.Services.AddAutoMapper(typeof(Program));
 
+// Register backup services
+builder.Services.AddScoped<pos_service.Services.Backup.IBackupService, pos_service.Services.Backup.BackupService>();
+
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
@@ -94,7 +100,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "http://192.168.56.1:3000")
+        policy.WithOrigins("http://localhost:3000", "http://localhost", "http://172.20.10.5", "http://192.168.1.5")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();

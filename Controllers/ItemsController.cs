@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using pos_service.Authorization;
 using pos_service.Controllers.Base;
 using pos_service.Models;
 using pos_service.Models.DTO.Items;
+using pos_service.Models.Enums;
 using pos_service.Services;
 
 namespace pos_service.Controllers
@@ -203,7 +205,8 @@ namespace pos_service.Controllers
         /// <param name="itemDto">The item data transfer object containing updated information.</param>
         /// <returns>NoContent if successful, BadRequest if IDs don't match, or NotFound if item doesn't exist.</returns>
         [HttpPut("{id:int}/{subId:int}")]
-        public async Task<IActionResult> UpdateItem(int id, int subId, [FromBody] ItemReqDto itemDto)
+        [Permission(PermissionType.ITEM_UPDATE)]
+        public async Task<ActionResult<ItemResDto>> UpdateItem(int id, int subId, [FromBody] ItemReqDto itemDto)
         {
             // For updates the body must include Id and SubId and they must match the route.
             if (!itemDto.Id.HasValue || !itemDto.SubId.HasValue)
@@ -216,12 +219,11 @@ namespace pos_service.Controllers
                 return BadRequest("The route parameters must match the item's Id and SubId.");
             }
 
-            var success = await _itemService.UpdateItemAsync(id, subId, itemDto, _currentUser);
-            if (!success)
-            {
+            var result = await _itemService.UpdateItemAsync(id, subId, itemDto, _currentUser);
+            if (result == null)
                 return NotFound();
-            }
-            return NoContent();
+
+            return Ok(result);
         }
 
         /// <summary>
@@ -231,14 +233,14 @@ namespace pos_service.Controllers
         /// <param name="subId">The sub-identifier of the item to delete.</param>
         /// <returns>NoContent if successful, otherwise returns NotFound.</returns>
         [HttpDelete("{id:int}/{subId:int}")]
+        [Permission(PermissionType.ITEM_DELETE)]
         public async Task<IActionResult> DeleteItem(int id, int subId)
         {
             var success = await _itemService.DeleteItemAsync(id, subId, _currentUser);
             if (!success)
-            {
                 return NotFound();
-            }
-            return NoContent();
+
+            return Ok();
         }
 
         /// <summary>

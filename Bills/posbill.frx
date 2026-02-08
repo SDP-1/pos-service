@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="02/02/2026 15:35:30" ReportInfo.Modified="02/02/2026 20:59:29" ReportInfo.CreatorVersion="2026.1.0.0">
+  <Dictionary>
+    <BusinessObjectDataSource Name="Items" ReferenceName="Items" DataType="System.Int32" Enabled="true">
+      <Column Name="no" DataType="System.Int32"/>
+      <Column Name="description" DataType="System.String"/>
+      <Column Name="mprice" DataType="System.String"/>
+      <Column Name="ourprice" DataType="System.String"/>
+      <Column Name="qty" DataType="System.String"/>
+      <Column Name="nextAmount" DataType="System.String"/>
+    </BusinessObjectDataSource>
+    <Parameter Name="date" DataType="System.String" AsString=""/>
+    <Parameter Name="time" DataType="System.String" AsString=""/>
+    <Parameter Name="DateTime" DataType="System.String" AsString=""/>
+    <Parameter Name="invoceNo" DataType="System.String" AsString=""/>
+    <Parameter Name="TotalAmount" DataType="System.String" AsString=""/>
+    <Parameter Name="Discount" DataType="System.String" AsString=""/>
+    <Parameter Name="Cash" DataType="System.String" AsString=""/>
+    <Parameter Name="Balance" DataType="System.String" AsString=""/>
+    <Parameter Name="GrosAmount" DataType="System.String" AsString=""/>
+  </Dictionary>
+  <ReportPage Name="Page1" PaperWidth="80" PaperHeight="250" LeftMargin="0" TopMargin="0" RightMargin="7" BottomMargin="5" Watermark.Font="Arial, 60pt" UnlimitedHeight="true">
+    <ReportTitleBand Name="ReportTitle1" Width="275.94" Height="66.15">
+      <TextObject Name="txtStore" Width="270.27" Height="18.9" Text="SIRITHUNGA GROCERY" HorzAlign="Center" Font="Arial, 11pt, style=Bold"/>
+      <TextObject Name="txtAddr" Top="18.9" Width="270.27" Height="18.9" Text="Nalagasdeniya, Hikkaduwa" HorzAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="txtPhone" Top="37.8" Width="270.27" Height="18.9" Text="Tel: (+94)912276011" HorzAlign="Center" Font="Arial, 9pt"/>
+      <LineObject Name="Line1" Top="60" Width="270.27" Border.Style="DashDot"/>
+    </ReportTitleBand>
+    <PageHeaderBand Name="PageHeader1" Top="68.44" Width="275.94" Height="66.15">
+      <TextObject Name="txtInv" Width="270.27" Height="18.9" Text="Invoice No : [invoceNo]" Font="Arial, 9pt"/>
+      <TextObject Name="txtD" Top="18.9" Width="272.3" Height="18.9" Text="Date : [DateTime]&#13;&#10;" Font="Arial, 9pt"/>
+      <LineObject Name="Line2" Top="40" Width="270.27"/>
+      <TextObject Name="h1" Left="12.2" Top="45" Width="60" Height="18.9" Text="වෙළද මිල" HorzAlign="Right" Font="Arial, 7pt"/>
+      <TextObject Name="h2" Left="77.2" Top="45" Width="60" Height="18.9" Text="අපේ මිල" HorzAlign="Right" Font="Arial, 7pt"/>
+      <TextObject Name="h3" Left="142.2" Top="45" Width="48.9" Height="18.9" Text="ප්‍රමාණය" HorzAlign="Right" Font="Arial, 7pt"/>
+      <TextObject Name="h4" Left="196.1" Top="45" Width="73.45" Height="18.9" Text="වටිනාකම" HorzAlign="Right" Font="Arial, 7pt"/>
+      <LineObject Name="Line6" Top="66.15" Width="270.27"/>
+    </PageHeaderBand>
+    <DataBand Name="Data1" Top="136.87" Width="275.94" Height="40" DataSource="Items">
+      <TextObject Name="t1" Width="270.27" Height="18.9" Text="[Items.no]. [Items.description]" Font="Arial, 8pt"/>
+      <TextObject Name="t2" Left="12.2" Top="18.9" Width="60" Height="18.9" Text="[Items.mprice]" HorzAlign="Right" Font="Arial, 9pt"/>
+      <TextObject Name="t3" Left="77.2" Top="18.9" Width="60" Height="18.9" Text="[Items.ourprice]" HorzAlign="Right" Font="Arial, 9pt"/>
+      <TextObject Name="t4" Left="151.65" Top="18.9" Width="39.45" Height="18.9" Text="[Items.qty]" HorzAlign="Right" Font="Arial, 9pt"/>
+      <TextObject Name="t5" Left="196.1" Top="18.9" Width="73.45" Height="18.9" Text="[Items.nextAmount]" HorzAlign="Right" Font="Arial, 9pt"/>
+    </DataBand>
+    <ReportSummaryBand Name="Summary1" Top="179.16" Width="275.94" Height="159.45">
+      <LineObject Name="Line3" Top="5" Width="270.27" Border.Style="Dash"/>
+      <TextObject Name="f1" Left="41.1" Top="10" Width="40.55" Height="15" Text="Gros" HorzAlign="Right" Font="Arial, 9pt"/>
+      <TextObject Name="f2" Left="101.1" Top="10" Width="69.45" Height="15" Text="Discount" HorzAlign="Right" Font="Arial, 9pt"/>
+      <TextObject Name="f3" Left="171.1" Top="10" Width="98.45" Height="15" Text="Net Amount" HorzAlign="Right" Font="Arial, 9pt"/>
+      <TextObject Name="v1" Left="3.3" Top="25" Width="78.35" Height="18.9" Text="[GrosAmount]" HorzAlign="Right" Font="Arial, 9pt"/>
+      <TextObject Name="v2" Left="82.2" Top="25" Width="88.35" Height="18.9" Text="[Discount]" HorzAlign="Right" Font="Arial, 9pt"/>
+      <TextObject Name="v3" Left="171.1" Top="25" Width="98.45" Height="18.9" Text="[TotalAmount]" HorzAlign="Right" Font="Arial, 9pt"/>
+      <TextObject Name="c1" Left="101.1" Top="45" Width="79.45" Height="18.9" Text="Cash :" HorzAlign="Right" Font="Arial, 9pt"/>
+      <TextObject Name="c2" Left="180.55" Top="45" Width="89" Height="18.9" Text="[Cash]" HorzAlign="Right" Font="Arial, 9pt"/>
+      <TextObject Name="b1" Left="101.1" Top="63.9" Width="79.45" Height="18.9" Text="Balance :" HorzAlign="Right" Font="Arial, 9pt"/>
+      <TextObject Name="b2" Left="180.55" Top="63.9" Width="89" Height="18.9" Text="[Balance]" HorzAlign="Right" Font="Arial, 9pt"/>
+      <LineObject Name="Line4" Top="85" Width="270.27"/>
+      <TextObject Name="d1" Top="90" Width="270.27" Height="15" Text="**  ඔබ ලැබූ ලාභය  **" HorzAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="d2" Top="105" Width="270.27" Height="15" Text="[Discount]" HorzAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <LineObject Name="Line5" Top="125" Width="270.27" Border.Style="DashDotDot"/>
+      <TextObject Name="last" Top="130" Width="270.27" Height="18.9" Text="ස්තූතියි, නැවත පැමිණෙන්න." HorzAlign="Center" Font="Arial, 9pt"/>
+    </ReportSummaryBand>
+  </ReportPage>
+</Report>

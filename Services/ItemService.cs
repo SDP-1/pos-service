@@ -91,27 +91,15 @@ namespace pos_service.Services
             var item = _mapper.Map<Item>(itemDto);
             item.Id = idToUse;
             item.SubId = subIdToUse;
-
-            // Handle Supplier Linking using ItemSupplier join entities
-            if (itemDto.SupplierIds != null && itemDto.SupplierIds.Any())
+            if (string.IsNullOrWhiteSpace(item.Uuid))
             {
-                foreach (var supplierId in itemDto.SupplierIds)
-                {
-                    var supplier = await _supplierRepository.GetByIdAsync(supplierId);
-                    if (supplier != null)
-                    {
-                        item.ItemSuppliers.Add(new ItemSupplier
-                        {
-                            Uuid = Guid.NewGuid().ToString(),
-                            SuppliersId = supplier.Id,
-                            ItemsId = item.Id,
-                            ItemsSubId = item.SubId,
-                            Supplier = supplier,
-                            Item = item
-                        });
-                    }
-                }
+                item.Uuid = Guid.NewGuid().ToString();
             }
+
+            ApplyPrice(item, itemDto.Price);
+            ApplyExpiries(item, itemDto);
+
+            await ApplySuppliersAsync(item, itemDto.SupplierIds);
 
             var newItem = await _itemRepository.AddAsync(item);
             return _mapper.Map<ItemResDto>(newItem);
@@ -125,43 +113,27 @@ namespace pos_service.Services
         /// <param name="itemDto">The item data transfer object containing updated information.</param>
         /// <param name="currentUser">The current user updating the item.</param>
         /// <returns>True if update was successful, otherwise false.</returns>
-        public async Task<bool> UpdateItemAsync(int id, int subId, ItemReqDto itemDto, CurrentUser currentUser)
+        public async Task<ItemResDto> UpdateItemAsync(int id, int subId, ItemReqDto itemDto, CurrentUser currentUser)
         {
             // Fetch the item with its related suppliers to update them
             var itemToUpdate = await _itemRepository.GetByIdWithSuppliersAsync(id, subId);
             if (itemToUpdate == null)
             {
                 // Item not found.
-                return false;
+                return null;
             }
 
             // Map flat properties from DTO to entity
             _mapper.Map(itemDto, itemToUpdate);
 
-            // Handle Supplier Linking using ItemSupplier join entities
-            itemToUpdate.ItemSuppliers.Clear(); // Clear existing links
-            if (itemDto.SupplierIds != null && itemDto.SupplierIds.Any())
-            {
-                foreach (var supplierId in itemDto.SupplierIds)
-                {
-                    var supplier = await _supplierRepository.GetByIdAsync(supplierId);
-                    if (supplier != null)
-                    {
-                        itemToUpdate.ItemSuppliers.Add(new ItemSupplier
-                        {
-                            Uuid = Guid.NewGuid().ToString(),
-                            SuppliersId = supplier.Id,
-                            ItemsId = itemToUpdate.Id,
-                            ItemsSubId = itemToUpdate.SubId,
-                            Supplier = supplier,
-                            Item = itemToUpdate
-                        });
-                    }
-                }
-            }
+            ApplyPrice(itemToUpdate, itemDto.Price);
+            ApplyExpiries(itemToUpdate, itemDto);
 
-            await _itemRepository.UpdateAsync(itemToUpdate);
-            return true;
+            await ApplySuppliersAsync(itemToUpdate, itemDto.SupplierIds);
+
+            var result = await _itemRepository.UpdateAsync(itemToUpdate);
+
+            return _mapper.Map<ItemResDto>(result); ;
         }
 
         /// <summary>
@@ -323,6 +295,92 @@ namespace pos_service.Services
         {
             var items = await _itemRepository.GetBySearchAsync(searchTerm);
             return _mapper.Map<IEnumerable<ItemResDto>>(items);
+        }
+
+        private static List<ItemExpiry> ResolveExpiries(ItemReqDto itemDto, Item item)
+        {
+            if (itemDto.ExpDates == null || !itemDto.ExpDates.Any())
+            {
+                return new List<ItemExpiry>();
+            }
+
+            return itemDto.ExpDates
+                .GroupBy(exp => new { Date = exp.ExpDate.Date, exp.NotifyBeforeDays })
+                .Select(group => new ItemExpiry
+                {
+                    ItemsId = item.Id,
+                    ItemsSubId = item.SubId,
+                    ItemUuid = item.Uuid,
+                    ExpDate = group.Key.Date,
+                    NotifyBeforeDays = group.Key.NotifyBeforeDays,
+                    Uuid = Guid.NewGuid().ToString()
+                })
+                .ToList();
+        }
+
+        /// <summary>
+        /// Ensures price details are applied to the item and keys are synchronized.
+        /// </summary>
+        private void ApplyPrice(Item item, ItemPriceDto? priceDto)
+        {
+
+            if (item.Price == null)
+            {
+                item.Price = new ItemPrice
+                {
+                    ItemsId    = item.Id,
+                    ItemsSubId = item.SubId,
+                    ItemUuid   = item.Uuid
+                };
+            }
+
+            _mapper.Map(priceDto ?? new ItemPriceDto(), item.Price);
+            item.Price.ItemsId    = item.Id;
+            item.Price.ItemsSubId = item.SubId;
+            item.Price.Uuid       = Guid.NewGuid().ToString();
+            item.Price.ItemUuid   = item.Uuid;
+        }
+
+        /// <summary>
+        /// Replaces expiry dates for the item based on the request DTO.
+        /// </summary>
+        private void ApplyExpiries(Item item, ItemReqDto itemDto)
+        {
+            item.ExpDates.Clear();
+            var expiries = ResolveExpiries(itemDto, item);
+            foreach (var expiry in expiries)
+            {
+                item.ExpDates.Add(expiry);
+            }
+        }
+
+        /// <summary>
+        /// Rebuilds supplier links for the item based on the provided supplier IDs.
+        /// </summary>
+        private async Task ApplySuppliersAsync(Item item, ICollection<int>? supplierIds)
+        {
+            item.ItemSuppliers.Clear();
+            if (supplierIds == null || !supplierIds.Any())
+            {
+                return;
+            }
+
+            foreach (var supplierId in supplierIds)
+            {
+                var supplier = await _supplierRepository.GetByIdAsync(supplierId);
+                if (supplier != null)
+                {
+                    item.ItemSuppliers.Add(new ItemSupplier
+                    {
+                        Uuid        = Guid.NewGuid().ToString(),
+                        SuppliersId = supplier.Id,
+                        ItemsId     = item.Id,
+                        ItemsSubId  = item.SubId,
+                        Supplier    = supplier,
+                        Item        = item
+                    });
+                }
+            }
         }
     }
 }

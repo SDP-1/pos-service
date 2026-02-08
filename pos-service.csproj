@@ -8,7 +8,35 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Repositories\Base\**" />
+    <Content Remove="Repositories\Base\**" />
+    <EmbeddedResource Remove="Repositories\Base\**" />
+    <None Remove="Repositories\Base\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Bills\item_barcode.frx" />
+    <None Remove="Bills\posbill.frx" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="Repositories\Base\IStoredProcedureExecutor.cs" />
+    <Compile Include="Repositories\Base\StoredProcedureExecutor.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Bills\item_barcode.frx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Bills\posbill.frx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Required for PrinterSettings type forwarding -->
+    <PackageReference Include="FastReport.OpenSource" Version="2026.1.3" />
+    <PackageReference Include="FastReport.OpenSource.Web" Version="2026.1.3" />
     <PackageReference Include="System.Drawing.Common" Version="7.0.6" />
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.10" />
@@ -25,8 +53,32 @@
 
   <ItemGroup>
     <Folder Include="Migrations\" />
-    <Folder Include="Models\DTO\Bills\" />
-    <Folder Include="Repositories\Base\" />
+    <Folder Include="Tests\Services\" />
   </ItemGroup>
+
+  <!-- Ensure environment-specific appsettings file is included in publish output -->
+
+
+
+  <!-- Generate a web.config during publish so IIS can pick up Production environment without manual editing -->
+  <Target Name="GenerateWebConfig" AfterTargets="Publish">
+    <ItemGroup>
+      <_WebConfigLines Include="&lt;?xml version='1.0' encoding='utf-8'?&gt;" />
+      <_WebConfigLines Include="&lt;configuration&gt;" />
+      <_WebConfigLines Include="  &lt;system.webServer&gt;" />
+      <_WebConfigLines Include="    &lt;handlers&gt;" />
+      <_WebConfigLines Include="      &lt;add name=&quot;aspNetCore&quot; path=&quot;*&quot; verb=&quot;*&quot; modules=&quot;AspNetCoreModuleV2&quot; resourceType=&quot;Unspecified&quot; /&gt;" />
+      <_WebConfigLines Include="    &lt;/handlers&gt;" />
+      <_WebConfigLines Include="    &lt;aspNetCore processPath=&quot;dotnet&quot; arguments=&quot;.\pos-service.dll&quot; stdoutLogEnabled=&quot;false&quot; stdoutLogFile=&quot;.\logs\stdout&quot; hostingModel=&quot;OutOfProcess&quot;&gt;" />
+      <_WebConfigLines Include="      &lt;environmentVariables&gt;" />
+      <_WebConfigLines Include="        &lt;environmentVariable name=&quot;ASPNETCORE_ENVIRONMENT&quot; value=&quot;Production&quot; /&gt;" />
+      <_WebConfigLines Include="      &lt;/environmentVariables&gt;" />
+      <_WebConfigLines Include="    &lt;/aspNetCore&gt;" />
+      <_WebConfigLines Include="  &lt;/system.webServer&gt;" />
+      <_WebConfigLines Include="&lt;/configuration&gt;" />
+    </ItemGroup>
+
+    <WriteLinesToFile File="$(PublishDir)web.config" Lines="@(_WebConfigLines)" Overwrite="true" Encoding="UTF-8" />
+  </Target>
 
 </Project>

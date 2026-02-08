@@ -13,13 +13,25 @@ namespace pos_service.Models.DTO.Items
         // SubId for the given main Id (or 0 for a newly created main Id).
         public int? SubId                     { get; set; }
 
+        // Backing fields to normalize values on set
+        private string _name;
+        private string _printName;
+
         [Required]
         [StringLength(200)]
-        public string Name                    { get; set; }
+        public string Name
+        {
+            get => _name;
+            set => _name = value?.ToUpperInvariant();
+        }
 
         [Required]
         [StringLength(40)]
-        public string PrintName               { get; set; }
+        public string PrintName
+        {
+            get => _printName;
+            set => _printName = value?.ToUpperInvariant();
+        }
 
         [StringLength(100)]
         public string? BarCode                { get; set; }
@@ -30,28 +42,9 @@ namespace pos_service.Models.DTO.Items
         public bool AllowsDecimalQuantities   { get; set; } = false;
 
         [Required]
-        [Range(0, double.MaxValue)]
-        public decimal BuyingPrice            { get; set; }
+        public ItemPriceDto Price              { get; set; }
 
-        [Required]
-        [Range(0, double.MaxValue)]
-        public decimal MarkedPrice            { get; set; }
-
-        public DateTime? ExpDate { get; set; }
-
-        [Required]
-        [Range(0, double.MaxValue)]
-        public decimal RetailPrice            { get; set; }
-
-        [Required]
-        [Range(0, double.MaxValue)]
-        public decimal WholesalePrice         { get; set; }
-
-        [Range(0, 100)]
-        public decimal RetailDiscountRatio    { get; set; } = 0.0m;
-
-        [Range(0, 100)]
-        public decimal WholesaleDiscountRatio { get; set; } = 0.0m;
+        public ICollection<ItemExpiryDto> ExpDates { get; set; } = new List<ItemExpiryDto>();
 
         /// <summary>
         /// A list of supplier IDs to associate with this item.

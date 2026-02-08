@@ -34,14 +34,6 @@ namespace pos_service.Data
             // Seed admin user
             await SeedAdminUserAsync(context, passwordHasher);
 
-            // Seed default suppliers
-            await SeedSuppliersAsync(context);
-
-            // Seed default items
-            await SeedItemsAsync(context);
-
-            // Seed sample orders
-            await SeedOrdersAsync(context);
             // Seed default settings
             await SeedSettingsAsync(context);
         }
@@ -113,74 +105,6 @@ namespace pos_service.Data
         }
 
         /// <summary>
-        /// Seeds default suppliers if no suppliers exist in the database.
-        /// Creates initial supplier records for the POS system.
-        /// </summary>
-        /// <param name="context">The application database context.</param>
-        private static async Task SeedSuppliersAsync(AppDbContext context)
-        {
-            if (!await context.Suppliers.AnyAsync())
-            {
-                context.Suppliers.AddRange(
-                    new Supplier { Id = 1, Name = "Default Supplier 1", Uuid = Guid.NewGuid().ToString() },
-                    new Supplier { Id = 2, Name = "Default Supplier 2", Uuid = Guid.NewGuid().ToString() }
-                );
-                await context.SaveChangesAsync();
-            }
-        }
-
-        /// <summary>
-        /// Seeds default items if no items exist in the database.
-        /// Creates initial item records with associated suppliers for the POS system.
-        /// </summary>
-        /// <param name="context">The application database context.</param>
-        private static async Task SeedItemsAsync(AppDbContext context)
-        {
-            if (!await context.Items.AnyAsync())
-            {
-                // Get existing suppliers from DB
-                var suppliers = await context.Suppliers.ToListAsync();
-                var supplier = await context.Suppliers.FindAsync(1); // supplierId is int
-                if (supplier == null)
-                    throw new Exception("Supplier not found");
-
-                var item1 = new Item
-                {
-                    Id = 1,
-                    SubId = 0,
-                    Name = "Item 1",
-                    StockQuantity = 200,
-                    PrintName = "Item 1",
-                    RetailPrice = 100,
-                    BuyingPrice = 90,
-                    MarkedPrice = 100,
-                    Uuid = Guid.NewGuid().ToString(),
-                    ItemSuppliers = new List<ItemSupplier>()
-                    {
-                        new ItemSupplier { SuppliersId = supplier.Id, ItemsId = 1, ItemsSubId = 0,Uuid = Guid.NewGuid().ToString(), Supplier = supplier }
-                    }
-                };
-
-                var item2 = new Item
-                {
-                    Id = 2,
-                    SubId = 0,
-                    Name = "Item 2",
-                    StockQuantity = 200,
-                    PrintName = "Item 2",
-                    RetailPrice = 200,
-                    BuyingPrice = 90,
-                    MarkedPrice = 100,
-                    Uuid = Guid.NewGuid().ToString(),
-                    ItemSuppliers = suppliers.Select(s => new ItemSupplier { SuppliersId = s.Id, ItemsId = 2, Uuid = Guid.NewGuid().ToString(), ItemsSubId = 0, Supplier = s }).ToList()
-                };
-
-                context.Items.AddRange(item1, item2);
-                await context.SaveChangesAsync();
-            }
-        }
-
-        /// <summary>
         /// Seed default permissions and role mappings
         /// </summary>
         private static async Task SeedPermissionsAsync(AppDbContext context)
@@ -208,7 +132,7 @@ namespace pos_service.Data
                     new Permission { Id = (int)PermissionType.USER_VIEW, PermissionType = PermissionType.USER_VIEW, PermissionCatagory = PermissionCatagory.USER, Description = "Can view users" },
                     new Permission { Id = (int)PermissionType.USER_CREATE, PermissionType = PermissionType.USER_CREATE, PermissionCatagory = PermissionCatagory.USER, Description = "Can create users" },
                     new Permission { Id = (int)PermissionType.USER_UPDATE, PermissionType = PermissionType.USER_UPDATE, PermissionCatagory = PermissionCatagory.USER, Description = "Can update users" },
-                    new Permission { Id = (int)PermissionType.USER_DEACTIVATE, PermissionType = PermissionType.USER_DEACTIVATE, PermissionCatagory = PermissionCatagory.USER, Description = "Can deactivate users" },
+                    new Permission { Id = (int)PermissionType.USER_ACTIVE_STATUS_CHANGE, PermissionType = PermissionType.USER_ACTIVE_STATUS_CHANGE, PermissionCatagory = PermissionCatagory.USER, Description = "Can change user active status users" },
                     new Permission { Id = (int)PermissionType.USER_DELETE, PermissionType = PermissionType.USER_DELETE, PermissionCatagory = PermissionCatagory.USER, Description = "Can delete users" },
                     new Permission { Id = (int)PermissionType.USER_CHANGE_PASSWORD, PermissionType = PermissionType.USER_CHANGE_PASSWORD, PermissionCatagory = PermissionCatagory.USER, Description = "Can change password" },
                     new Permission { Id = (int)PermissionType.USER_MANAGE, PermissionType = PermissionType.USER_MANAGE, PermissionCatagory = PermissionCatagory.USER, Description = "Can manage user accounts and roles" },
@@ -264,116 +188,5 @@ namespace pos_service.Data
             }
         }
 
-        private static async Task SeedOrdersAsync(AppDbContext context)
-        {
-            if (!await context.Orders.AnyAsync())
-            {
-                // Ensure required data exists
-                var admin = await context.Users.FindAsync(1);
-                if (admin == null)
-                    throw new Exception("Admin user not found for seeding orders");
-
-                var item1 = await context.Items.FindAsync(1, 0);
-                var item2 = await context.Items.FindAsync(2, 0);
-                if (item1 == null || item2 == null)
-                    throw new Exception("Seed items not found when creating sample orders");
-
-                // Create first sample order
-                var order1Items = new List<OrderItem>
-                {
-                    new OrderItem
-                    {
-                        Uuid = Guid.NewGuid().ToString(),
-                        OriginalItemUuid = item1.Uuid,
-                        PrintName = item1.PrintName,
-                        Quantity = 2,
-                        PriceAtSale = item1.RetailPrice,
-                        MarkedPriceAtSale = item1.MarkedPrice,
-                        CostAtSale = item1.BuyingPrice,
-                        LineTotal = 2 * item1.RetailPrice
-                    },
-                    new OrderItem
-                    {
-                        Uuid = Guid.NewGuid().ToString(),
-                        OriginalItemUuid = item2.Uuid,
-                        PrintName = item2.PrintName,
-                        Quantity = 1,
-                        PriceAtSale = item2.RetailPrice,
-                        MarkedPriceAtSale = item2.MarkedPrice,
-                        CostAtSale = item2.BuyingPrice,
-                        LineTotal = 1 * item2.RetailPrice
-                    }
-                };
-
-                var gross1 = order1Items.Sum(i => i.PriceAtSale * i.Quantity);
-                var totalCost1 = order1Items.Sum(i => i.CostAtSale * i.Quantity);
-                var totalDiscount1 = gross1 - order1Items.Sum(i => i.LineTotal);
-                var net1 = gross1 - totalDiscount1;
-
-                var order1 = new Order
-                {
-                    Uuid = Guid.NewGuid().ToString(),
-                    OrderNumber = "ORD-SEED-00001",
-                    Status = OrderStatus.Paid,
-                    PaymentMethod = PaymentMethod.Cash,
-                    SaleType = SaleType.Retail,
-                    ItemCount = order1Items.Count,
-                    GrossAmount = gross1,
-                    TotalDiscount = totalDiscount1,
-                    NetAmount = net1,
-                    TotalCost = totalCost1,
-                    AmountPaid = net1,
-                    Balance = 0,
-                    CashierId = admin.Id,
-                    CustomerId = null,
-                    OrderItems = order1Items,
-                    Description = "Sample seeded order 1"
-                };
-
-                // Create second sample order
-                var order2Items = new List<OrderItem>
-                {
-                    new OrderItem
-                    {
-                        Uuid = Guid.NewGuid().ToString(),
-                        OriginalItemUuid = item2.Uuid,
-                        PrintName = item2.PrintName,
-                        Quantity = 3,
-                        PriceAtSale = item2.RetailPrice,
-                        MarkedPriceAtSale = item2.MarkedPrice,
-                        CostAtSale = item2.BuyingPrice,
-                        LineTotal = 3 * item2.RetailPrice
-                    }
-                };
-
-                var gross2 = order2Items.Sum(i => i.PriceAtSale * i.Quantity);
-                var totalCost2 = order2Items.Sum(i => i.CostAtSale * i.Quantity);
-                var totalDiscount2 = gross2 - order2Items.Sum(i => i.LineTotal);
-                var net2 = gross2 - totalDiscount2;
-
-                var order2 = new Order
-                {
-                    Uuid = Guid.NewGuid().ToString(),
-                    OrderNumber = "ORD-SEED-00002",
-                    Status = OrderStatus.Paid,
-                    PaymentMethod = PaymentMethod.Card,
-                    SaleType = SaleType.Retail,
-                    ItemCount = order2Items.Count,
-                    GrossAmount = gross2,
-                    TotalDiscount = totalDiscount2,
-                    NetAmount = net2,
-                    TotalCost = totalCost2,
-                    AmountPaid = net2,
-                    Balance = 0,
-                    CashierId = admin.Id,
-                    CustomerId = null,
-                    OrderItems = order2Items,
-                    Description = "Sample seeded order 2"
-                };
-
-                context.Orders.AddRange(order1, order2);
-                await context.SaveChangesAsync();
-            }
-        }
     }
 }

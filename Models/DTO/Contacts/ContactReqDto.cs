@@ -5,6 +5,13 @@ namespace pos_service.Models.DTO.Contacts
 {
     public class ContactReqDto : IReqAuditDto
     {
+        /// <summary>
+        ///  The unique identifier for the entity.
+        ///  This help for when editing existing records.
+        ///  This is special case refer SupplierService UpdateSupplierAsync method for more understanding
+        /// </summary>
+        public string? Uuid        { get; set; }
+
         [Required]
         [MaxLength(100)]
         public string Name         { get; set; }

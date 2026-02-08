@@ -1,10 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using pos_service.Models;
-using pos_service.Models.DTO.Orders;
+using pos_service.Helpers;
+using pos_service.Models.DTO.Bills;
 using pos_service.Services;
-using System.Drawing.Printing;
-using System.Net.Sockets;
+using System.Drawing;
 
 namespace pos_service.Controllers
 {
@@ -14,61 +13,156 @@ namespace pos_service.Controllers
     public class PrintController : ControllerBase
     {
         private readonly IOrderService _orderService;
+        private readonly IItemService _itemService;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IWebHostEnvironment _env;
 
-        public PrintController(IOrderService orderService, ICurrentUserService currentUserService)
+        public PrintController(
+            IOrderService orderService,
+            IItemService itemService,
+            ICurrentUserService currentUserService,
+            IWebHostEnvironment env)
         {
-            _orderService       = orderService;
+            _orderService = orderService;
+            _itemService = itemService;
             _currentUserService = currentUserService;
+            _env = env;
         }
 
+        /// <summary>
+        /// Prints the bill for the given order number.
+        /// </summary>
+        /// <param name="orderNumber">The order number to print the bill for.</param>
+        /// <returns>A response indicating the result of the print operation.</returns>
         [HttpPost]
-        public async Task<IActionResult> Print([FromBody] PrintRequest req)
+        public async Task<IActionResult> PrintBill([FromQuery] string orderNumber)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            if (string.IsNullOrWhiteSpace(orderNumber))
+                return BadRequest("OrderNumber is required");
+
             try
             {
                 var currentUser = _currentUserService.GetCurrentUser();
 
-                OrderResDto? orderToPrint = null;
-                if (string.IsNullOrWhiteSpace(req.OrderNumber))
-                    return BadRequest("OrderNumber is required");
-
-                orderToPrint = await _orderService.GetOrderByOrderNumberAsync(req.OrderNumber!, currentUser);
+                var orderToPrint = await _orderService.GetOrderByOrderNumberAsync(orderNumber, currentUser);
                 if (orderToPrint == null)
-                    return NotFound($"Order with number '{req.OrderNumber}' not found");
+                    return NotFound($"Order with number '{orderNumber}' not found");
 
-                var bytes = Helpers.EscPosFormatter.FormatReceipt(orderToPrint!);
-
-                if (req.UseNetwork && !string.IsNullOrWhiteSpace(req.PrinterIp))
+                var printer = FastReportPrintHelper.GetDefaultPrinter();
+                if (string.IsNullOrWhiteSpace(printer))
                 {
-                    await Helpers.NetworkPrinter.SendAsync(req.PrinterIp, req.Port ?? 9100, bytes);
+                    return StatusCode(500, "No installed printer found. Set a default printer.");
                 }
-                else
+
+                var reportPath = Path.Combine(_env.ContentRootPath, "Bills/posbill.frx");
+                var success = await FastReportPrintHelper.PrintReceiptAsync(orderToPrint, printer, reportPath);
+
+                if (!success)
                 {
-                    var printerName = req.PrinterName;
-                    if (string.IsNullOrWhiteSpace(printerName))
+                    return StatusCode(500, new PrintResponseDto
                     {
-                        try
-                        {
-                            printerName = new PrinterSettings().PrinterName;
-                        }
-                        catch
-                        {
-                            printerName = "POS Receipt Printer";
-                        }
-                    }
-
-                    var ok = Helpers.RawPrinterHelper.SendBytesToPrinter(printerName, bytes);
-                    if (!ok) return StatusCode(500, $"Failed to send to printer '{printerName}'");
+                        Printed = false,
+                        Error = $"Failed to send to printer '{printer}'"
+                    });
                 }
 
-                return Ok(new { printed = true, orderNumber = orderToPrint!.OrderNumber, status = orderToPrint.Status.ToString() });
+                return Ok(new PrintResponseDto
+                { 
+                    Printed = true
+                });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { printed = false, error = ex.Message });
+                return StatusCode(500, new PrintResponseDto
+                {
+                    Printed = false,
+                    Error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// Prints the barcode for the given item UUID.
+        /// </summary>
+        /// <param name="itemUuid">The UUID of the item to print the barcode for.</param>
+        /// <returns>A response indicating the result of the print operation.</returns>
+        [HttpPost("barcode/{itemUuid}")]
+        public async Task<IActionResult> PrintBarcode(string itemUuid)
+        {
+            if (string.IsNullOrWhiteSpace(itemUuid))
+                return BadRequest("ItemUuid is required");
+
+            try
+            {
+                var currentUser = _currentUserService.GetCurrentUser();
+
+                var item = await _itemService.GetItemByUuidAsync(itemUuid, currentUser);
+                if (item == null)
+                    return NotFound($"Item with UUID '{itemUuid}' not found");
+
+                if (string.IsNullOrWhiteSpace(item.BarCode))
+                {
+                    return BadRequest(new PrintResponseDto
+                    {
+                        Printed = false,
+                        Error = "This item does not have a barcode assigned"
+                    });
+                }
+
+                var printer = FastReportPrintHelper.GetDefaultPrinter();
+                if (string.IsNullOrWhiteSpace(printer))
+                {
+                    return StatusCode(500, "No installed printer found. Set a default printer.");
+                }
+
+                var reportPath = Path.Combine(_env.ContentRootPath, "Bills/item_barcode.frx");
+                var success = await FastReportPrintHelper.PrintBarcodeAsync(item, printer, reportPath);
+
+                if (!success)
+                {
+                    return StatusCode(500, new PrintResponseDto
+                    {
+                        Printed = false,
+                        Error = $"Failed to send to printer '{printer}'"
+                    });
+                }
+
+                return Ok(new PrintResponseDto
+                { 
+                    Printed = true
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new PrintResponseDto
+                {
+                    Printed = false,
+                    Error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// Retrieves the list of available printers and the default printer.
+        /// </summary>
+        /// <returns>A response containing the list of printers and the default printer.</returns>
+        [HttpGet("printers")]
+        public IActionResult GetPrinters()
+        {
+            try
+            {
+                var printers = FastReportPrintHelper.GetAvailablePrinters();
+                var defaultPrinter = FastReportPrintHelper.GetDefaultPrinter();
+
+                return Ok(new PrintersResponseDto
+                {
+                    Printers = printers,
+                    DefaultPrinter = defaultPrinter
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
             }
         }
     }

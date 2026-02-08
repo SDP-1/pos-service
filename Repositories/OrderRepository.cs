@@ -2,6 +2,8 @@
 using pos_service.Data;
 using pos_service.Models;
 using pos_service.Models.DTO.Orders;
+using pos_service.Models.Enums;
+using pos_service.Repositories.Base;
 
 namespace pos_service.Repositories
 {
@@ -9,11 +11,16 @@ namespace pos_service.Repositories
     {
         private readonly AppDbContext _context;
         private readonly ILogger<OrderRepository> _logger;
+        private readonly IStoredProcedureExecutor _spExecutor;
 
-        public OrderRepository(AppDbContext context, ILogger<OrderRepository> logger)
+        public OrderRepository(
+            AppDbContext context, 
+            ILogger<OrderRepository> logger,
+            IStoredProcedureExecutor spExecutor)
         {
             _logger = logger;
             _context = context;
+            _spExecutor = spExecutor;
         }
 
         public async Task<Order> CreateAsync(Order order)
@@ -60,7 +67,7 @@ namespace pos_service.Repositories
                 .Include(o => o.OrderItems)
                 .Include(o => o.Cashier)
                 .Include(o => o.Customer)
-                .FirstOrDefaultAsync(o => o.OrderNumber == orderNumber && o.IsActive);
+                .FirstOrDefaultAsync(o => o.OrderNumber == orderNumber);
         }
 
         public async Task<Order?> GetByUuidAsync(string uuid)
@@ -190,22 +197,86 @@ namespace pos_service.Repositories
         public async Task<string> GenerateOrderNumberAsync()
         {
             var today = DateTime.UtcNow;
-            var year = today.Year;
-            var month = today.Month.ToString("D2");
+            var yearMonth = today.ToString("yyyyMM"); // e.g., 202602
 
-            // Get the last order number for today
+            // Get the last order number for this month
             var lastOrder = await _context.Orders
-                .Where(o => o.OrderNumber.StartsWith($"ORD-{year}-{month}"))
+                .Where(o => o.OrderNumber.StartsWith($"ORD{yearMonth}"))
                 .OrderByDescending(o => o.OrderNumber)
                 .FirstOrDefaultAsync();
 
-            if (lastOrder == null)
+            int nextNumber = 1;
+
+            if (lastOrder != null)
             {
-                return $"ORD-{year}-{month}-00001";
+                // Extract last 5 digits as number
+                var lastNumberPart = lastOrder.OrderNumber.Substring(lastOrder.OrderNumber.Length - 5);
+                nextNumber = int.Parse(lastNumberPart) + 1;
             }
 
-            var lastNumber = int.Parse(lastOrder.OrderNumber.Split('-').Last());
-            return $"ORD-{year}-{month}-{(lastNumber + 1):D5}";
+            // Format as ORDYYYYMM00001
+            return $"ORD{yearMonth}{nextNumber:D5}";
+        }
+
+        /// <summary>
+        /// Retrieves orders filtered by date range and status.
+        /// Key behaviors:
+        /// - If StartDate is null, defaults to today's date
+        /// - If StartDate > EndDate, automatically swaps the dates
+        /// - Returns all active orders in the given date range
+        /// - Status filter is optional; if null, returns all statuses
+        /// - Results are ordered by CreatedAt in descending order
+        /// - Includes related data: OrderItems, Cashier, and Customer
+        /// </summary>
+        /// <param name="startDate">Start date for the date range filter. Defaults to today if not provided.</param>
+        /// <param name="endDate">End date for the date range filter. If null, includes all dates from startDate onwards.</param>
+        /// <param name="status">Order status filter. If null, returns all statuses.</param>
+        /// <returns>List of active orders matching the criteria, ordered by CreatedAt descending.</returns>
+        public async Task<List<Order>> GetOrdersByDateAndStatusAsync(DateTime? startDate, DateTime? endDate, OrderStatus? status)
+        {
+            try
+            {
+                // Replicate stored procedure logic:
+                // 1. Default StartDate to Today if NULL
+                var effectiveStartDate = startDate ?? DateTime.Today;
+
+                // 2. AUTO-SWAP LOGIC: If Start is newer than End, swap them
+                DateTime? effectiveEndDate = endDate;
+                if (effectiveEndDate.HasValue && effectiveStartDate > effectiveEndDate.Value)
+                {
+                    var temp = effectiveStartDate;
+                    effectiveStartDate = effectiveEndDate.Value;
+                    effectiveEndDate = temp;
+                }
+
+                // 3. Build query with the same filtering logic as SP
+                var query = _context.Orders
+                    .Include(o => o.OrderItems)
+                    .Include(o => o.Cashier)
+                    .Include(o => o.Customer)
+                    .Where(o => o.IsActive)
+                    .Where(o => o.CreatedAt >= effectiveStartDate);
+
+                // Apply end date filter if provided
+                if (effectiveEndDate.HasValue)
+                    query = query.Where(o => o.CreatedAt <= effectiveEndDate.Value);
+
+                // Apply status filter if provided
+                if (status.HasValue)
+                    query = query.Where(o => o.Status == status.Value);
+
+                // Order by creation date descending for reporting
+                query = query.OrderByDescending(o => o.CreatedAt);
+
+                return await query.ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, 
+                    "Error getting orders by date and status: StartDate={StartDate}, EndDate={EndDate}, Status={Status}", 
+                    startDate, endDate, status);
+                throw;
+            }
         }
     }
 }

@@ -10,5 +10,6 @@ namespace pos_service.Services.Roles
         Task<RoleResDto?> CreateAsync(RoleReqDto role);
         Task<RoleResDto?> UpdateAsync(int id, RoleReqDto role);
         Task<bool> DeleteAsync(int id);
+        Task<RoleResDto?> SetActiveStatusAsync(int id, bool isActive);
     }
 }

@@ -24,6 +24,8 @@ namespace pos_service.Data
         public DbSet<Customer> Customers   { get; set; }
         public DbSet<Supplier> Suppliers   { get; set; }
         public DbSet<Item> Items           { get; set; }
+        public DbSet<ItemPrice> ItemPrices { get; set; }
+        public DbSet<ItemExpiry> ItemExpiries { get; set; }
         public DbSet<ItemSupplier> ItemSuppliers { get; set; }
         public DbSet<Order> Orders         { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
@@ -31,6 +33,8 @@ namespace pos_service.Data
         public DbSet<RolePermission> RolePermissions { get; set; }
         public DbSet<Role> Roles { get; set; }
         public DbSet<Setting> Settings { get; set; }
+        public DbSet<BackupLocation> BackupLocations { get; set; }
+        public DbSet<BackupHistory> BackupHistories { get; set; }
 
         /// <summary>
         /// This method is used to configure the database model using the Fluent API.
@@ -49,6 +53,7 @@ namespace pos_service.Data
 
                 // Let the database populate CreatedAt and UpdatedAt using CURRENT_TIMESTAMP.
                 // EF will treat these as store-generated values so DB defaults and ON UPDATE apply.
+                // Let the database populate CreatedAt and UpdatedAt using CURRENT_TIMESTAMP.
                 entity
                     .Property<DateTime>(nameof(IAuditable.CreatedAt))
                     .HasColumnType("datetime(6)")
@@ -147,6 +152,10 @@ namespace pos_service.Data
                 // UUID must be unique
                 entity.HasAlternateKey(s => s.Uuid);
 
+                // Supplier name must be unique
+                entity.HasIndex(s => s.Name)
+                      .IsUnique();
+
                 // Supplier -> Contacts (cascade)
                 entity.HasMany(s => s.Contacts)
                       .WithOne(c => c.Supplier)
@@ -178,7 +187,32 @@ namespace pos_service.Data
                       .IsRequired()
                       .OnDelete(DeleteBehavior.Cascade);
 
+                entity.HasOne(i => i.Price)
+                      .WithOne(p => p.Item)
+                      .HasForeignKey<ItemPrice>(p => new { p.ItemsId, p.ItemsSubId })
+                      .IsRequired()
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(i => i.ExpDates)
+                      .WithOne(e => e.Item)
+                      .HasForeignKey(e => new { e.ItemsId, e.ItemsSubId })
+                      .IsRequired()
+                      .OnDelete(DeleteBehavior.Cascade);
+
                 entity.HasAlternateKey(i => i.Uuid);   // creates unique constraint
+            });
+
+            modelBuilder.Entity<ItemPrice>(entity =>
+            {
+                entity.HasKey(p => new { p.ItemsId, p.ItemsSubId });
+                entity.Property(p => p.ItemUuid).HasMaxLength(255).IsRequired();
+                entity.HasAlternateKey(p => p.ItemUuid);
+            });
+
+            modelBuilder.Entity<ItemExpiry>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.ItemUuid).HasMaxLength(255).IsRequired();
             });
 
             // --- Settings Configuration ---
@@ -188,6 +222,24 @@ namespace pos_service.Data
                 entity.Property(s => s.SettingKey).HasConversion<string>();
                 entity.Property(s => s.Description).HasMaxLength(500);
                 entity.HasAlternateKey(s => s.Uuid);
+            });
+
+            modelBuilder.Entity<BackupLocation>(entity =>
+            {
+                entity.HasAlternateKey(b => b.Uuid);
+                entity.Property(b => b.Name).HasMaxLength(255).HasColumnType("varchar(255)");
+                entity.Property(b => b.Path).HasColumnType("longtext");
+                //entity.ToTable("BackupLocations");
+            });
+
+            modelBuilder.Entity<BackupHistory>(entity =>
+            {
+                entity.HasAlternateKey(b => b.Uuid);
+                entity.Property(b => b.ScheduleUuid).HasMaxLength(255).HasColumnType("varchar(255)");
+                entity.Property(b => b.LocationUuid).HasMaxLength(255).HasColumnType("varchar(255)");
+                entity.Property(b => b.Message).HasColumnType("longtext");
+                entity.Property(b => b.FilePath).HasColumnType("longtext");
+                //entity.ToTable("BackupHistories");
             });
 
             // --- ItemSupplier Configuration ---
@@ -230,7 +282,8 @@ namespace pos_service.Data
                 // Configure the relationship to the User (Cashier).
                 entity.HasOne(o => o.Cashier)
                       .WithMany() // A User can have many Orders, but we don't need a navigation property on User.
-                      .HasForeignKey(o => o.CashierId);
+                      .HasForeignKey(o => o.CashierId)
+                      .OnDelete(DeleteBehavior.SetNull); // do not delete set as null
 
                 // Configure the optional relationship to the Customer.
                 entity.HasOne(o => o.Customer)
@@ -297,8 +350,7 @@ namespace pos_service.Data
                     // ignore and use SYSTEM
                 }
 
-                // Do not set CreatedAt/UpdatedAt in application when DB is configured to generate them
-                // Database will populate CreatedAt on insert and UpdatedAt on update via CURRENT_TIMESTAMP.
+                // Only set non-timestamp audit fields here. CreatedAt/UpdatedAt are DB-generated.
                 auditableEntity.UpdatedBy = userUuid;
 
                 if (entityEntry.State == EntityState.Added)

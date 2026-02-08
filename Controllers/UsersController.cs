@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using pos_service.Authorization;
 using pos_service.Controllers.Base;
 using pos_service.Models.DTO.Users;
+using pos_service.Models.Enums;
 using pos_service.Services;
 
 namespace pos_service.Controllers
@@ -62,6 +64,7 @@ namespace pos_service.Controllers
         /// </summary>
         /// <returns>A list of all user details.</returns>
         [HttpGet]
+        [Permission(PermissionType.USER_VIEW)]
         public async Task<ActionResult<IEnumerable<UserResDto>>> GetAllUsers()
         {
             var users = await _userService.GetAllUsersAsync(_currentUser);
@@ -74,6 +77,7 @@ namespace pos_service.Controllers
         /// <param name="id">The unique identifier of the user.</param>
         /// <returns>The user details if found, otherwise returns NotFound.</returns>
         [HttpGet("{id:int}")]
+        [Permission(PermissionType.USER_VIEW)]
         public async Task<ActionResult<UserResDto>> GetUserById(int id)
         {
             var user = await _userService.GetUserByIdAsync(id, _currentUser);
@@ -86,61 +90,41 @@ namespace pos_service.Controllers
 
         /// <summary>
         /// Creates a new user in the system.
+        /// Accepts multipart/form-data to support file uploads for profile image.
         /// </summary>
-        /// <param name="userDto">The user data transfer object containing user information.</param>
+        /// <param name="userDto">The user data transfer object containing user information and profile image file.</param>
         /// <returns>The newly created user details with location header.</returns>
         [HttpPost]
-        public async Task<ActionResult<UserResDto>> CreateUser([FromBody] UserReqDto userDto)
+        [Permission(PermissionType.USER_CREATE)]
+        public async Task<ActionResult<UserResDto>> CreateUser([FromForm] UserReqDto userDto)
         {
-            try
+            var newUser = await _userService.CreateUserAsync(userDto, _currentUser);
+            if (newUser == null)
             {
-                var newUser = await _userService.CreateUserAsync(userDto, _currentUser);
-                if (newUser == null)
-                {
-                    return Conflict("A user with this username already exists.");
-                }
+                return Conflict("A user with this username already exists.");
+            }
 
-                // Use the User's Id as the route parameter
-                return CreatedAtAction(nameof(GetUserById), new { id = newUser.Id }, newUser);
-            }
-            catch (FileNotFoundException ex)
-            {
-                // Missing source file provided by client
-                return BadRequest($"Profile image not found: {ex.FileName}");
-            }
-            catch (Exception ex)
-            {
-                // Generic server error when saving/copying images
-                return StatusCode(500, $"Error saving profile image: {ex.Message}");
-            }
+            // Use the User's Id as the route parameter
+            return CreatedAtAction(nameof(GetUserById), new { id = newUser.Id }, newUser);
         }
 
         /// <summary>
         /// Updates an existing user's details.
+        /// Accepts multipart/form-data to support file uploads for profile image.
         /// </summary>
         /// <param name="id">The unique identifier of the user to update.</param>
-        /// <param name="userDto">The user data transfer object containing updated information.</param>
+        /// <param name="userDto">The user data transfer object containing updated information and optional profile image file.</param>
         /// <returns>The updated user details if successful, otherwise returns NotFound.</returns>
         [HttpPatch("{id:int}")]
-        public async Task<IActionResult> UpdateUser(int id, [FromBody] UserReqDto userDto)
+        [Permission(PermissionType.USER_UPDATE)]
+        public async Task<IActionResult> UpdateUser(int id, [FromForm] UserReqDto userDto)
         {
-            try
+            var user = await _userService.UpdateUserAsync(id, userDto, _currentUser);
+            if (user == null)
             {
-                var user = await _userService.UpdateUserAsync(id, userDto, _currentUser);
-                if (user == null)
-                {
-                    return NotFound();
-                }
-                return Ok(user);
+                return NotFound();
             }
-            catch (FileNotFoundException ex)
-            {
-                return BadRequest($"Profile image not found: {ex.FileName}");
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Error saving profile image: {ex.Message}");
-            }
+            return Ok(user);
         }
 
         /// <summary>
@@ -149,6 +133,7 @@ namespace pos_service.Controllers
         /// <param name="id">The unique identifier of the user to deactivate.</param>
         /// <returns>NoContent if successful, otherwise returns NotFound.</returns>
         [HttpPatch("{id:int}/deactivate")]
+        [Permission(PermissionType.USER_ACTIVE_STATUS_CHANGE)]
         public async Task<IActionResult> DeactivateUser(int id)
         {
             var success = await _userService.DeactivateUserAsync(id, _currentUser);
@@ -160,11 +145,29 @@ namespace pos_service.Controllers
         }
 
         /// <summary>
+        /// Activates a deactivated user account.
+        /// </summary>
+        /// <param name="id">The unique identifier of the user to activate.</param>
+        /// <returns>Ok if successful, otherwise returns NotFound.</returns>
+        [HttpPatch("{id:int}/activate")]
+        [Permission(PermissionType.USER_ACTIVE_STATUS_CHANGE)]
+        public async Task<IActionResult> ActivateUser(int id)
+        {
+            var success = await _userService.ActivateUserAsync(id, _currentUser);
+            if (!success)
+            {
+                return NotFound();
+            }
+            return Ok("User activation successful.");
+        }
+
+        /// <summary>
         /// Permanently deletes a user from the system.
         /// </summary>
         /// <param name="id">The unique identifier of the user to delete.</param>
         /// <returns>NoContent if successful, otherwise returns NotFound.</returns>
         [HttpDelete("{id:int}")]
+        [Permission(PermissionType.USER_DELETE)]
         public async Task<IActionResult> DeleteUser(int id)
         {
             var success = await _userService.DeleteUserAsync(id, _currentUser);
@@ -183,13 +186,13 @@ namespace pos_service.Controllers
         /// <returns>NoContent if successful, otherwise returns BadRequest.</returns>
         [HttpPatch("{id:int}/change-password")]
         [Authorize] // Any logged-in user
+        [Permission(PermissionType.USER_CHANGE_PASSWORD)]
         public async Task<IActionResult> ChangePassword(int id, [FromBody] ChangePasswordDto passwordDto)
         {
-            // Assuming ChangePasswordDto contains OldPassword and NewPassword
             var success = await _userService.ChangePasswordAsync(id, passwordDto.OldPassword, passwordDto.NewPassword, _currentUser);
             if (!success)
             {
-                return BadRequest("Invalid ID or incorrect old password.");
+                return BadRequest("Incorrect old password.");
             }
             return Ok("Change passwrd succesfull");
         }

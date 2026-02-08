@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using System;
+using System.Linq;
 using pos_service.Models;
 using pos_service.Models.DTO.Contacts;
 using pos_service.Models.DTO.Items;
@@ -16,15 +18,26 @@ namespace pos_service.Profiles
         {
             // Item Mappings
             // map Item -> ItemResDto.Suppliers from ItemSuppliers join
+            CreateMap<ItemPrice, ItemPriceDto>();
+            CreateMap<ItemPriceDto, ItemPrice>();
+            CreateMap<ItemExpiry, ItemExpiryDto>();
+
             CreateMap<Item, ItemResDto>()
-                .ForMember(dest => dest.Suppliers, opt => opt.MapFrom(src => src.ItemSuppliers.Select(isu => isu.Supplier)));
-            CreateMap<Item, ItemMiniResDto>();
+                .ForMember(dest => dest.Suppliers, opt => opt.MapFrom(src => src.ItemSuppliers.Select(isu => isu.Supplier)))
+                .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price ?? new ItemPrice()))
+                .ForMember(dest => dest.ExpDates, opt => opt.MapFrom(src => src.ExpDates.OrderBy(e => e.ExpDate)));
+
+            CreateMap<Item, ItemMiniResDto>()
+                .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price ?? new ItemPrice()))
+                .ForMember(dest => dest.ExpDates, opt => opt.MapFrom(src => src.ExpDates.OrderBy(e => e.ExpDate)));
+
             // Map ItemReqDto -> Item but do not overwrite primary key properties when mapping
             // into an existing entity. Keys are assigned by service logic when creating items.
             CreateMap<ItemReqDto, Item>()
                 .ForMember(d => d.Id, opt => opt.Ignore())
-                .ForMember(d => d.SubId, opt => opt.Ignore());
-            CreateMap<Item, ItemResDto>();
+                .ForMember(d => d.SubId, opt => opt.Ignore())
+                .ForMember(d => d.Price, opt => opt.Ignore())
+                .ForMember(d => d.ExpDates, opt => opt.Ignore());
 
             // Contact Mappings
             CreateMap<Contact, ContactResDto>();
@@ -33,7 +46,11 @@ namespace pos_service.Profiles
             // Supplier Mappings
             CreateMap<Supplier, SupplierResDto>()
                 .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.ItemSuppliers.Select(isu => isu.Item)));
-            CreateMap<SupplierReqDto, Supplier>();
+            // When mapping request DTO -> entity, ignore navigation collections because
+            // service code will manage Contacts and ItemSuppliers explicitly.
+            CreateMap<SupplierReqDto, Supplier>()
+                .ForMember(dest => dest.Contacts, opt => opt.Ignore())
+                .ForMember(dest => dest.ItemSuppliers, opt => opt.Ignore());
 
             // User Mappings
             CreateMap<User, UserResDto>();

@@ -7,6 +7,7 @@ using pos_service.Models.Enums;
 using pos_service.Repositories;
 using Microsoft.Extensions.Logging;
 using pos_service.Models.DTO.ReturnedItems;
+using pos_service.Models.DTO.OrderItems;
 
 namespace pos_service.Services
 {
@@ -167,6 +168,18 @@ namespace pos_service.Services
                     _context.Items.Update(item);
                 }
 
+                // Update customer loyalty points based on the request DTO (earn/deduct per spec)
+                if (order.CustomerId.HasValue)
+                {
+                    var customer = await _context.Customers.FindAsync(order.CustomerId.Value);
+                    if (customer != null)
+                    {
+                        var points = CalculateLoyaltyPointsFromReq(orderDto.OrderItems);
+                        customer.LoyaltyPoints = Math.Max(0, customer.LoyaltyPoints + points);
+                        _context.Customers.Update(customer);
+                    }
+                }
+
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
@@ -259,6 +272,13 @@ namespace pos_service.Services
 
                 if (existingOrder.Status != OrderStatus.Pending)
                     throw new InvalidOperationException("Only pending orders can be modified");
+
+                // Capture old order items for loyalty points adjustment, then restore quantities
+                var oldOrderItemsSnapshot = existingOrder.OrderItems.Select(oi => new OrderItem
+                {
+                    LineTotal = oi.LineTotal,
+                    IsReturnItem = oi.IsReturnItem
+                }).ToList();
 
                 // Restore quantities from old order items
                 foreach (var oldItem in existingOrder.OrderItems)
@@ -376,6 +396,20 @@ namespace pos_service.Services
                 existingOrder.CustomerId = orderDto.CustomerId;
 
                 var updatedOrder = await _orderRepository.UpdateAsync(existingOrder);
+                // Adjust customer loyalty points based on delta between new and old order items
+                if (existingOrder.CustomerId.HasValue)
+                {
+                    var customer = await _context.Customers.FindAsync(existingOrder.CustomerId.Value);
+                    if (customer != null)
+                    {
+                        var oldPoints = CalculateLoyaltyPointsFromOrderItems(oldOrderItemsSnapshot);
+                        var newPoints = CalculateLoyaltyPointsFromOrderItems(existingOrder.OrderItems);
+                        var delta = newPoints - oldPoints;
+                        customer.LoyaltyPoints = Math.Max(0, customer.LoyaltyPoints + delta);
+                        _context.Customers.Update(customer);
+                    }
+                }
+
                 await _context.SaveChangesAsync();
 
                 await transaction.CommitAsync();
@@ -556,6 +590,36 @@ namespace pos_service.Services
             // Use repository to get view-backed rows
             var rows = await _orderRepository.GetReturnedItemsSummaryByOrderNumberAsync(orderNumber);
             return _mapper.Map<List<pos_service.Models.DTO.ReturnedItems.ReturnedItemsSummaryResDto>>(rows);
+        }
+
+        // Calculate loyalty points earned/deducted for a collection of OrderItemReqDto.
+        // Rules:
+        // - Earn 1 point per 100 Rs for non-return items (integer points only)
+        // - Deduct 2 points per 100 Rs for return items
+        // - Returns a signed integer (positive => add points, negative => remove points)
+        private int CalculateLoyaltyPointsFromReq(IEnumerable<OrderItemReqDto> items)
+        {
+            // Use absolute values so returned line totals (which may be negative) always reduce points.
+            var saleTotal = items.Where(i => !i.IsReturnItem).Sum(i => Math.Abs(i.LineTotal));
+            var returnTotal = items.Where(i => i.IsReturnItem).Sum(i => Math.Abs(i.LineTotal));
+
+            int earn = (int)(saleTotal / 100m);
+            int deduct = (int)(returnTotal / 100m) * 2;
+
+            return earn - deduct;
+        }
+
+        // Same calculation but for persisted OrderItem entities
+        private int CalculateLoyaltyPointsFromOrderItems(IEnumerable<OrderItem> items)
+        {
+            // Use absolute values so returned line totals (which may be negative) always reduce points.
+            var saleTotal = items.Where(i => !i.IsReturnItem).Sum(i => Math.Abs(i.LineTotal));
+            var returnTotal = items.Where(i => i.IsReturnItem).Sum(i => Math.Abs(i.LineTotal));
+
+            int earn = (int)(saleTotal / 100m);
+            int deduct = (int)(returnTotal / 100m) * 2;
+
+            return earn - deduct;
         }
     }
 }

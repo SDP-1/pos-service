@@ -54,9 +54,9 @@ namespace pos_service.Controllers
         {
            var order = await _orderService.GetOrderAsync(id, _currentUser);
            if (order == null)
-               return Ok("Order not found");
+               return NotFound("Order not found");
 
-           return Ok(order);
+            return Ok(order);
         }
 
         /// <summary>
@@ -70,9 +70,9 @@ namespace pos_service.Controllers
         {
            var order = await _orderService.GetOrderByUuidAsync(uuid, _currentUser);
            if (order == null)
-               return Ok("Order not found");
+               return NotFound("Order not found");
 
-           return Ok(order);
+            return Ok(order);
         }
 
         /// <summary>
@@ -86,8 +86,8 @@ namespace pos_service.Controllers
         {
             var order = await _orderService.GetOrderByOrderNumberAsync(number, _currentUser);
             if (order == null)
-                return Ok("Order not found");
-           
+                return NotFound("Order not found");
+
             return Ok(order);
         }
 
@@ -100,7 +100,7 @@ namespace pos_service.Controllers
         {
             var order = await _orderService.GetOrderWithReturnedItemsAsync(number, _currentUser);
             if (order == null)
-                return Ok("Order not found");
+                return NotFound("Order not found");
 
             return Ok(order);
         }

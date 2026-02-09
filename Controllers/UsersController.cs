@@ -65,6 +65,7 @@ namespace pos_service.Controllers
         /// <returns>A list of all user details.</returns>
         [HttpGet]
         [Permission(PermissionType.USER_VIEW)]
+        [Permission(PermissionType.USER_MANAGE)]
         public async Task<ActionResult<IEnumerable<UserResDto>>> GetAllUsers()
         {
             var users = await _userService.GetAllUsersAsync(_currentUser);

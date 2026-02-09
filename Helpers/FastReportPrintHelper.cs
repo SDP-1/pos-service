@@ -39,6 +39,7 @@ namespace pos_service.Helpers
                 report.SetParameterValue("Cash", order.AmountPaid.ToString("F2"));
                 report.SetParameterValue("Balance", order.Balance.ToString("F2"));
                 report.SetParameterValue("GrosAmount", order.GrossAmount.ToString("F2"));
+                report.SetParameterValue("Barcode", order.OrderNumber.ToString());
             });
         }
 

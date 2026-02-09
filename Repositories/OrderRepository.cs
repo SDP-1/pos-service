@@ -201,7 +201,7 @@ namespace pos_service.Repositories
 
             // Get the last order number for this month
             var lastOrder = await _context.Orders
-                .Where(o => o.OrderNumber.StartsWith($"ORD{yearMonth}"))
+                .Where(o => o.OrderNumber.StartsWith(yearMonth))
                 .OrderByDescending(o => o.OrderNumber)
                 .FirstOrDefaultAsync();
 
@@ -209,13 +209,13 @@ namespace pos_service.Repositories
 
             if (lastOrder != null)
             {
-                // Extract last 5 digits as number
-                var lastNumberPart = lastOrder.OrderNumber.Substring(lastOrder.OrderNumber.Length - 5);
+                // Extract last 7 digits
+                var lastNumberPart = lastOrder.OrderNumber.Substring(6, 7);
                 nextNumber = int.Parse(lastNumberPart) + 1;
             }
 
-            // Format as ORDYYYYMM00001
-            return $"ORD{yearMonth}{nextNumber:D5}";
+            // Format: YYYYMM + 7-digit sequence = 13 digits total
+            return $"{yearMonth}{nextNumber:D7}";
         }
 
         /// <summary>

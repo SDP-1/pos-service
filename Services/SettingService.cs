@@ -19,30 +19,7 @@ namespace pos_service.Services
             _context = context;
         }
 
-        public async Task<Setting> CreateAsync(Setting setting, CurrentUser currentUser)
-        {
-            // basic validations
-            var exists = await _settingRepository.GetByKeyAsync(setting.SettingKey);
-            if (exists != null)
-            {
-                // update existing
-                exists.SettingValue = setting.SettingValue;
-                exists.Description = setting.Description;
-                return await _settingRepository.UpdateAsync(exists);
-            }
-
-            var created = await _settingRepository.AddAsync(setting);
-            return created;
-        }
-
-        public async Task<bool> DeleteAsync(int id, CurrentUser currentUser)
-        {
-            var setting = await _settingRepository.GetByIdAsync(id);
-            if (setting == null) return false;
-            await _settingRepository.DeleteAsync(setting);
-            return true;
-        }
-
+        // Settings are read-only via API: creation, update and deletion are not supported.
         public async Task<IEnumerable<Setting>> GetAllAsync(CurrentUser currentUser)
         {
             return await _settingRepository.GetAllAsync();
@@ -58,16 +35,15 @@ namespace pos_service.Services
             return await _settingRepository.GetByKeyAsync(key);
         }
 
-        public async Task<Setting> UpdateAsync(int id, Setting setting, CurrentUser currentUser)
+        public async Task<Setting?> SetSettingValueAsync(SettingKey key, bool value, CurrentUser currentUser)
         {
-            var existing = await _settingRepository.GetByIdAsync(id);
-            if (existing == null)
-                throw new ArgumentException($"Setting with ID {id} not found");
+            // Only allow system admin or roles with permission to view settings to toggle (we'll rely on controller permission)
+            var setting = await _settingRepository.GetByKeyAsync(key);
+            if (setting == null) return null;
 
-            existing.Description = setting.Description;
-            existing.SettingValue = setting.SettingValue;
-
-            return await _settingRepository.UpdateAsync(existing);
+            setting.SettingValue = value;
+            var updated = await _settingRepository.UpdateAsync(setting);
+            return updated;
         }
     }
 }

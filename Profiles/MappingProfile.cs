@@ -9,6 +9,7 @@ using pos_service.Models.DTO.OrderItems;
 using pos_service.Models.DTO.Roles;
 using pos_service.Models.DTO.Suppliers;
 using pos_service.Models.DTO.Users;
+using pos_service.Models.DTO.Settings;
 
 namespace pos_service.Profiles
 {
@@ -85,6 +86,9 @@ namespace pos_service.Profiles
             CreateMap<Customer, Models.DTO.Customers.CustomerResDto>()
                 .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName));
             CreateMap<Models.DTO.Customers.CustomerReqDto, Customer>();
+
+            // Setting mappings
+            CreateMap<Setting, SettingResDto>();
         }
     }
 }

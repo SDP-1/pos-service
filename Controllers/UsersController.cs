@@ -212,7 +212,7 @@ namespace pos_service.Controllers
             {
                 return BadRequest("Incorrect old password.");
             }
-            return Ok("Change passwrd succesfull");
+            return Ok("Change password successful");
         }
     }
 }

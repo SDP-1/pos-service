@@ -42,7 +42,8 @@ namespace pos_service.Services
             try
             {
                 var allowZeroStock = (await _settingService.GetByKeyAsync(SettingKey.AllowZeroStock, currentUser))?.SettingValue ?? false;
-                var allowOrdersForLoan = (await _settingService.GetByKeyAsync(SettingKey.AllowOrdesForsLoan, currentUser))?.SettingValue ?? false;
+                var allowOrdersForLoan = (await _settingService.GetByKeyAsync(SettingKey.AllowOrdesForLoan, currentUser))?.SettingValue ?? false;
+                var AllowCreditOrderWithoutCustomer = (await _settingService.GetByKeyAsync(SettingKey.AllowCreditOrderWithoutCustomer, currentUser))?.SettingValue ?? false;
 
                 var orderItems = new List<OrderItem>();
                 decimal grossAmount = 0m;
@@ -110,7 +111,11 @@ namespace pos_service.Services
                 bool hasReturnItems = orderDto.OrderItems.Any(item => item.IsReturnItem);
 
                 if (balance < 0 && !allowOrdersForLoan)
-                    throw new InvalidOperationException("Negative balance not allowed. Enable setting AllowOrdesForsLoan to allow credit/loan sales.");
+                    throw new InvalidOperationException("Negative balance not allowed. Enable setting AllowOrdesForLoan to allow credit/loan sales.");
+
+                // Enforce presence of customer for loan orders unless explicitly allowed
+                if (balance < 0 && allowOrdersForLoan && !AllowCreditOrderWithoutCustomer && !orderDto.CustomerId.HasValue)
+                    throw new InvalidOperationException("Loan orders require a customer. Enable setting AllowCreditOrderWithoutCustomer to allow loans without a customer.");
 
                 OrderStatus initialStatus;
                 if (hasReturnItems)
@@ -264,7 +269,8 @@ namespace pos_service.Services
             try
             {
                 var allowZeroStock = (await _settingService.GetByKeyAsync(SettingKey.AllowZeroStock, currentUser))?.SettingValue ?? false;
-                var allowOrdersForLoan = (await _settingService.GetByKeyAsync(SettingKey.AllowOrdesForsLoan, currentUser))?.SettingValue ?? false;
+                var allowOrdersForLoan = (await _settingService.GetByKeyAsync(SettingKey.AllowOrdesForLoan, currentUser))?.SettingValue ?? false;
+                var AllowCreditOrderWithoutCustomer = (await _settingService.GetByKeyAsync(SettingKey.AllowCreditOrderWithoutCustomer, currentUser))?.SettingValue ?? false;
 
                 var existingOrder = await _orderRepository.GetByIdAsync(id);
                 if (existingOrder == null)
@@ -378,7 +384,11 @@ namespace pos_service.Services
 
                 // Enforce loan setting on update
                 if (existingOrder.Balance < 0 && !allowOrdersForLoan)
-                    throw new InvalidOperationException("Negative balance not allowed. Enable setting AllowOrdesForsLoan to allow credit/loan sales.");
+                    throw new InvalidOperationException("Negative balance not allowed. Enable setting AllowOrdesForLoan to allow credit/loan sales.");
+
+                // Enforce presence of customer for loan orders unless allowed by setting
+                if (existingOrder.Balance < 0 && allowOrdersForLoan && !AllowCreditOrderWithoutCustomer && !orderDto.CustomerId.HasValue)
+                    throw new InvalidOperationException("Loan orders require a customer. Enable setting AllowCreditOrderWithoutCustomer to allow loans without a customer.");
 
                 // Set status: Loan for negative balance when allowed, Paid when fully settled, otherwise Pending
                 if (existingOrder.Balance < 0 && allowOrdersForLoan)

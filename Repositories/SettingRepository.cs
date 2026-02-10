@@ -16,19 +16,7 @@ namespace pos_service.Repositories
             _logger = logger;
         }
 
-        public async Task<Setting> AddAsync(Setting setting)
-        {
-            setting.Uuid = Guid.NewGuid().ToString();
-            _context.Settings.Add(setting);
-            await _context.SaveChangesAsync();
-            return setting;
-        }
-
-        public async Task DeleteAsync(Setting setting)
-        {
-            _context.Settings.Remove(setting);
-            await _context.SaveChangesAsync();
-        }
+        // Creation and deletion of settings are not supported via repository for now.
 
         public async Task<IEnumerable<Setting>> GetAllAsync()
         {
@@ -45,16 +33,13 @@ namespace pos_service.Repositories
             return await _context.Settings.FirstOrDefaultAsync(s => s.SettingKey == key && s.IsActive);
         }
 
-        public async Task<Setting?> GetByUuidAsync(string uuid)
-        {
-            return await _context.Settings.FirstOrDefaultAsync(s => s.Uuid == uuid && s.IsActive);
-        }
-
         public async Task<Setting> UpdateAsync(Setting setting)
         {
             _context.Entry(setting).State = EntityState.Modified;
             await _context.SaveChangesAsync();
             return setting;
         }
+
+        // UUID lookup and update are intentionally omitted to make settings read-only via API.
     }
 }

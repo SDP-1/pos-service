@@ -8,6 +8,10 @@ namespace pos_service.Models.Enums
         // When an order has a negative balance and this setting is true, the order will be
         // created with status `Loan`. When the balance is zero or positive the order will
         // be marked as `Paid` instead of `Pending`.
-        AllowOrdesForsLoan
+        AllowOrdesForLoan
+        ,
+        // When enabled, allow creating Loan orders (negative balance) even when no customer
+        // is provided on the order. When disabled, credit/loan orders must include a CustomerId.
+        AllowCreditOrderWithoutCustomer
     }
 }

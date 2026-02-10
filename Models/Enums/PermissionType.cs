@@ -19,7 +19,8 @@ namespace pos_service.Models.Enums
         SUPPLIER   = 4,
         CONTACT    = 5,
         PERMISSION = 6,
-        ROLE       = 7
+        ROLE       = 7,
+        SETTING    = 8
     }
 
     // PermissionType enum values MUST match Permission.Id values in the database.
@@ -73,6 +74,9 @@ namespace pos_service.Models.Enums
         ROLE_CREATE                         = 651,
         ROLE_UPDATE                         = 652,
         ROLE_DELETE                         = 653,
+
+        // Settings (start at 700)
+        SETTING_MANAGE                      = 700,
 
         // Only for SYS Admin (start at 1000 - 1050)
         // Special permission to allow viewing existence/details of the SystemAdmin role (id=1)

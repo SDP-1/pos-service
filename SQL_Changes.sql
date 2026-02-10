@@ -1,3 +1,12 @@
+-- need to apply
+
+ALTER TABLE `pos-system`.`settings` 
+ADD COLUMN `SettingName` VARCHAR(100) NOT NULL AFTER `SettingKey`;
+
+
+/*
+
+-- below one applied.
 
 -- User table
 
@@ -82,6 +91,8 @@ ADD CONSTRAINT `FK_Orders_Users_CashierId`
 ALTER TABLE `pos-system`.`customers` 
 ADD UNIQUE INDEX `Email_UNIQUE` (`Email` ASC) VISIBLE;
 ;
+
+*/
 
 
 

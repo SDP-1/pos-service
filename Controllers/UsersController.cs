@@ -69,6 +69,15 @@ namespace pos_service.Controllers
         public async Task<ActionResult<IEnumerable<UserResDto>>> GetAllUsers()
         {
             var users = await _userService.GetAllUsersAsync(_currentUser);
+
+            // Exclude SystemAdmin users (role id 1) from the returned list
+            // Only SystemAdmin WITH, PERMISSION_SYSADMIN_VIEW permission can see admin roles
+            if (!(_currentUser.IsInRole((int)UserRole.SYSTEM_ADMIN) &&
+                  _currentUser.HasPermission(PermissionType.PERMISSION_SYSADMIN_VIEW)))
+            {
+                users = users.Where(u => u.RoleId != (int)UserRole.SYSTEM_ADMIN);
+            }
+
             return Ok(users);
         }
 
@@ -86,6 +95,14 @@ namespace pos_service.Controllers
             {
                 return NotFound();
             }
+
+            // If caller is not SystemAdmin, only allow access to their own account
+            if (!_currentUser.IsInRole((int)UserRole.SYSTEM_ADMIN) && user.Id != _currentUser.Id)
+            {
+                // Hide existence of other user accounts
+                return NotFound();
+            }
+
             return Ok(user);
         }
 
@@ -176,7 +193,7 @@ namespace pos_service.Controllers
             {
                 return NotFound();
             }
-            return Ok("User Delete Successfull.");
+            return Ok("User Delete Successful.");
         }
 
         /// <summary>

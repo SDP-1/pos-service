@@ -1,5 +1,13 @@
 namespace pos_service.Models.Enums
 {
+
+    public enum UserRole  //This set automaticaly -> AddPermissionToRoleAsync
+    {
+        DEFAULT = 0,
+
+        SYSTEM_ADMIN = 1,
+    }
+
     // PermissionCatagory enum values start from 1
     public enum PermissionCatagory  //This set automaticaly -> AddPermissionToRoleAsync
     {

@@ -50,23 +50,6 @@ namespace pos_service.Controllers
         }
 
         /// <summary>
-        /// Retrieves a specific setting by its unique identifier.
-        /// </summary>
-        /// <param name="id">The unique identifier of the setting.</param>
-        /// <returns>The setting details if found, otherwise returns NotFound.</returns>
-        [HttpGet("{id:int}")]
-        [Permission(PermissionType.SETTING_MANAGE)]
-        public async Task<ActionResult<SettingResDto>> GetSettingById(int id)
-        {
-            var setting = await _settingService.GetByIdAsync(id, _currentUser);
-            if (setting == null)
-                return NotFound("Setting not found");
-
-            var settingDto = _mapper.Map<SettingResDto>(setting);
-            return Ok(settingDto);
-        }
-
-        /// <summary>
         /// Retrieves a setting by its key.
         /// </summary>
         /// <param name="key">The setting key to search for.</param>

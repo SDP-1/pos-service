@@ -13,7 +13,7 @@ namespace pos_service.Services
         public CustomerService(ICustomerRepository repository, IMapper mapper)
         {
             _repository = repository;
-            _mapper = mapper;
+            _mapper     = mapper;
         }
 
         public async Task<IEnumerable<CustomerResDto>> GetAllCustomersAsync(CurrentUser currentUser)

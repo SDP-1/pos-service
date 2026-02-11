@@ -41,17 +41,18 @@ namespace pos_service.Services
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var allowZeroStock = (await _settingService.GetByKeyAsync(SettingKey.AllowZeroStock, currentUser))?.SettingValue ?? false;
-                var allowOrdersForLoan = (await _settingService.GetByKeyAsync(SettingKey.AllowOrdesForLoan, currentUser))?.SettingValue ?? false;
-                var AllowCreditOrderWithoutCustomer = (await _settingService.GetByKeyAsync(SettingKey.AllowCreditOrderWithoutCustomer, currentUser))?.SettingValue ?? false;
+                var allowZeroStock                  = await _settingService.GetSettingValueAsync(SettingKey.AllowZeroStock, currentUser);
+                var allowOrdersForLoan              = await _settingService.GetSettingValueAsync(SettingKey.AllowOrdesForLoan, currentUser);
+                var AllowCreditOrderWithoutCustomer = await _settingService.GetSettingValueAsync(SettingKey.AllowCreditOrderWithoutCustomer, currentUser);
+                var calculateLoyaltyForLoanOrders   = await _settingService.GetSettingValueAsync(SettingKey.CalculateLoyaltyPointsForCreditOrders, currentUser);
 
-                var orderItems = new List<OrderItem>();
-                decimal grossAmount = 0m;
+                var orderItems        = new List<OrderItem>();
+                decimal grossAmount   = 0m;
                 decimal totalDiscount = 0m;
-                decimal totalCost = 0m;
-                int itemCount = 0;
+                decimal totalCost     = 0m;
+                int itemCount         = 0;
 
-                var itemsToUpdate = new Dictionary<Item, decimal>();
+                var itemsToUpdate   = new Dictionary<Item, decimal>();
                 var itemReturnFlags = new Dictionary<Item, bool>();
 
                 foreach (var itemDto in orderDto.OrderItems)
@@ -71,7 +72,7 @@ namespace pos_service.Services
                     if (itemDto.IsReturnItem && string.IsNullOrWhiteSpace(itemDto.ReturnedOrderItemUuid))
                         throw new ArgumentException($"ReturnedOrderItemUuid is required for return item {item.PrintName}");
 
-                    itemsToUpdate[item] = itemDto.Quantity;
+                    itemsToUpdate[item]   = itemDto.Quantity;
                     itemReturnFlags[item] = itemDto.IsReturnItem;
 
                     // Frontend-provided prices and totals (required)
@@ -179,8 +180,10 @@ namespace pos_service.Services
                     var customer = await _context.Customers.FindAsync(order.CustomerId.Value);
                     if (customer != null)
                     {
-                        var points = CalculateLoyaltyPointsFromReq(orderDto.OrderItems);
-                        customer.LoyaltyPoints = Math.Max(0, customer.LoyaltyPoints + points);
+                        var suppressEarnForLoan = order.Status == OrderStatus.Loan && !calculateLoyaltyForLoanOrders;
+                        var points              = CalculateLoyaltyPointsFromReq(orderDto.OrderItems, suppressEarnForLoan);
+                        customer.LoyaltyPoints  = Math.Max(0, customer.LoyaltyPoints + points);
+
                         _context.Customers.Update(customer);
                     }
                 }
@@ -249,7 +252,7 @@ namespace pos_service.Services
 
         public async Task<OrderListResDto> GetOrdersAsync(OrderQueryDto query, CurrentUser currentUser)
         {
-            var orders = await _orderRepository.GetAllAsync(query);
+            var orders     = await _orderRepository.GetAllAsync(query);
             var totalCount = await _orderRepository.GetCountAsync(query);
 
             return new OrderListResDto
@@ -268,9 +271,10 @@ namespace pos_service.Services
 
             try
             {
-                var allowZeroStock = (await _settingService.GetByKeyAsync(SettingKey.AllowZeroStock, currentUser))?.SettingValue ?? false;
-                var allowOrdersForLoan = (await _settingService.GetByKeyAsync(SettingKey.AllowOrdesForLoan, currentUser))?.SettingValue ?? false;
-                var AllowCreditOrderWithoutCustomer = (await _settingService.GetByKeyAsync(SettingKey.AllowCreditOrderWithoutCustomer, currentUser))?.SettingValue ?? false;
+                var allowZeroStock                  = await _settingService.GetSettingValueAsync(SettingKey.AllowZeroStock, currentUser);
+                var allowOrdersForLoan              = await _settingService.GetSettingValueAsync(SettingKey.AllowOrdesForLoan, currentUser);
+                var AllowCreditOrderWithoutCustomer = await _settingService.GetSettingValueAsync(SettingKey.AllowCreditOrderWithoutCustomer, currentUser);
+                var calculateLoyaltyForLoanOrders   = await _settingService.GetSettingValueAsync(SettingKey.CalculateLoyaltyPointsForCreditOrders, currentUser);
 
                 var existingOrder = await _orderRepository.GetByIdAsync(id);
                 if (existingOrder == null)
@@ -302,10 +306,10 @@ namespace pos_service.Services
 
                 // For simplicity, we'll recreate the order items
                 // In a real scenario, you might want to handle updates more granularly
-                decimal grossAmount = 0;
+                decimal grossAmount   = 0;
                 decimal totalDiscount = 0;
-                decimal totalCost = 0;
-                int itemCount = 0;
+                decimal totalCost     = 0;
+                int itemCount         = 0;
 
                 var itemsToUpdate = new Dictionary<Item, decimal>();
                 var itemReturnFlags = new Dictionary<Item, bool>();
@@ -321,7 +325,7 @@ namespace pos_service.Services
                         throw new ArgumentException($"Insufficient stock for item {item.PrintName}. Available: {item.StockQuantity}, Requested: {itemDto.Quantity}");
 
                     // Add to tracking dictionary
-                    itemsToUpdate[item] = itemDto.Quantity;
+                    itemsToUpdate[item]   = itemDto.Quantity;
                     itemReturnFlags[item] = itemDto.IsReturnItem;
 
                     // Use frontend-provided prices directly
@@ -412,10 +416,12 @@ namespace pos_service.Services
                     var customer = await _context.Customers.FindAsync(existingOrder.CustomerId.Value);
                     if (customer != null)
                     {
-                        var oldPoints = CalculateLoyaltyPointsFromOrderItems(oldOrderItemsSnapshot);
-                        var newPoints = CalculateLoyaltyPointsFromOrderItems(existingOrder.OrderItems);
-                        var delta = newPoints - oldPoints;
-                        customer.LoyaltyPoints = Math.Max(0, customer.LoyaltyPoints + delta);
+                        var suppressEarnForLoan = existingOrder.Status == OrderStatus.Loan && !calculateLoyaltyForLoanOrders;
+                        var oldPoints           = CalculateLoyaltyPointsFromOrderItems(oldOrderItemsSnapshot, false);
+                        var newPoints           = CalculateLoyaltyPointsFromOrderItems(existingOrder.OrderItems, suppressEarnForLoan);
+                        var delta               = newPoints - oldPoints;
+                        customer.LoyaltyPoints  = Math.Max(0, customer.LoyaltyPoints + delta);
+
                         _context.Customers.Update(customer);
                     }
                 }
@@ -446,8 +452,7 @@ namespace pos_service.Services
                 // Restore quantities from order items only when order is active and we care about stock
                 if (order.IsActive)
                 {
-                    var allowZeroStockSetting = await _settingService.GetByKeyAsync(SettingKey.AllowZeroStock, currentUser);
-                    var allowZeroStock = allowZeroStockSetting?.SettingValue ?? false;
+                    var allowZeroStock = await _settingService.GetSettingValueAsync(SettingKey.AllowZeroStock, currentUser);
 
                     foreach (var orderItem in order.OrderItems)
                     {
@@ -607,27 +612,27 @@ namespace pos_service.Services
         // - Earn 1 point per 100 Rs for non-return items (integer points only)
         // - Deduct 2 points per 100 Rs for return items
         // - Returns a signed integer (positive => add points, negative => remove points)
-        private int CalculateLoyaltyPointsFromReq(IEnumerable<OrderItemReqDto> items)
+        private int CalculateLoyaltyPointsFromReq(IEnumerable<OrderItemReqDto> items, bool suppressEarn = false)
         {
             // Use absolute values so returned line totals (which may be negative) always reduce points.
-            var saleTotal = items.Where(i => !i.IsReturnItem).Sum(i => Math.Abs(i.LineTotal));
+            var saleTotal   = items.Where(i => !i.IsReturnItem).Sum(i => Math.Abs(i.LineTotal));
             var returnTotal = items.Where(i => i.IsReturnItem).Sum(i => Math.Abs(i.LineTotal));
 
-            int earn = (int)(saleTotal / 100m);
-            int deduct = (int)(returnTotal / 100m) * 2;
+            int earn        = suppressEarn ? 0 : (int)(saleTotal / 100m);
+            int deduct      = (int)(returnTotal / 100m) * 2;
 
             return earn - deduct;
         }
 
         // Same calculation but for persisted OrderItem entities
-        private int CalculateLoyaltyPointsFromOrderItems(IEnumerable<OrderItem> items)
+        private int CalculateLoyaltyPointsFromOrderItems(IEnumerable<OrderItem> items, bool suppressEarn = false)
         {
             // Use absolute values so returned line totals (which may be negative) always reduce points.
-            var saleTotal = items.Where(i => !i.IsReturnItem).Sum(i => Math.Abs(i.LineTotal));
+            var saleTotal   = items.Where(i => !i.IsReturnItem).Sum(i => Math.Abs(i.LineTotal));
             var returnTotal = items.Where(i => i.IsReturnItem).Sum(i => Math.Abs(i.LineTotal));
 
-            int earn = (int)(saleTotal / 100m);
-            int deduct = (int)(returnTotal / 100m) * 2;
+            int earn        = suppressEarn ? 0 : (int)(saleTotal / 100m);
+            int deduct      = (int)(returnTotal / 100m) * 2;
 
             return earn - deduct;
         }

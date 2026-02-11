@@ -10,6 +10,8 @@ using pos_service.Models.DTO.Roles;
 using pos_service.Models.DTO.Suppliers;
 using pos_service.Models.DTO.Users;
 using pos_service.Models.DTO.Settings;
+using pos_service.Models.DTO.ReturnedItems;
+using pos_service.Models.DTO.Customers;
 
 namespace pos_service.Profiles
 {
@@ -76,16 +78,16 @@ namespace pos_service.Profiles
                 .ForMember(dest => dest.LineTotal, opt => opt.MapFrom(src => src.LineTotal));
 
             // Returned items summary view mapping
-            CreateMap<pos_service.Models.ReturnedItemsSummary, pos_service.Models.DTO.ReturnedItems.ReturnedItemsSummaryResDto>();
+            CreateMap<ReturnedItemsSummary,ReturnedItemsSummaryResDto>();
 
             // Role Mapper
             CreateMap<Role, RoleResDto>();
             CreateMap<RoleReqDto, Role>();
 
             // Customer mappings
-            CreateMap<Customer, Models.DTO.Customers.CustomerResDto>()
+            CreateMap<Customer, CustomerResDto>()
                 .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName));
-            CreateMap<Models.DTO.Customers.CustomerReqDto, Customer>();
+            CreateMap<CustomerReqDto, Customer>();
 
             // Setting mappings
             CreateMap<Setting, SettingResDto>();

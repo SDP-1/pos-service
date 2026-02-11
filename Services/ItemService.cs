@@ -308,12 +308,12 @@ namespace pos_service.Services
                 .GroupBy(exp => new { Date = exp.ExpDate.Date, exp.NotifyBeforeDays })
                 .Select(group => new ItemExpiry
                 {
-                    ItemsId = item.Id,
-                    ItemsSubId = item.SubId,
-                    ItemUuid = item.Uuid,
-                    ExpDate = group.Key.Date,
+                    ItemsId          = item.Id,
+                    ItemsSubId       = item.SubId,
+                    ItemUuid         = item.Uuid,
+                    ExpDate          = group.Key.Date,
                     NotifyBeforeDays = group.Key.NotifyBeforeDays,
-                    Uuid = Guid.NewGuid().ToString()
+                    Uuid             = Guid.NewGuid().ToString()
                 })
                 .ToList();
         }

@@ -59,8 +59,9 @@ namespace pos_service.Services
             {
                 foreach (var c in dto.Contacts)
                 {
-                    var contact = _mapper.Map<Contact>(c);
+                    var contact  = _mapper.Map<Contact>(c);
                     contact.Uuid = Guid.NewGuid().ToString();
+
                     supplier.Contacts.Add(contact);
                 }
             }
@@ -85,6 +86,7 @@ namespace pos_service.Services
                             Supplier    = newSupplier,
                             Item        = item
                         };
+
                         newSupplier.ItemSuppliers.Add(isu);
                     }
                 }
@@ -163,7 +165,7 @@ namespace pos_service.Services
             // Project directly into minimal DTO to avoid unnecessary mapping
             return suppliers.Select(s => new SupplierDropdownDto
             {
-                Id = s.Id,
+                Id   = s.Id,
                 Name = s.Name
             });
         }

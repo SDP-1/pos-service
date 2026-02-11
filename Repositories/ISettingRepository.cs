@@ -6,7 +6,6 @@ namespace pos_service.Repositories
     public interface ISettingRepository
     {
         Task<IEnumerable<Setting>> GetAllAsync();
-        Task<Setting?> GetByIdAsync(int id);
         Task<Setting?> GetByKeyAsync(SettingKey key);
         Task<Setting> UpdateAsync(Setting setting);
     }

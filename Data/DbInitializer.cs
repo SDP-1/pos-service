@@ -43,9 +43,10 @@ namespace pos_service.Data
             // Desired default settings. If a setting exists keep it, otherwise create it.
             var desired = new List<Setting>
             {
-                new Setting { SettingKey = SettingKey.AllowZeroStock, SettingName = "Allow Zero Stock", SettingValue = true, Description = "Allows selling items when stock quantity is zero without throwing an error" },
-                new Setting { SettingKey = SettingKey.AllowOrdesForLoan, SettingName = "Allow Ordes For Loan", SettingValue = false, Description = "Allows creating orders with negative balance (credit / loan sales). When enabled orders with negative balance will be marked as Loan." },
-                new Setting { SettingKey = SettingKey.AllowCreditOrderWithoutCustomer, SettingName = "Allow credit orders without customer", SettingValue = false, Description = "Allows creating credit orders with out customer (Not recommend)." }
+                new Setting { Id = (int)SettingKey.AllowZeroStock, SettingKey = SettingKey.AllowZeroStock, SettingName = "Allow zero stock", SettingValue = true, Description = "This allow when item stock is zero, the order can still be created. When off, orders cannot be created if any item has zero stock." },
+                new Setting { Id = (int)SettingKey.AllowOrdesForLoan, SettingKey = SettingKey.AllowOrdesForLoan, SettingName = "Allow orders for credit", SettingValue = true, Description = "Allows creating orders credit / loan sales. When on orders with negative balance will be marked as Loan." },
+                new Setting { Id = (int)SettingKey.AllowCreditOrderWithoutCustomer, SettingKey = SettingKey.AllowCreditOrderWithoutCustomer, SettingName = "Allow credit orders without customer", SettingValue = false, Description = "Allows creating credit orders with out customer (Not recommend)." },
+                new Setting { Id = (int)SettingKey.CalculateLoyaltyPointsForCreditOrders, SettingKey = SettingKey.CalculateLoyaltyPointsForCreditOrders, SettingName = "Allow loyalty points for credit orders", SettingValue = false, Description = "Allow to calculate loyalty point for credit orders." },
             };
 
             foreach (var s in desired)

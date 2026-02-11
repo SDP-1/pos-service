@@ -23,11 +23,6 @@ namespace pos_service.Repositories
             return await _context.Settings.AsNoTracking().ToListAsync();
         }
 
-        public async Task<Setting?> GetByIdAsync(int id)
-        {
-            return await _context.Settings.FindAsync(id);
-        }
-
         public async Task<Setting?> GetByKeyAsync(SettingKey key)
         {
             return await _context.Settings.FirstOrDefaultAsync(s => s.SettingKey == key && s.IsActive);

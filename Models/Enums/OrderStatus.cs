@@ -1,6 +1,7 @@
 ﻿namespace pos_service.Models.Enums
 {
-    public enum OrderStatus
+    // Main status for an order. Represents the high-level lifecycle state.
+    public enum MainOrderStatus
     {
         Default   = 0,
 
@@ -8,6 +9,14 @@
         Paid      = 2,   // The order has been fully paid
         Loan      = 3,   // The order is sold on credit
         Cancelled = 4,
-        Return    = 5,   // The order contains return/refund items
+    }
+
+    // Sub-status for an order. Optional details about the order state.
+    // Designed to be nullable on the Order entity.
+    public enum OrderSubStatus
+    {
+        None   = 0,
+
+        Return = 1, // The order contains return/refund items
     }
 }

@@ -63,11 +63,15 @@ namespace pos_service.Profiles
 
             // Order Maper
             CreateMap<Order, OrderResDto>()
+                .ForMember(dest => dest.MainStatus, opt => opt.MapFrom(src => src.MainStatus))
+                .ForMember(dest => dest.SubStatus, opt => opt.MapFrom(src => src.SubStatus))
                 .ForMember(dest => dest.CashierName, opt => opt.MapFrom(src => src.Cashier != null ? src.Cashier.FullName : string.Empty))
                 .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Customer != null ? src.Customer.FullName  : string.Empty))
                 .ForMember(dest => dest.CustomerPhone, opt => opt.MapFrom(src => src.Customer != null ? src.Customer.PhoneNumber : string.Empty));
             CreateMap<OrderReqDto, Order>();
-            CreateMap<Order, OrderSummaryResDto>();
+            CreateMap<Order, OrderSummaryResDto>()
+                .ForMember(dest => dest.MainStatus, opt => opt.MapFrom(src => src.MainStatus))
+                .ForMember(dest => dest.SubStatus, opt => opt.MapFrom(src => src.SubStatus));
 
             // Order Maper
             CreateMap<OrderItem, OrderItemResDto>();

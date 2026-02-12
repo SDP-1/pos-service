@@ -3,6 +3,139 @@
 ALTER TABLE `pos-system`.`settings` 
 ADD COLUMN `SettingName` VARCHAR(100) NOT NULL AFTER `SettingKey`;
 
+ALTER TABLE `pos-system`.`permissions` 
+CHANGE COLUMN `PermissionType` `PermissionType` VARCHAR(50) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NOT NULL ;
+
+ALTER TABLE `pos-system`.`permissions` 
+CHANGE COLUMN `PermissionCatagory` `PermissionCatagory` VARCHAR(50) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NOT NULL ;
+
+ALTER TABLE `pos-system`.`settings` 
+CHANGE COLUMN `SettingKey` `SettingKey` VARCHAR(50) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NOT NULL ;
+
+
+-- 1. Add the new columns as VARCHAR to match your data
+ALTER TABLE `orders` 
+ADD COLUMN `MainStatus` VARCHAR(50) NOT NULL AFTER `Status`,
+ADD COLUMN `SubStatus` VARCHAR(50) NULL DEFAULT NULL AFTER `MainStatus`;
+
+SET SQL_SAFE_UPDATES = 0;
+UPDATE `orders` SET `MainStatus` = `Status`;
+
+UPDATE `orders` SET `MainStatus` = 'Paid', `SubStatus` = 'Return' WHERE `Status` = 'Return';
+
+SET SQL_SAFE_UPDATES = 1;
+
+ALTER TABLE `orders` DROP COLUMN `Status`;
+
+-- column updates
+
+ALTER TABLE `pos-system`.`orders` 
+CHANGE COLUMN `PaymentMethod` `PaymentMethod` VARCHAR(50) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NOT NULL ,
+CHANGE COLUMN `SaleType` `SaleType` VARCHAR(50) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NOT NULL ;
+
+-- column updates
+
+ALTER TABLE `pos-system`.`orders` 
+CHANGE COLUMN `Uuid` `Uuid` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NOT NULL ,
+CHANGE COLUMN `CreatedBy` `CreatedBy` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NULL DEFAULT NULL ,
+CHANGE COLUMN `UpdatedBy` `UpdatedBy` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NULL DEFAULT NULL ;
+
+ALTER TABLE `pos-system`.`users` 
+CHANGE COLUMN `UserName` `UserName` VARCHAR(100) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NOT NULL ,
+CHANGE COLUMN `Uuid` `Uuid` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NOT NULL ,
+CHANGE COLUMN `CreatedBy` `CreatedBy` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NULL DEFAULT NULL ,
+CHANGE COLUMN `UpdatedBy` `UpdatedBy` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NULL DEFAULT NULL ;
+
+ALTER TABLE `pos-system`.`suppliers` 
+CHANGE COLUMN `Name` `Name` VARCHAR(100) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NOT NULL ,
+CHANGE COLUMN `Uuid` `Uuid` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NOT NULL ,
+CHANGE COLUMN `CreatedBy` `CreatedBy` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NULL DEFAULT NULL ,
+CHANGE COLUMN `UpdatedBy` `UpdatedBy` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NULL DEFAULT NULL ;
+
+ALTER TABLE `pos-system`.`settings` 
+CHANGE COLUMN `Uuid` `Uuid` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NOT NULL ,
+CHANGE COLUMN `CreatedBy` `CreatedBy` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NULL DEFAULT NULL ,
+CHANGE COLUMN `UpdatedBy` `UpdatedBy` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NULL DEFAULT NULL ;
+
+ALTER TABLE `pos-system`.`roles` 
+CHANGE COLUMN `Uuid` `Uuid` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NOT NULL ,
+CHANGE COLUMN `CreatedBy` `CreatedBy` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NULL DEFAULT NULL ,
+CHANGE COLUMN `UpdatedBy` `UpdatedBy` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NULL DEFAULT NULL ;
+
+ALTER TABLE `pos-system`.`rolepermissions` 
+CHANGE COLUMN `Uuid` `Uuid` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NOT NULL ,
+CHANGE COLUMN `CreatedBy` `CreatedBy` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NULL DEFAULT NULL ,
+CHANGE COLUMN `UpdatedBy` `UpdatedBy` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NULL DEFAULT NULL ;
+
+ALTER TABLE `pos-system`.`orderitems` 
+DROP FOREIGN KEY `FK_OrderItems_Items_OriginalItemUuid`;
+ALTER TABLE `pos-system`.`orderitems` 
+CHANGE COLUMN `OriginalItemUuid` `OriginalItemUuid` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NULL DEFAULT NULL ,
+CHANGE COLUMN `Uuid` `Uuid` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NOT NULL ,
+CHANGE COLUMN `CreatedBy` `CreatedBy` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NULL DEFAULT NULL ,
+CHANGE COLUMN `UpdatedBy` `UpdatedBy` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NULL DEFAULT NULL ;
+ALTER TABLE `pos-system`.`orderitems` 
+ADD CONSTRAINT `FK_OrderItems_Items_OriginalItemUuid`
+  FOREIGN KEY (`OriginalItemUuid`)
+  REFERENCES `pos-system`.`items` (`Uuid`)
+  ON DELETE SET NULL;
+
+  ALTER TABLE `pos-system`.`itemprices` 
+CHANGE COLUMN `ItemUuid` `ItemUuid` VARCHAR(36) NOT NULL ,
+CHANGE COLUMN `CreatedBy` `CreatedBy` VARCHAR(36) NULL DEFAULT NULL ,
+CHANGE COLUMN `UpdatedBy` `UpdatedBy` VARCHAR(36) NULL DEFAULT NULL ,
+CHANGE COLUMN `Uuid` `Uuid` VARCHAR(36) NOT NULL ;
+
+ALTER TABLE `pos-system`.`itemexpiries` 
+CHANGE COLUMN `ItemUuid` `ItemUuid` VARCHAR(36) NOT NULL ,
+CHANGE COLUMN `Uuid` `Uuid` VARCHAR(36) NOT NULL ,
+CHANGE COLUMN `CreatedBy` `CreatedBy` VARCHAR(36) NULL DEFAULT NULL ,
+CHANGE COLUMN `UpdatedBy` `UpdatedBy` VARCHAR(36) NULL DEFAULT NULL ;
+
+ALTER TABLE `pos-system`.`customers` 
+CHANGE COLUMN `Uuid` `Uuid` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NOT NULL ,
+CHANGE COLUMN `CreatedBy` `CreatedBy` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NULL DEFAULT NULL ,
+CHANGE COLUMN `UpdatedBy` `UpdatedBy` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NULL DEFAULT NULL ;
+
+ALTER TABLE `pos-system`.`contacts` 
+CHANGE COLUMN `Uuid` `Uuid` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NOT NULL ,
+CHANGE COLUMN `CreatedBy` `CreatedBy` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NULL DEFAULT NULL ,
+CHANGE COLUMN `UpdatedBy` `UpdatedBy` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NULL DEFAULT NULL ;
+
+ALTER TABLE `pos-system`.`backuplocations` 
+CHANGE COLUMN `Uuid` `Uuid` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NOT NULL ,
+CHANGE COLUMN `CreatedBy` `CreatedBy` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NULL DEFAULT NULL ,
+CHANGE COLUMN `UpdatedBy` `UpdatedBy` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NULL DEFAULT NULL ;
+
+-- STEP 1: Remove the constraint from the child table
+ALTER TABLE `pos-system`.`orderitems` 
+DROP FOREIGN KEY `FK_OrderItems_Items_OriginalItemUuid`;
+
+-- STEP 2: Now you can safely modify the parent table (items)
+ALTER TABLE `pos-system`.`items` 
+MODIFY COLUMN `Uuid` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NOT NULL,
+MODIFY COLUMN `CreatedBy` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NULL DEFAULT NULL,
+MODIFY COLUMN `UpdatedBy` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NULL DEFAULT NULL;
+
+-- STEP 3: Modify the child table (orderitems) to match the new length
+ALTER TABLE `pos-system`.`orderitems` 
+MODIFY COLUMN `OriginalItemUuid` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NULL DEFAULT NULL,
+MODIFY COLUMN `Uuid` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NOT NULL,
+MODIFY COLUMN `CreatedBy` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NULL DEFAULT NULL,
+MODIFY COLUMN `UpdatedBy` VARCHAR(36) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NULL DEFAULT NULL;
+
+-- STEP 4: Restore the foreign key
+ALTER TABLE `pos-system`.`orderitems` 
+ADD CONSTRAINT `FK_OrderItems_Items_OriginalItemUuid`
+  FOREIGN KEY (`OriginalItemUuid`)
+  REFERENCES `pos-system`.`items` (`Uuid`)
+  ON DELETE SET NULL;
+
+
+
+
+
+
 
 /*
 

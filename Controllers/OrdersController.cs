@@ -159,9 +159,9 @@ namespace pos_service.Controllers
         /// <returns>The updated order details if successful.</returns>
         [HttpPatch("{id:int}/status/{status:int}")]
         [Permission(PermissionType.ORDER_UPDATE_STATUS)]
-        public async Task<ActionResult<OrderResDto>> UpdateOrderStatus(int id, OrderStatus status)
+        public async Task<ActionResult<OrderResDto>> UpdateOrderStatus(int id, pos_service.Models.Enums.MainOrderStatus status)
         {
-            if (status == OrderStatus.Default)
+            if (status == pos_service.Models.Enums.MainOrderStatus.Default)
                 return BadRequest("status is required.");
 
                 var order = await _orderService.UpdateOrderStatusAsync(id, status, _currentUser);
@@ -187,9 +187,10 @@ namespace pos_service.Controllers
         public async Task<ActionResult<List<OrderResDto>>> GetOrdersByDateAndStatus(
             [FromQuery] DateTime? startDate, 
             [FromQuery] DateTime? endDate, 
-            [FromQuery] OrderStatus? status)
+            [FromQuery] pos_service.Models.Enums.MainOrderStatus? status,
+            [FromQuery] pos_service.Models.Enums.OrderSubStatus? subStatus)
         {
-            var orders = await _orderService.GetOrdersByDateAndStatusAsync(startDate, endDate, status, _currentUser);
+            var orders = await _orderService.GetOrdersByDateAndStatusAsync(startDate, endDate, status, subStatus, _currentUser);
             return Ok(orders);
         }
     }

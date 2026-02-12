@@ -96,7 +96,10 @@ namespace pos_service.Repositories
                 ordersQuery = ordersQuery.Where(o => o.CreatedAt <= query.EndDate.Value);
 
             if (query.Status.HasValue)
-                ordersQuery = ordersQuery.Where(o => o.Status == query.Status.Value);
+                ordersQuery = ordersQuery.Where(o => o.MainStatus == query.Status.Value);
+
+            if (query.SubStatus.HasValue)
+                ordersQuery = ordersQuery.Where(o => o.SubStatus == query.SubStatus.Value);
 
             if (query.PaymentMethod.HasValue)
                 ordersQuery = ordersQuery.Where(o => o.PaymentMethod == query.PaymentMethod.Value);
@@ -169,7 +172,10 @@ namespace pos_service.Repositories
                 ordersQuery = ordersQuery.Where(o => o.CreatedAt <= query.EndDate.Value);
 
             if (query.Status.HasValue)
-                ordersQuery = ordersQuery.Where(o => o.Status == query.Status.Value);
+                ordersQuery = ordersQuery.Where(o => o.MainStatus == query.Status.Value);
+
+            if (query.SubStatus.HasValue)
+                ordersQuery = ordersQuery.Where(o => o.SubStatus == query.SubStatus.Value);
 
             if (query.PaymentMethod.HasValue)
                 ordersQuery = ordersQuery.Where(o => o.PaymentMethod == query.PaymentMethod.Value);
@@ -232,7 +238,7 @@ namespace pos_service.Repositories
         /// <param name="endDate">End date for the date range filter. If null, includes all dates from startDate onwards.</param>
         /// <param name="status">Order status filter. If null, returns all statuses.</param>
         /// <returns>List of active orders matching the criteria, ordered by CreatedAt descending.</returns>
-        public async Task<List<Order>> GetOrdersByDateAndStatusAsync(DateTime? startDate, DateTime? endDate, OrderStatus? status)
+        public async Task<List<Order>> GetOrdersByDateAndStatusAsync(DateTime? startDate, DateTime? endDate, pos_service.Models.Enums.MainOrderStatus? status, pos_service.Models.Enums.OrderSubStatus? subStatus)
         {
             try
             {
@@ -263,7 +269,10 @@ namespace pos_service.Repositories
 
                 // Apply status filter if provided
                 if (status.HasValue)
-                    query = query.Where(o => o.Status == status.Value);
+                    query = query.Where(o => o.MainStatus == status.Value);
+
+                if (subStatus.HasValue)
+                    query = query.Where(o => o.SubStatus == subStatus.Value);
 
                 // Order by creation date descending for reporting
                 query = query.OrderByDescending(o => o.CreatedAt);

@@ -69,14 +69,14 @@ namespace pos_service.Data
                 // CreatedBy is optional and has no DB default; application may set it or leave null.
                 entity
                     .Property<string?>(nameof(IAuditable.CreatedBy))
-                    .HasColumnType("varchar(255)")
+                    .HasColumnType("varchar(36)")
                     .HasMaxLength(255)
                     .IsRequired(false);
 
                 // UpdatedBy is optional and has no DB default; application may set it or leave null.
                 entity
                     .Property<string?>(nameof(IAuditable.UpdatedBy))
-                    .HasColumnType("varchar(255)")
+                    .HasColumnType("varchar(36)")
                     .HasMaxLength(255);
 
                 // IsActive defaults to true
@@ -102,8 +102,8 @@ namespace pos_service.Data
                 entity.HasIndex(p => p.PermissionType).IsUnique();
 
                 // store enums as ints
-                entity.Property(p => p.PermissionType).HasConversion<string>();
-                entity.Property(p => p.PermissionCatagory).HasConversion<string>();
+                entity.Property(p => p.PermissionType).HasConversion<string>().HasMaxLength(50);
+                entity.Property(p => p.PermissionCatagory).HasConversion<string>().HasMaxLength(50);
             });
 
             modelBuilder.Entity<RolePermission>(entity =>
@@ -222,7 +222,7 @@ namespace pos_service.Data
             modelBuilder.Entity<Setting>(entity =>
             {
                 entity.HasIndex(s => s.SettingKey).IsUnique();
-                entity.Property(s => s.SettingKey).HasConversion<string>();
+                entity.Property(s => s.SettingKey).HasConversion<string>().HasMaxLength(50);
                 entity.Property(s => s.Description).HasMaxLength(500);
                 entity.HasAlternateKey(s => s.Uuid);
             });
@@ -278,9 +278,10 @@ namespace pos_service.Data
                 entity.HasIndex(o => o.OrderNumber).IsUnique();
 
                 // Convert enums to strings for readability in the database.
-                entity.Property(o => o.Status).HasConversion<string>();
-                entity.Property(o => o.PaymentMethod).HasConversion<string>();
-                entity.Property(o => o.SaleType).HasConversion<string>();
+                entity.Property(o => o.MainStatus).HasConversion<string>().HasMaxLength(50);
+                entity.Property(o => o.SubStatus).HasConversion<string>().HasMaxLength(50);
+                entity.Property(o => o.PaymentMethod).HasConversion<string>().HasMaxLength(50);
+                entity.Property(o => o.SaleType).HasConversion<string>().HasMaxLength(50);
 
                 // Configure the relationship to the User (Cashier).
                 entity.HasOne(o => o.Cashier)

@@ -78,7 +78,7 @@ namespace pos_service.Services
         /// <param name="status">The new status to set for the order.</param>
         /// <param name="currentUser">The current user updating the order status.</param>
         /// <returns>The updated order details.</returns>
-        Task<OrderResDto> UpdateOrderStatusAsync(int id, OrderStatus status, CurrentUser currentUser);
+        Task<OrderResDto> UpdateOrderStatusAsync(int id, pos_service.Models.Enums.MainOrderStatus status, CurrentUser currentUser);
 
 
         /// <summary>
@@ -95,7 +95,7 @@ namespace pos_service.Services
         /// <param name="endDate">End date for the date range filter. If null, includes all dates from startDate onwards.</param>
         /// <param name="status">Order status filter. If null, returns all statuses.</param>
         /// <returns>List of active orders matching the criteria, ordered by CreatedAt descending.</returns>
-        Task<List<OrderResDto>> GetOrdersByDateAndStatusAsync(DateTime? startDate, DateTime? endDate, OrderStatus? status, CurrentUser currentUser);
+        Task<List<OrderResDto>> GetOrdersByDateAndStatusAsync(DateTime? startDate, DateTime? endDate, pos_service.Models.Enums.MainOrderStatus? status, pos_service.Models.Enums.OrderSubStatus? subStatus, CurrentUser currentUser);
 
         // Returns returned-items summary rows (from view) for given order number
         Task<List<pos_service.Models.DTO.ReturnedItems.ReturnedItemsSummaryResDto>> GetReturnedItemsSummaryByOrderNumberAsync(string orderNumber, CurrentUser currentUser);

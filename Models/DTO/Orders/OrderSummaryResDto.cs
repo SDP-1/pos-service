@@ -6,7 +6,8 @@ namespace pos_service.Models.DTO.Orders
     {
         public int Id { get; set; }
         public string OrderNumber { get; set; }
-        public OrderStatus Status { get; set; }
+        public pos_service.Models.Enums.MainOrderStatus MainStatus { get; set; }
+        public pos_service.Models.Enums.OrderSubStatus? SubStatus { get; set; }
         public PaymentMethod PaymentMethod { get; set; }
         public SaleType SaleType { get; set; }
         public int ItemCount { get; set; }

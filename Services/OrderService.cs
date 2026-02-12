@@ -118,20 +118,27 @@ namespace pos_service.Services
                 if (balance < 0 && allowOrdersForLoan && !AllowCreditOrderWithoutCustomer && !orderDto.CustomerId.HasValue)
                     throw new InvalidOperationException("Loan orders require a customer. Enable setting AllowCreditOrderWithoutCustomer to allow loans without a customer.");
 
-                OrderStatus initialStatus;
+                MainOrderStatus initialMainStatus;
+                OrderSubStatus? initialSubStatus = null;
+
                 if (hasReturnItems)
-                    initialStatus = OrderStatus.Return;
-                else if (balance < 0 && allowOrdersForLoan)
-                    initialStatus = OrderStatus.Loan;
+                {
+                    // Return is a sub-status. Main status depends on payment/loan conditions.
+                    initialSubStatus = OrderSubStatus.Return;
+                }
+
+                if (balance < 0 && allowOrdersForLoan)
+                    initialMainStatus = MainOrderStatus.Loan;
                 else if (balance >= 0 && orderDto.AmountPaid >= netAmount)
-                    initialStatus = OrderStatus.Paid;
+                    initialMainStatus = MainOrderStatus.Paid;
                 else
-                    initialStatus = OrderStatus.Pending;
+                    initialMainStatus = MainOrderStatus.Pending;
 
                 var order = new Order
                 {
                     OrderNumber   = await _orderRepository.GenerateOrderNumberAsync(),
-                    Status        = initialStatus,
+                    MainStatus    = initialMainStatus,
+                    SubStatus     = initialSubStatus,
                     PaymentMethod = orderDto.PaymentMethod,
                     SaleType      = orderDto.SaleType,
                     ItemCount     = itemCount,
@@ -180,7 +187,7 @@ namespace pos_service.Services
                     var customer = await _context.Customers.FindAsync(order.CustomerId.Value);
                     if (customer != null)
                     {
-                        var suppressEarnForLoan = order.Status == OrderStatus.Loan && !calculateLoyaltyForLoanOrders;
+                        var suppressEarnForLoan = order.MainStatus == MainOrderStatus.Loan && !calculateLoyaltyForLoanOrders;
                         var points              = CalculateLoyaltyPointsFromReq(orderDto.OrderItems, suppressEarnForLoan);
                         customer.LoyaltyPoints  = Math.Max(0, customer.LoyaltyPoints + points);
 
@@ -280,7 +287,7 @@ namespace pos_service.Services
                 if (existingOrder == null)
                     throw new ArgumentException($"Order with ID {id} not found");
 
-                if (existingOrder.Status != OrderStatus.Pending)
+                if (existingOrder.MainStatus != MainOrderStatus.Pending)
                     throw new InvalidOperationException("Only pending orders can be modified");
 
                 // Capture old order items for loyalty points adjustment, then restore quantities
@@ -394,19 +401,25 @@ namespace pos_service.Services
                 if (existingOrder.Balance < 0 && allowOrdersForLoan && !AllowCreditOrderWithoutCustomer && !orderDto.CustomerId.HasValue)
                     throw new InvalidOperationException("Loan orders require a customer. Enable setting AllowCreditOrderWithoutCustomer to allow loans without a customer.");
 
-                // Set status: Loan for negative balance when allowed, Paid when fully settled, otherwise Pending
+                // Set main/sub status: Loan for negative balance when allowed, Paid when fully settled, otherwise Pending
+                OrderSubStatus? newSubStatus = null;
+                if (existingOrder.OrderItems.Any(oi => oi.IsReturnItem))
+                    newSubStatus = OrderSubStatus.Return;
+
                 if (existingOrder.Balance < 0 && allowOrdersForLoan)
                 {
-                    existingOrder.Status = OrderStatus.Loan;
+                    existingOrder.MainStatus = MainOrderStatus.Loan;
                 }
                 else if (existingOrder.Balance >= 0 && existingOrder.AmountPaid >= existingOrder.NetAmount)
                 {
-                    existingOrder.Status = OrderStatus.Paid;
+                    existingOrder.MainStatus = MainOrderStatus.Paid;
                 }
                 else
                 {
-                    existingOrder.Status = OrderStatus.Pending;
+                    existingOrder.MainStatus = MainOrderStatus.Pending;
                 }
+
+                existingOrder.SubStatus = newSubStatus;
                 existingOrder.CustomerId = orderDto.CustomerId;
 
                 var updatedOrder = await _orderRepository.UpdateAsync(existingOrder);
@@ -416,7 +429,7 @@ namespace pos_service.Services
                     var customer = await _context.Customers.FindAsync(existingOrder.CustomerId.Value);
                     if (customer != null)
                     {
-                        var suppressEarnForLoan = existingOrder.Status == OrderStatus.Loan && !calculateLoyaltyForLoanOrders;
+                        var suppressEarnForLoan = existingOrder.MainStatus == MainOrderStatus.Loan && !calculateLoyaltyForLoanOrders;
                         var oldPoints           = CalculateLoyaltyPointsFromOrderItems(oldOrderItemsSnapshot, false);
                         var newPoints           = CalculateLoyaltyPointsFromOrderItems(existingOrder.OrderItems, suppressEarnForLoan);
                         var delta               = newPoints - oldPoints;
@@ -488,7 +501,7 @@ namespace pos_service.Services
             }
         }
 
-        public async Task<OrderResDto> UpdateOrderStatusAsync(int id, OrderStatus status, CurrentUser currentUser)
+        public async Task<OrderResDto> UpdateOrderStatusAsync(int id, MainOrderStatus status, CurrentUser currentUser)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
 
@@ -502,7 +515,7 @@ namespace pos_service.Services
                     throw new ArgumentException($"Order with ID {id} not found");
 
                 // Handle status-specific logic
-                if (status == OrderStatus.Cancelled && order.Status != OrderStatus.Cancelled)
+                if (status == MainOrderStatus.Cancelled && order.MainStatus != MainOrderStatus.Cancelled)
                 {
                     // Restore stock when order is cancelled
                     foreach (var orderItem in order.OrderItems)
@@ -519,7 +532,7 @@ namespace pos_service.Services
                         }
                     }
                 }
-                else if (order.Status == OrderStatus.Cancelled && status != OrderStatus.Cancelled)
+                if (order.MainStatus == MainOrderStatus.Cancelled && status != MainOrderStatus.Cancelled)
                 {
                     // Reduce stock when order is uncancelled
                     foreach (var orderItem in order.OrderItems)
@@ -551,7 +564,17 @@ namespace pos_service.Services
                     }
                 }
 
-                order.Status = status;
+                order.MainStatus = status;
+
+                // When un-cancelling or updating main status, if there are return items keep SubStatus; otherwise clear when moving away
+                if (order.OrderItems.Any(oi => oi.IsReturnItem))
+                {
+                    order.SubStatus = OrderSubStatus.Return;
+                }
+                else
+                {
+                    order.SubStatus = null;
+                }
 
                 var updatedOrder = await _orderRepository.UpdateAsync(order);
                 await _context.SaveChangesAsync();
@@ -582,12 +605,12 @@ namespace pos_service.Services
         /// <param name="endDate">End date for the date range filter. If null, includes all dates from startDate onwards.</param>
         /// <param name="status">Order status filter. If null, returns all statuses.</param>
         /// <returns>List of active orders matching the criteria, ordered by CreatedAt descending.</returns>
-        public async Task<List<OrderResDto>> GetOrdersByDateAndStatusAsync(DateTime? startDate, DateTime? endDate, OrderStatus? status, CurrentUser currentUser)
+        public async Task<List<OrderResDto>> GetOrdersByDateAndStatusAsync(DateTime? startDate, DateTime? endDate, MainOrderStatus? status, OrderSubStatus? subStatus, CurrentUser currentUser)
         {
             try
             {
                 // Call stored procedure via repository
-                var orders = await _orderRepository.GetOrdersByDateAndStatusAsync(startDate, endDate, status);
+                var orders = await _orderRepository.GetOrdersByDateAndStatusAsync(startDate, endDate, status, subStatus);
 
                 // Map to DTOs
                 return _mapper.Map<List<OrderResDto>>(orders);

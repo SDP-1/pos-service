@@ -16,7 +16,9 @@ namespace pos_service.Models
         [MaxLength(50)]
         public string OrderNumber                        { get; set; }
 
-        public OrderStatus Status                        { get; set; } = OrderStatus.Pending;
+        // Main status and optional sub-status. SubStatus can be null when not applicable.
+        public MainOrderStatus MainStatus                { get; set; } = MainOrderStatus.Pending;
+        public OrderSubStatus? SubStatus                 { get; set; } = null;
         public PaymentMethod PaymentMethod               { get; set; } = PaymentMethod.Cash;
 
         /// <summary>

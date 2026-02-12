@@ -80,6 +80,11 @@ namespace pos_service.Services
         /// <returns>The updated order details.</returns>
         Task<OrderResDto> UpdateOrderStatusAsync(int id, pos_service.Models.Enums.MainOrderStatus status, CurrentUser currentUser);
 
+        /// <summary>
+        /// Record a settlement payment for a loan order.
+        /// </summary>
+        Task<OrderResDto> RecordSettlementAsync(int orderId, decimal amountPaid, string? description, CurrentUser currentUser);
+
 
         /// <summary>
         /// Retrieves orders filtered by date range and status.

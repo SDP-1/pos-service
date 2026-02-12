@@ -60,6 +60,17 @@ namespace pos_service.Controllers
         }
 
         /// <summary>
+        /// Record a loan settlement payment for an order.
+        /// </summary>
+        [HttpPost("{id:int}/settle")]
+        [Permission(PermissionType.ORDER_SETTLEMENT)]
+        public async Task<ActionResult<OrderResDto>> RecordSettlement(int id, [FromBody] LoanSettlementLogReqDto dto)
+        {
+            var order = await _orderService.RecordSettlementAsync(id, dto.AmountPaid, dto.Description, _currentUser);
+            return Ok(order);
+        }
+
+        /// <summary>
         /// Retrieves an order by its unique UUID identifier.
         /// </summary>
         /// <param name="uuid">The UUID of the order to retrieve.</param>

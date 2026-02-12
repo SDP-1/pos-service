@@ -35,6 +35,9 @@ namespace pos_service.Models.DTO.Orders
         // Order items
         public List<OrderItemResDto> OrderItems { get; set; } = new List<OrderItemResDto>();
 
+        // Loan settlement history (if any)
+        public List<LoanSettlementLogResDto> LoanSettlementLogs { get; set; } = new List<LoanSettlementLogResDto>();
+
         // Audit fields
         public string Uuid { get; set; }
         public DateTime CreatedAt { get; set; }

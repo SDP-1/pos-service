@@ -36,6 +36,7 @@ namespace pos_service.Models.Enums
         ORDER_DELETE                        = 103,
         ORDER_DELETE_PERMANENTLY            = 104,
         ORDER_UPDATE_STATUS                 = 105,
+        ORDER_SETTLEMENT                    = 106,
 
         // Items (start at 200)
         ITEM_VIEW                           = 200,

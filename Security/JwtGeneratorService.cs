@@ -44,7 +44,7 @@ namespace pos_service.Security
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddDays(1), // Token valid for 1 days
+                Expires = DateTime.Now.AddDays(1), // Token valid for 1 days
                 SigningCredentials = new SigningCredentials(
                     new SymmetricSecurityKey(key),
                     SecurityAlgorithms.HmacSha256Signature

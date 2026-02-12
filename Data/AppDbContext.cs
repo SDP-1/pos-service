@@ -35,6 +35,7 @@ namespace pos_service.Data
         public DbSet<Setting> Settings { get; set; }
         public DbSet<BackupLocation> BackupLocations { get; set; }
         public DbSet<BackupHistory> BackupHistories { get; set; }
+        public DbSet<LoanSettlementLog> LoanSettlementLogs { get; set; }
 
         /// <summary>
         /// This method is used to configure the database model using the Fluent API.
@@ -203,6 +204,26 @@ namespace pos_service.Data
                       .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasAlternateKey(i => i.Uuid);   // creates unique constraint
+            });
+
+            modelBuilder.Entity<LoanSettlementLog>(entity =>
+            {
+                entity.HasOne(ls => ls.Order)
+                      .WithMany(o => o.LoanSettlementLogs)
+                      .HasForeignKey(ls => ls.OrderId)
+                      .IsRequired()
+                      .OnDelete(DeleteBehavior.Cascade);
+                // Let the database populate PaymentDate with CURRENT_TIMESTAMP(6) when not supplied
+                entity
+                    .Property<DateTime>(ls => ls.PaymentDate)
+                    .HasColumnType("datetime(6)")
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP(6)")
+                    .ValueGeneratedOnAdd();
+
+                entity.Property(ls => ls.Status).HasConversion<string>().HasMaxLength(50);
+                entity.Property(ls => ls.AmountPaid).HasColumnType("decimal(18,2)");
+                entity.Property(ls => ls.RemainingBalance).HasColumnType("decimal(18,2)");
+                entity.HasAlternateKey(ls => ls.Uuid);
             });
 
             modelBuilder.Entity<ItemPrice>(entity =>

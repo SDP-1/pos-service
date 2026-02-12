@@ -36,6 +36,65 @@ namespace pos_service.Services
             _logger = logger;
         }
 
+        public async Task<OrderResDto> RecordSettlementAsync(int orderId, decimal amountPaid, string? description, CurrentUser currentUser)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var order = await _orderRepository.GetByIdAsync(orderId);
+                if (order == null) throw new ArgumentException($"Order with ID {orderId} not found");
+
+                if (order.MainStatus != MainOrderStatus.Loan)
+                    throw new InvalidOperationException("Only loan orders can accept settlement payments");
+
+                // Validate payment amount: must be positive and must not exceed the remaining due
+                var due = order.NetAmount - order.AmountPaid;
+                if (due <= 0)
+                    throw new InvalidOperationException("Order is already fully settled");
+                if (amountPaid <= 0)
+                    throw new ArgumentException("AmountPaid must be greater than zero", nameof(amountPaid));
+                if (amountPaid > due)
+                    throw new InvalidOperationException($"AmountPaid ({amountPaid}) cannot be greater than remaining due amount ({due})");
+
+                // update financials
+                order.AmountPaid += amountPaid;
+                order.Balance = order.AmountPaid - order.NetAmount;
+
+                // create log
+                var remaining = Math.Max(0, order.NetAmount - order.AmountPaid);
+                var log = new LoanSettlementLog
+                {
+                    Uuid = Guid.NewGuid().ToString(),
+                    OrderId = order.Id,
+                    PaymentDate = DateTime.Now,
+                    Description = description,
+                    AmountPaid = amountPaid,
+                    RemainingBalance = remaining,
+                    Status = remaining <= 0 ? LoanSettlementStatus.Completed : LoanSettlementStatus.PartiallySettled
+                };
+
+                _context.LoanSettlementLogs.Add(log);
+
+                // If fully settled, update order main status to LoanSettled and balance to 0
+                if (remaining <= 0)
+                {
+                    order.MainStatus = MainOrderStatus.LoanSettled;
+                    order.Balance = 0;
+                }
+
+                _context.Orders.Update(order);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return _mapper.Map<OrderResDto>(order);
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
         public async Task<OrderResDto> CreateOrderAsync(OrderReqDto orderDto, CurrentUser currentUser)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -112,11 +171,11 @@ namespace pos_service.Services
                 bool hasReturnItems = orderDto.OrderItems.Any(item => item.IsReturnItem);
 
                 if (balance < 0 && !allowOrdersForLoan)
-                    throw new InvalidOperationException("Negative balance not allowed. Enable setting AllowOrdesForLoan to allow credit/loan sales.");
+                    throw new InvalidOperationException("Credit(Loan) orders not allowed.");
 
                 // Enforce presence of customer for loan orders unless explicitly allowed
                 if (balance < 0 && allowOrdersForLoan && !AllowCreditOrderWithoutCustomer && !orderDto.CustomerId.HasValue)
-                    throw new InvalidOperationException("Loan orders require a customer. Enable setting AllowCreditOrderWithoutCustomer to allow loans without a customer.");
+                    throw new InvalidOperationException("Loan orders require a customer.");
 
                 MainOrderStatus initialMainStatus;
                 OrderSubStatus? initialSubStatus = null;
@@ -155,6 +214,24 @@ namespace pos_service.Services
                 };
 
                 var createdOrder = await _orderRepository.CreateAsync(order);
+
+                // If this order is a loan (credit), create initial loan settlement log entry representing the created loan (negative balance)
+                if (createdOrder.MainStatus == MainOrderStatus.Loan)
+                {
+                    var initialLog = new LoanSettlementLog
+                    {
+                        Uuid = Guid.NewGuid().ToString(),
+                        OrderId = createdOrder.Id,
+                        PaymentDate = DateTime.Now,
+                        Description = "Loan created",
+                        AmountPaid = createdOrder.AmountPaid,
+                        RemainingBalance = Math.Abs(createdOrder.Balance),
+                        Status = LoanSettlementStatus.Created
+                    };
+
+                    _context.LoanSettlementLogs.Add(initialLog);
+                    await _context.SaveChangesAsync();
+                }
 
                 foreach (var (item, quantity) in itemsToUpdate)
                 {
@@ -395,11 +472,11 @@ namespace pos_service.Services
 
                 // Enforce loan setting on update
                 if (existingOrder.Balance < 0 && !allowOrdersForLoan)
-                    throw new InvalidOperationException("Negative balance not allowed. Enable setting AllowOrdesForLoan to allow credit/loan sales.");
+                    throw new InvalidOperationException("Credit (Loan) orders not allowed.");
 
                 // Enforce presence of customer for loan orders unless allowed by setting
                 if (existingOrder.Balance < 0 && allowOrdersForLoan && !AllowCreditOrderWithoutCustomer && !orderDto.CustomerId.HasValue)
-                    throw new InvalidOperationException("Loan orders require a customer. Enable setting AllowCreditOrderWithoutCustomer to allow loans without a customer.");
+                    throw new InvalidOperationException("Loan orders require a customer.");
 
                 // Set main/sub status: Loan for negative balance when allowed, Paid when fully settled, otherwise Pending
                 OrderSubStatus? newSubStatus = null;
@@ -412,11 +489,11 @@ namespace pos_service.Services
                 }
                 else if (existingOrder.Balance >= 0 && existingOrder.AmountPaid >= existingOrder.NetAmount)
                 {
-                    existingOrder.MainStatus = MainOrderStatus.Paid;
+                    existingOrder.MainStatus = pos_service.Models.Enums.MainOrderStatus.Paid;
                 }
                 else
                 {
-                    existingOrder.MainStatus = MainOrderStatus.Pending;
+                    existingOrder.MainStatus = pos_service.Models.Enums.MainOrderStatus.Pending;
                 }
 
                 existingOrder.SubStatus = newSubStatus;
@@ -532,7 +609,7 @@ namespace pos_service.Services
                         }
                     }
                 }
-                if (order.MainStatus == MainOrderStatus.Cancelled && status != MainOrderStatus.Cancelled)
+                if (order.MainStatus == pos_service.Models.Enums.MainOrderStatus.Cancelled && status != pos_service.Models.Enums.MainOrderStatus.Cancelled)
                 {
                     // Reduce stock when order is uncancelled
                     foreach (var orderItem in order.OrderItems)
@@ -569,7 +646,7 @@ namespace pos_service.Services
                 // When un-cancelling or updating main status, if there are return items keep SubStatus; otherwise clear when moving away
                 if (order.OrderItems.Any(oi => oi.IsReturnItem))
                 {
-                    order.SubStatus = OrderSubStatus.Return;
+                    order.SubStatus = pos_service.Models.Enums.OrderSubStatus.Return;
                 }
                 else
                 {
@@ -605,7 +682,7 @@ namespace pos_service.Services
         /// <param name="endDate">End date for the date range filter. If null, includes all dates from startDate onwards.</param>
         /// <param name="status">Order status filter. If null, returns all statuses.</param>
         /// <returns>List of active orders matching the criteria, ordered by CreatedAt descending.</returns>
-        public async Task<List<OrderResDto>> GetOrdersByDateAndStatusAsync(DateTime? startDate, DateTime? endDate, MainOrderStatus? status, OrderSubStatus? subStatus, CurrentUser currentUser)
+        public async Task<List<OrderResDto>> GetOrdersByDateAndStatusAsync(DateTime? startDate, DateTime? endDate, pos_service.Models.Enums.MainOrderStatus? status, pos_service.Models.Enums.OrderSubStatus? subStatus, CurrentUser currentUser)
         {
             try
             {

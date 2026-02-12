@@ -88,6 +88,11 @@ namespace pos_service.Models
         public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
 
         /// <summary>
+        /// Loan settlement history for this order (if the order was created as a loan/credit).
+        /// </summary>
+        public virtual ICollection<LoanSettlementLog> LoanSettlementLogs { get; set; } = new List<LoanSettlementLog>();
+
+        /// <summary>
         /// Optional description or notes for the order.
         /// Default is null.
         /// </summary>

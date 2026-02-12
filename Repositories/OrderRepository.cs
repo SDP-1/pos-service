@@ -45,7 +45,8 @@ namespace pos_service.Repositories
                 IQueryable<Order> query = _context.Orders
                                                     .Include(o => o.OrderItems)
                                                     .Include(o => o.Cashier)
-                                                    .Include(o => o.Customer);
+                                                    .Include(o => o.Customer)
+                                                    .Include(o => o.LoanSettlementLogs);
 
                 // Apply active filter only when requested
                 if (isActiveOnly)
@@ -67,6 +68,7 @@ namespace pos_service.Repositories
                 .Include(o => o.OrderItems)
                 .Include(o => o.Cashier)
                 .Include(o => o.Customer)
+                .Include(o => o.LoanSettlementLogs)
                 .FirstOrDefaultAsync(o => o.OrderNumber == orderNumber);
         }
 
@@ -76,6 +78,7 @@ namespace pos_service.Repositories
                 .Include(o => o.OrderItems)
                 .Include(o => o.Cashier)
                 .Include(o => o.Customer)
+                .Include(o => o.LoanSettlementLogs)
                 .FirstOrDefaultAsync(o => o.Uuid == uuid && o.IsActive);
         }
 
@@ -202,7 +205,7 @@ namespace pos_service.Repositories
 
         public async Task<string> GenerateOrderNumberAsync()
         {
-            var today = DateTime.UtcNow;
+            var today = DateTime.Now;
             var yearMonth = today.ToString("yyyyMM"); // e.g., 202602
 
             // Get the last order number for this month

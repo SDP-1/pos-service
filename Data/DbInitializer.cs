@@ -130,6 +130,7 @@ namespace pos_service.Data
                 new Permission { Id = (int)PermissionType.ORDER_DELETE, PermissionType = PermissionType.ORDER_DELETE, PermissionCatagory = PermissionCatagory.ORDER, Description = "Can delete orders" },
                 new Permission { Id = (int)PermissionType.ORDER_DELETE_PERMANENTLY, PermissionType = PermissionType.ORDER_DELETE_PERMANENTLY, PermissionCatagory = PermissionCatagory.ORDER, Description = "Can permanently delete orders" },
                 new Permission { Id = (int)PermissionType.ORDER_UPDATE_STATUS, PermissionType = PermissionType.ORDER_UPDATE_STATUS, PermissionCatagory = PermissionCatagory.ORDER, Description = "Can update order status" },
+                new Permission { Id = (int)PermissionType.ORDER_SETTLEMENT, PermissionType = PermissionType.ORDER_SETTLEMENT, PermissionCatagory = PermissionCatagory.ORDER, Description = "Can record loan settlement payments" },
 
                 // Items
                 new Permission { Id = (int)PermissionType.ITEM_VIEW, PermissionType = PermissionType.ITEM_VIEW, PermissionCatagory = PermissionCatagory.ITEM, Description = "Can view items" },

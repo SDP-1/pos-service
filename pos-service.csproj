@@ -8,9 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Initialize-backup-db\**" />
     <Compile Remove="Repositories\Base\**" />
+    <Content Remove="Initialize-backup-db\**" />
     <Content Remove="Repositories\Base\**" />
+    <EmbeddedResource Remove="Initialize-backup-db\**" />
     <EmbeddedResource Remove="Repositories\Base\**" />
+    <None Remove="Initialize-backup-db\**" />
     <None Remove="Repositories\Base\**" />
   </ItemGroup>
 

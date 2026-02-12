@@ -68,6 +68,8 @@ namespace pos_service.Profiles
                 .ForMember(dest => dest.CashierName, opt => opt.MapFrom(src => src.Cashier != null ? src.Cashier.FullName : string.Empty))
                 .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Customer != null ? src.Customer.FullName  : string.Empty))
                 .ForMember(dest => dest.CustomerPhone, opt => opt.MapFrom(src => src.Customer != null ? src.Customer.PhoneNumber : string.Empty));
+            CreateMap<LoanSettlementLog, LoanSettlementLogResDto>();
+            // include mapping from Order -> LoanSettlementLogs will be handled by automapper automatically if property exists
             CreateMap<OrderReqDto, Order>();
             CreateMap<Order, OrderSummaryResDto>()
                 .ForMember(dest => dest.MainStatus, opt => opt.MapFrom(src => src.MainStatus))

@@ -1,5 +1,7 @@
 -- need to apply
 
+ALTER TABLE `pos-system`.`settings` 
+CHANGE COLUMN `Description` `Description` VARCHAR(600) CHARACTER SET 'utf8mb4' COLLATE 'utf8mb4_0900_ai_ci' NULL DEFAULT NULL ;
 
 
 

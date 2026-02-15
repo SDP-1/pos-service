@@ -175,7 +175,7 @@ namespace pos_service.Services
 
                 // Enforce presence of customer for loan orders unless explicitly allowed
                 if (balance < 0 && allowOrdersForLoan && !AllowCreditOrderWithoutCustomer && !orderDto.CustomerId.HasValue)
-                    throw new InvalidOperationException("Loan orders require a customer.");
+                    throw new InvalidOperationException("Credit(Loan) orders require a customer.");
 
                 MainOrderStatus initialMainStatus;
                 OrderSubStatus? initialSubStatus = null;

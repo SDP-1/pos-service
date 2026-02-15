@@ -25,6 +25,15 @@ namespace pos_service.Models.Enums
         /// When enabled, loyalty points will be calculated for orders created as Loan (credit) bills.
         /// When disabled, loan/credit orders will not grant earning points; return items will still deduct points.
         /// </summary>
-        CalculateLoyaltyPointsForCreditOrders = 4
+        CalculateLoyaltyPointsForCreditOrders = 4,
+
+        /// <summary>
+        /// When this setting is enabled, the cursor always returns to the Barcode field after each scan, 
+        /// allowing continuous scanning without pressing Enter. If you need to change the quantity, 
+        /// you must manually navigate to the Qty field (for example, using the arrow keys), enter the value, and confirm it.
+        /// When this setting is disabled, after scanning a barcode the cursor automatically moves to the Qty field. 
+        /// You can immediately enter the quantity and press Enter to add the item to the order, without manually navigating to the quantity field.
+        /// </summary>
+        AlwaysFocusBarcodeField = 5,
     }
 }

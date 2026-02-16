@@ -707,6 +707,12 @@ namespace pos_service.Services
             return _mapper.Map<List<pos_service.Models.DTO.ReturnedItems.ReturnedItemsSummaryResDto>>(rows);
         }
 
+        public async Task<List<OrderResDto>> GetInactiveOrdersAsync(CurrentUser currentUser)
+        {
+            var orders = await _orderRepository.GetInactiveOrdersAsync();
+            return _mapper.Map<List<OrderResDto>>(orders);
+        }
+
         // Calculate loyalty points earned/deducted for a collection of OrderItemReqDto.
         // Rules:
         // - Earn 1 point per 100 Rs for non-return items (integer points only)

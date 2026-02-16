@@ -35,5 +35,11 @@ namespace pos_service.Models.Enums
         /// You can immediately enter the quantity and press Enter to add the item to the order, without manually navigating to the quantity field.
         /// </summary>
         AlwaysFocusBarcodeField = 5,
+
+        /// <summary>
+        /// When enabled, users are allowed to delete orders from the system. When disabled,
+        /// order deletion is prevented by the application logic.
+        /// </summary>
+        AllowDeleteOrder = 6,
     }
 }

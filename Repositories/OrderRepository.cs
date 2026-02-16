@@ -305,5 +305,24 @@ namespace pos_service.Repositories
                 return new List<ReturnedItemsSummary>();
             }
         }
+
+        public async Task<List<Order>> GetInactiveOrdersAsync()
+        {
+            try
+            {
+                return await _context.Orders
+                    .Include(o => o.OrderItems)
+                    .Include(o => o.Cashier)
+                    .Include(o => o.Customer)
+                    .Where(o => !o.IsActive)
+                    .OrderByDescending(o => o.CreatedAt)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching inactive orders");
+                return new List<Order>();
+            }
+        }
     }
 }

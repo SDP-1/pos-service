@@ -88,5 +88,11 @@ namespace pos_service.Repositories
 
         // Returns returned-items summary rows (backed by view) for given order number
         Task<List<pos_service.Models.ReturnedItemsSummary>> GetReturnedItemsSummaryByOrderNumberAsync(string orderNumber);
+
+        /// <summary>
+        /// Retrieves all orders that are inactive (IsActive == false).
+        /// </summary>
+        /// <returns>List of inactive orders.</returns>
+        Task<List<Order>> GetInactiveOrdersAsync();
     }
 }

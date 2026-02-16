@@ -204,5 +204,16 @@ namespace pos_service.Controllers
             var orders = await _orderService.GetOrdersByDateAndStatusAsync(startDate, endDate, status, subStatus, _currentUser);
             return Ok(orders);
         }
+
+        /// <summary>
+        /// Retrieves all inactive orders (IsActive == false).
+        /// </summary>
+        [HttpGet("inactive")]
+        [Permission(PermissionType.ORDER_VIEW)]
+        public async Task<ActionResult<List<OrderResDto>>> GetInactiveOrders()
+        {
+            var orders = await _orderService.GetInactiveOrdersAsync(_currentUser);
+            return Ok(orders);
+        }
     }
 }

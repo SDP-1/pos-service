@@ -22,9 +22,9 @@
   </Dictionary>
   <ReportPage Name="Page1" PaperWidth="80" PaperHeight="250" LeftMargin="0" TopMargin="0" RightMargin="7" BottomMargin="5" Watermark.Font="Arial, 60pt" UnlimitedHeight="true">
     <ReportTitleBand Name="ReportTitle1" Width="275.94" Height="66.15">
-      <TextObject Name="txtStore" Width="270.27" Height="18.9" Text="SIRITHUNGA GROCERY" HorzAlign="Center" Font="Arial, 11pt, style=Bold"/>
-      <TextObject Name="txtAddr" Top="18.9" Width="270.27" Height="18.9" Text="Nalagasdeniya, Hikkaduwa" HorzAlign="Center" Font="Arial, 10pt"/>
-      <TextObject Name="txtPhone" Top="37.8" Width="270.27" Height="18.9" Text="Tel: (+94)912276011" HorzAlign="Center" Font="Arial, 9pt"/>
+      <TextObject Name="txtStore" Width="270.27" Height="18.9" Text="[StoreName]" HorzAlign="Center" Font="Arial, 11pt, style=Bold"/>
+      <TextObject Name="txtAddr" Top="18.9" Width="270.27" Height="18.9" Text="[StoreAddress]" HorzAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="txtPhone" Top="37.8" Width="270.27" Height="18.9" Text="Tel: [StorePhoneNumber]" HorzAlign="Center" Font="Arial, 9pt"/>
       <LineObject Name="Line1" Top="60" Width="270.27" Border.Style="DashDot"/>
     </ReportTitleBand>
     <PageHeaderBand Name="PageHeader1" Top="68.82" Width="275.94" Height="66.15">

@@ -4,6 +4,7 @@ using pos_service.Helpers;
 using pos_service.Models.DTO.Bills;
 using pos_service.Services;
 using System.Drawing;
+using System.Runtime.Versioning;
 
 namespace pos_service.Controllers
 {
@@ -15,17 +16,20 @@ namespace pos_service.Controllers
         private readonly IOrderService _orderService;
         private readonly IItemService _itemService;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IShopService _shopService;
         private readonly IWebHostEnvironment _env;
 
         public PrintController(
             IOrderService orderService,
             IItemService itemService,
             ICurrentUserService currentUserService,
+            IShopService shopService,
             IWebHostEnvironment env)
         {
             _orderService = orderService;
             _itemService = itemService;
             _currentUserService = currentUserService;
+            _shopService = shopService;
             _env = env;
         }
 
@@ -35,6 +39,7 @@ namespace pos_service.Controllers
         /// <param name="orderNumber">The order number to print the bill for.</param>
         /// <returns>A response indicating the result of the print operation.</returns>
         [HttpPost]
+        [SupportedOSPlatform("windows")]
         public async Task<IActionResult> PrintBill([FromQuery] string orderNumber)
         {
             if (string.IsNullOrWhiteSpace(orderNumber))
@@ -43,6 +48,7 @@ namespace pos_service.Controllers
             try
             {
                 var currentUser = _currentUserService.GetCurrentUser();
+                var shop = await _shopService.GetAsync();
 
                 var orderToPrint = await _orderService.GetOrderByOrderNumberAsync(orderNumber, currentUser);
                 if (orderToPrint == null)
@@ -55,7 +61,7 @@ namespace pos_service.Controllers
                 }
 
                 var reportPath = Path.Combine(_env.ContentRootPath, "Bills/posbill.frx");
-                var success = await FastReportPrintHelper.PrintReceiptAsync(orderToPrint, printer, reportPath);
+                var success = await FastReportPrintHelper.PrintReceiptAsync(orderToPrint, printer, reportPath, shop);
 
                 if (!success)
                 {

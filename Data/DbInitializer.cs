@@ -173,6 +173,9 @@ namespace pos_service.Data
                 // Settings
                 new Permission { Id = (int)PermissionType.SETTING_MANAGE, PermissionType = PermissionType.SETTING_MANAGE, PermissionCatagory = PermissionCatagory.SETTING, Description = "Can manage settings (on/off)" },
 
+                //Shop details
+                new Permission { Id = (int)PermissionType.SHOP_DETAILS_UPDATE, PermissionType = PermissionType.SHOP_DETAILS_UPDATE, PermissionCatagory = PermissionCatagory.SHOP, Description = "Can change shop related details" },
+
                 // Only for Admin
                 new Permission { Id = (int)PermissionType.PERMISSION_SYSADMIN_VIEW, PermissionType = PermissionType.PERMISSION_SYSADMIN_VIEW, PermissionCatagory = PermissionCatagory.ROLE, Description = "Can view the SystemAdmin role existence/details" },
             };

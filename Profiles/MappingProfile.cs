@@ -97,6 +97,8 @@ namespace pos_service.Profiles
 
             // Setting mappings
             CreateMap<Setting, SettingResDto>();
+            CreateMap<Shop, Models.DTO.Settings.ShopResDto>()
+                .ForMember(dest => dest.Logo, opt => opt.MapFrom(src => src.Logo));
         }
     }
 }

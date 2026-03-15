@@ -35,6 +35,7 @@ namespace pos_service.Data
         public DbSet<Setting> Settings { get; set; }
         public DbSet<BackupLocation> BackupLocations { get; set; }
         public DbSet<BackupHistory> BackupHistories { get; set; }
+        public DbSet<Shop> Shops { get; set; }
         public DbSet<LoanSettlementLog> LoanSettlementLogs { get; set; }
 
         /// <summary>
@@ -87,6 +88,21 @@ namespace pos_service.Data
                     .HasDefaultValue(true)
                     .ValueGeneratedOnAdd();
             }
+            // --- Shop Configuration ---
+            modelBuilder.Entity<Shop>(entity =>
+            {
+                // Ensure shop name is unique to avoid duplicate entries with same name.
+                entity.HasIndex(s => s.Name).IsUnique();
+
+                entity.Property(s => s.Name).HasMaxLength(255).IsRequired();
+                entity.Property(s => s.Address).HasMaxLength(255);
+                entity.Property(s => s.PhoneNumber).HasMaxLength(20);
+                entity.Property(s => s.Email).HasMaxLength(255);
+                entity.Property(s => s.Logo).HasColumnType("mediumblob");
+
+                // Provide alternate key on Uuid like other auditable entities.
+                entity.HasAlternateKey(s => s.Uuid);
+            });
 
             // --- Role configuration ---
             modelBuilder.Entity<Role>(entity =>

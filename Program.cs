@@ -76,6 +76,8 @@ builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();
 builder.Services.AddScoped<pos_service.Repositories.Roles.IRoleRepository, pos_service.Repositories.Roles.RoleRepository>();
 builder.Services.AddScoped<ISettingRepository, SettingRepository>();
 builder.Services.AddScoped<ISettingService, SettingService>();
+builder.Services.AddScoped<IShopRepository, ShopRepository>();
+builder.Services.AddScoped<IShopService, ShopService>();
 // Backup repositories - only location and history needed for manual backups
 builder.Services.AddScoped<IBackupLocationRepository, BackupLocationRepository>();
 builder.Services.AddScoped<IBackupHistoryRepository, BackupHistoryRepository>();

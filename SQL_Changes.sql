@@ -18,6 +18,11 @@ CREATE TABLE `shops` (
   UNIQUE KEY `IX_Shops_Name` (`Name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 
+-- chnage user table profileimage type as LONGTEXT to MEDIUMBLOB
+
+ALTER TABLE `pos-system`.`users` 
+CHANGE COLUMN `ProfileImage` `ProfileImage` MEDIUMBLOB NULL DEFAULT NULL ;
+
 
 /*
 -- appilied

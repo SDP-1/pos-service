@@ -56,7 +56,10 @@ namespace pos_service.Profiles
                 .ForMember(dest => dest.ItemSuppliers, opt => opt.Ignore());
 
             // User Mappings
-            CreateMap<User, UserResDto>();
+            // Map User -> UserResDto including binary ProfileImage similar to ShopResDto.Logo
+            CreateMap<User, UserResDto>()
+                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role))
+                .ForMember(dest => dest.ProfileImage, opt => opt.MapFrom(src => src.ProfileImage));
             CreateMap<User, CurrentUser>();
             CreateMap<UserReqDto, User>();
             CreateMap<UserLoginReqDto, User>();

@@ -23,6 +23,13 @@ namespace pos_service.Models.DTO.Users
         // The client provides the profile image as a file;
         public IFormFile? ProfileImage { get; set; }
 
+        /// <summary>
+        /// When true on update, instructs the server to remove the existing profile image (set to null).
+        /// Default false. If a new ProfileImage file is provided it will replace the existing image;
+        /// if RemoveImage is true the image will be removed regardless of file upload.
+        /// </summary>
+        public bool RemoveImage { get; set; } = false;
+
         [MaxLength(12)]
         public string? NIC { get; set; }
 

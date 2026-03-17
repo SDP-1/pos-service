@@ -1,12 +1,12 @@
-using pos_service.Models;
-using pos_service.Repositories;
-using pos_service.Models.DTO.Settings;
-using Microsoft.AspNetCore.Http;
 using AutoMapper;
-
-using System.IO;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using pos_service.Helpers;
+using pos_service.Models;
+using pos_service.Models.DTO.Settings;
+using pos_service.Repositories;
 using pos_service.Services.Common.Cache;
+using System.IO;
 
 namespace pos_service.Services
 {
@@ -63,15 +63,20 @@ namespace pos_service.Services
                 existing.Address = req.Address;
                 existing.PhoneNumber = req.PhoneNumber;
                 existing.Email = req.Email;
-                existing.Logo = null;
                 shop = existing;
             }
 
-            if (req.Logo != null && req.Logo.Length > 0)
+            // Handle logo according to DTO flags similar to user RemoveImage behavior:
+            // - If RemoveLogo == true => remove existing logo (set null)
+            // - Else if a new file is provided => replace existing logo with uploaded bytes
+            // - Else => keep existing logo unchanged
+            if (req.RemoveLogo)
             {
-                using var ms = new MemoryStream();
-                await req.Logo.CopyToAsync(ms);
-                shop.Logo = ms.ToArray();
+                shop.Logo = null;
+            }
+            else if (req.Logo != null)
+            {
+                shop.Logo = await FileHelper.ConvertFileToBytesAsync(req.Logo);
             }
 
             var saved = await _repo.CreateOrUpdateAsync(shop);

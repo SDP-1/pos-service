@@ -21,5 +21,12 @@ namespace pos_service.Models.DTO.Settings
 
         // Optional logo file uploaded as multipart/form-data
         public IFormFile? Logo { get; set; }
+
+        /// <summary>
+        /// When true on update, instructs the server to remove the existing logo (set to null).
+        /// Default false. If a new Logo file is provided it will replace the existing image;
+        /// if RemoveLogo is true the logo will be removed regardless of file upload.
+        /// </summary>
+        public bool RemoveLogo { get; set; } = false;
     }
 }

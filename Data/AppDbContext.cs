@@ -161,6 +161,11 @@ namespace pos_service.Data
                 // 1. Define Uuid as a unique, alternate key.
                 // This is REQUIRED to use it as a foreign key target.
                 entity.HasAlternateKey(u => u.Uuid);
+
+                // Ensure ProfileImage column uses MEDIUMBLOB (byte[] mapped by EF)
+                entity.Property(u => u.ProfileImage)
+                      .HasColumnType("mediumblob")
+                      .IsRequired(false);
             });
 
             // --- Supplier Configuration ---

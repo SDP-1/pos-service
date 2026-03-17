@@ -24,7 +24,7 @@ namespace pos_service.Models
         public string? Email { get; set; }
 
         /// <summary>
-        /// Binary contents of the shop logo. Stored in DB as BLOB/longblob.
+        /// Binary contents of the shop logo. Stored in DB as BLOB/MEDIUMBLOB/longblob.
         /// Use byte[] so EF Core maps this to a binary column.
         /// </summary>
         public byte[]? Logo { get; set; }

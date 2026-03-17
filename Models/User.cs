@@ -55,10 +55,12 @@ namespace pos_service.Models
         public virtual Role? Role      { get; set; }
 
         /// <summary>
-        /// The user's profile picture stored as base64 encoded string.
+        /// The user's profile picture stored as binary bytes.
+        /// Stored in the DB as MEDIUMBLOB.
+        /// Use byte[] so EF Core maps this to a binary column.
         /// </summary>
-        [Column(TypeName = "longtext")]
-        public string? ProfileImage    { get; set; }
+        [Column(TypeName = "mediumblob")]
+        public byte[]? ProfileImage    { get; set; }
 
         /// <summary>
         // The user's Sri Lankan National Identity Card number.

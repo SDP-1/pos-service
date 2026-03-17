@@ -13,11 +13,7 @@ using pos_service.Services.Common.Cache;
 using pos_service.Services.Permissions;
 using System.Text;
 
-var options = new WebApplicationOptions
-{
-    WebRootPath = "wwwroot" // desired path
-};
-var builder = WebApplication.CreateBuilder(options);
+var builder = WebApplication.CreateBuilder();
 var jwtKey = builder.Configuration["JwtSettings:SecretKey"];
 
 // 1. Get the connection string from appsettings.json
@@ -133,10 +129,6 @@ using (var scope = app.Services.CreateScope())
 
 // Use global exception handler middleware
 app.UseGlobalExceptionHandler();
-
-// Enable Static File Serving 
-// This middleware is essential for serving files from the designated WebRootPath.
-app.UseStaticFiles();
 
 // Enable CORS using the defined policy
 app.UseCors("AllowFrontend");

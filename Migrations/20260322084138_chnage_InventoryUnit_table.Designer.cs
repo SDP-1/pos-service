@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using pos_service.Data;
 
@@ -11,9 +12,11 @@ using pos_service.Data;
 namespace pos_service.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260322084138_chnage_InventoryUnit_table")]
+    partial class chnage_InventoryUnit_table
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -87,10 +90,6 @@ namespace pos_service.Migrations
 
                     b.HasAlternateKey("Uuid");
 
-                    b.HasIndex("CreatedBy");
-
-                    b.HasIndex("UpdatedBy");
-
                     b.ToTable("BackupHistories");
                 });
 
@@ -149,10 +148,6 @@ namespace pos_service.Migrations
                     b.HasKey("Id");
 
                     b.HasAlternateKey("Uuid");
-
-                    b.HasIndex("CreatedBy");
-
-                    b.HasIndex("UpdatedBy");
 
                     b.ToTable("BackupLocations");
                 });
@@ -221,11 +216,7 @@ namespace pos_service.Migrations
 
                     b.HasAlternateKey("Uuid");
 
-                    b.HasIndex("CreatedBy");
-
                     b.HasIndex("SupplierId");
-
-                    b.HasIndex("UpdatedBy");
 
                     b.HasIndex("UserId");
 
@@ -297,15 +288,11 @@ namespace pos_service.Migrations
 
                     b.HasAlternateKey("Uuid");
 
-                    b.HasIndex("CreatedBy");
-
                     b.HasIndex("Email")
                         .IsUnique();
 
                     b.HasIndex("PhoneNumber")
                         .IsUnique();
-
-                    b.HasIndex("UpdatedBy");
 
                     b.ToTable("Customers");
                 });
@@ -367,12 +354,8 @@ namespace pos_service.Migrations
 
                     b.HasAlternateKey("Uuid");
 
-                    b.HasIndex("CreatedBy");
-
                     b.HasIndex("ItemUuid")
                         .IsUnique();
-
-                    b.HasIndex("UpdatedBy");
 
                     b.ToTable("Inventories");
                 });
@@ -402,16 +385,14 @@ namespace pos_service.Migrations
                         .HasColumnType("tinyint(1)")
                         .HasDefaultValue(true);
 
-                    b.Property<string>("ParentUnitType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
+                    b.Property<int>("ParentUnitType")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("QuantityInBaseUnits")
                         .HasColumnType("decimal(18,3)");
 
                     b.Property<decimal>("QuantityPerParent")
-                        .HasColumnType("decimal(18,3)");
+                        .HasColumnType("decimal(18, 3)");
 
                     b.Property<string>("UnitType")
                         .IsRequired()
@@ -437,11 +418,7 @@ namespace pos_service.Migrations
 
                     b.HasAlternateKey("Uuid");
 
-                    b.HasIndex("CreatedBy");
-
                     b.HasIndex("InventoryId");
-
-                    b.HasIndex("UpdatedBy");
 
                     b.ToTable("InventoryUnits");
                 });
@@ -498,10 +475,6 @@ namespace pos_service.Migrations
                         .HasColumnType("varchar(255)");
 
                     b.HasKey("Id", "SubId");
-
-                    b.HasIndex("CreatedBy");
-
-                    b.HasIndex("UpdatedBy");
 
                     b.ToTable("Items");
                 });
@@ -561,10 +534,6 @@ namespace pos_service.Migrations
                         .HasColumnType("longtext");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CreatedBy");
-
-                    b.HasIndex("UpdatedBy");
 
                     b.HasIndex("ItemsId", "ItemsSubId");
 
@@ -635,10 +604,6 @@ namespace pos_service.Migrations
 
                     b.HasAlternateKey("ItemUuid");
 
-                    b.HasIndex("CreatedBy");
-
-                    b.HasIndex("UpdatedBy");
-
                     b.ToTable("ItemPrices");
                 });
 
@@ -685,10 +650,6 @@ namespace pos_service.Migrations
                     b.HasKey("SuppliersId", "ItemsId", "ItemsSubId");
 
                     b.HasAlternateKey("Uuid");
-
-                    b.HasIndex("CreatedBy");
-
-                    b.HasIndex("UpdatedBy");
 
                     b.HasIndex("ItemsId", "ItemsSubId");
 
@@ -759,11 +720,7 @@ namespace pos_service.Migrations
 
                     b.HasAlternateKey("Uuid");
 
-                    b.HasIndex("CreatedBy");
-
                     b.HasIndex("OrderId");
-
-                    b.HasIndex("UpdatedBy");
 
                     b.ToTable("LoanSettlementLogs");
                 });
@@ -865,14 +822,10 @@ namespace pos_service.Migrations
 
                     b.HasIndex("CashierId");
 
-                    b.HasIndex("CreatedBy");
-
                     b.HasIndex("CustomerId");
 
                     b.HasIndex("OrderNumber")
                         .IsUnique();
-
-                    b.HasIndex("UpdatedBy");
 
                     b.ToTable("Orders");
                 });
@@ -958,13 +911,9 @@ namespace pos_service.Migrations
 
                     b.HasAlternateKey("Uuid");
 
-                    b.HasIndex("CreatedBy");
-
                     b.HasIndex("OrderId");
 
                     b.HasIndex("OriginalItemUuid");
-
-                    b.HasIndex("UpdatedBy");
 
                     b.ToTable("OrderItems");
                 });
@@ -1090,12 +1039,8 @@ namespace pos_service.Migrations
 
                     b.HasAlternateKey("Uuid");
 
-                    b.HasIndex("CreatedBy");
-
                     b.HasIndex("Name")
                         .IsUnique();
-
-                    b.HasIndex("UpdatedBy");
 
                     b.ToTable("Roles");
                 });
@@ -1147,13 +1092,9 @@ namespace pos_service.Migrations
 
                     b.HasAlternateKey("Uuid");
 
-                    b.HasIndex("CreatedBy");
-
                     b.HasIndex("PermissionId");
 
                     b.HasIndex("RoleId");
-
-                    b.HasIndex("UpdatedBy");
 
                     b.ToTable("RolePermissions");
                 });
@@ -1216,12 +1157,8 @@ namespace pos_service.Migrations
 
                     b.HasAlternateKey("Uuid");
 
-                    b.HasIndex("CreatedBy");
-
                     b.HasIndex("SettingKey")
                         .IsUnique();
-
-                    b.HasIndex("UpdatedBy");
 
                     b.ToTable("Settings");
                 });
@@ -1287,12 +1224,8 @@ namespace pos_service.Migrations
 
                     b.HasAlternateKey("Uuid");
 
-                    b.HasIndex("CreatedBy");
-
                     b.HasIndex("Name")
                         .IsUnique();
-
-                    b.HasIndex("UpdatedBy");
 
                     b.ToTable("Shops");
                 });
@@ -1346,12 +1279,8 @@ namespace pos_service.Migrations
 
                     b.HasAlternateKey("Uuid");
 
-                    b.HasIndex("CreatedBy");
-
                     b.HasIndex("Name")
                         .IsUnique();
-
-                    b.HasIndex("UpdatedBy");
 
                     b.ToTable("Suppliers");
                 });
@@ -1423,11 +1352,9 @@ namespace pos_service.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CreatedBy");
+                    b.HasAlternateKey("Uuid");
 
                     b.HasIndex("RoleId");
-
-                    b.HasIndex("UpdatedBy");
 
                     b.HasIndex("UserName")
                         .IsUnique();
@@ -1435,54 +1362,12 @@ namespace pos_service.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("pos_service.Models.BackupHistory", b =>
-                {
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-                });
-
-            modelBuilder.Entity("pos_service.Models.BackupLocation", b =>
-                {
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-                });
-
             modelBuilder.Entity("pos_service.Models.Contact", b =>
                 {
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("pos_service.Models.Supplier", "Supplier")
                         .WithMany("Contacts")
                         .HasForeignKey("SupplierId")
                         .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("pos_service.Models.User", "User")
                         .WithMany("Contacts")
@@ -1494,29 +1379,8 @@ namespace pos_service.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("pos_service.Models.Customer", b =>
-                {
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-                });
-
             modelBuilder.Entity("pos_service.Models.Inventory", b =>
                 {
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("pos_service.Models.Item", "Item")
                         .WithOne("Inventory")
                         .HasForeignKey("pos_service.Models.Inventory", "ItemUuid")
@@ -1524,67 +1388,22 @@ namespace pos_service.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.Navigation("Item");
                 });
 
             modelBuilder.Entity("pos_service.Models.InventoryUnit", b =>
                 {
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("pos_service.Models.Inventory", "Inventory")
                         .WithMany("Units")
                         .HasForeignKey("InventoryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.Navigation("Inventory");
-                });
-
-            modelBuilder.Entity("pos_service.Models.Item", b =>
-                {
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("pos_service.Models.ItemExpiry", b =>
                 {
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("pos_service.Models.Item", "Item")
                         .WithMany("ExpDates")
                         .HasForeignKey("ItemsId", "ItemsSubId")
@@ -1596,18 +1415,6 @@ namespace pos_service.Migrations
 
             modelBuilder.Entity("pos_service.Models.ItemPrice", b =>
                 {
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("pos_service.Models.Item", "Item")
                         .WithOne("Price")
                         .HasForeignKey("pos_service.Models.ItemPrice", "ItemsId", "ItemsSubId")
@@ -1619,23 +1426,11 @@ namespace pos_service.Migrations
 
             modelBuilder.Entity("pos_service.Models.ItemSupplier", b =>
                 {
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("pos_service.Models.Supplier", "Supplier")
                         .WithMany("ItemSuppliers")
                         .HasForeignKey("SuppliersId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("pos_service.Models.Item", "Item")
                         .WithMany("ItemSuppliers")
@@ -1650,23 +1445,11 @@ namespace pos_service.Migrations
 
             modelBuilder.Entity("pos_service.Models.LoanSettlementLog", b =>
                 {
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("pos_service.Models.Order", "Order")
                         .WithMany("LoanSettlementLogs")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Order");
                 });
@@ -1679,21 +1462,9 @@ namespace pos_service.Migrations
                         .OnDelete(DeleteBehavior.SetNull)
                         .IsRequired();
 
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("pos_service.Models.Customer", "Customer")
                         .WithMany("Orders")
                         .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy")
-                        .HasPrincipalKey("Uuid")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Cashier");
@@ -1703,12 +1474,6 @@ namespace pos_service.Migrations
 
             modelBuilder.Entity("pos_service.Models.OrderItem", b =>
                 {
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("pos_service.Models.Order", "Order")
                         .WithMany("OrderItems")
                         .HasForeignKey("OrderId")
@@ -1721,40 +1486,13 @@ namespace pos_service.Migrations
                         .HasPrincipalKey("Uuid")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.Navigation("Item");
 
                     b.Navigation("Order");
                 });
 
-            modelBuilder.Entity("pos_service.Models.Role", b =>
-                {
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-                });
-
             modelBuilder.Entity("pos_service.Models.RolePermission", b =>
                 {
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("pos_service.Models.Permission", "Permission")
                         .WithMany()
                         .HasForeignKey("PermissionId")
@@ -1767,81 +1505,18 @@ namespace pos_service.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.Navigation("Permission");
 
                     b.Navigation("Role");
                 });
 
-            modelBuilder.Entity("pos_service.Models.Setting", b =>
-                {
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-                });
-
-            modelBuilder.Entity("pos_service.Models.Shop", b =>
-                {
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-                });
-
-            modelBuilder.Entity("pos_service.Models.Supplier", b =>
-                {
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-                });
-
             modelBuilder.Entity("pos_service.Models.User", b =>
                 {
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("pos_service.Models.Role", "Role")
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.HasOne("pos_service.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy")
-                        .HasPrincipalKey("Uuid")
-                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Role");
                 });

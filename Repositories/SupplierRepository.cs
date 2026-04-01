@@ -17,6 +17,7 @@ namespace pos_service.Repositories
                     .Include(s => s.Contacts)
                     .Include(s => s.ItemSuppliers)
                         .ThenInclude(isu => isu.Item)
+                        .ThenInclude(i => i.Price)
                     .ToListAsync();
         }
 
@@ -37,6 +38,7 @@ namespace pos_service.Repositories
                 .AsNoTracking()
                 .Include(s => s.ItemSuppliers)
                     .ThenInclude(isu => isu.Item)
+                    .ThenInclude(i => i.Price)
                 .Include(s => s.Contacts)
                 .FirstOrDefaultAsync(s => s.Id == id);
         }
@@ -46,6 +48,7 @@ namespace pos_service.Repositories
                 .AsNoTracking()
                 .Include(s => s.ItemSuppliers)
                     .ThenInclude(isu => isu.Item)
+                    .ThenInclude(i => i.Price)
                 .FirstOrDefaultAsync(s => s.Id == id);
         }
 

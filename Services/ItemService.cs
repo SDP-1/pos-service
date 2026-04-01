@@ -9,6 +9,7 @@ namespace pos_service.Services
     {
         private readonly IItemRepository     _itemRepository;
         private readonly ISupplierRepository _supplierRepository;
+        private readonly IInventoryRepository _inventoryRepository;
         private readonly IMapper             _mapper;
 
         /// <summary>
@@ -17,10 +18,12 @@ namespace pos_service.Services
         public ItemService(
             IItemRepository itemRepository,
             ISupplierRepository supplierRepository,
+            IInventoryRepository inventoryRepository,
             IMapper mapper)
         {
             _itemRepository     = itemRepository;
             _supplierRepository = supplierRepository;
+            _inventoryRepository = inventoryRepository;
             _mapper             = mapper;
         }
 
@@ -102,6 +105,27 @@ namespace pos_service.Services
             await ApplySuppliersAsync(item, itemDto.SupplierIds);
 
             var newItem = await _itemRepository.AddAsync(item);
+
+            var inventory = new Inventory
+            {
+                ItemUuid = newItem.Uuid,
+                StockQuantity = itemDto.StockQuantity,
+                AllowsDecimalQuantities = itemDto.AllowsDecimalQuantities,
+                UnitType = itemDto.UnitType,
+                Units = itemDto.Units.Select(u => new InventoryUnit
+                {
+                    UnitType = u.UnitType,
+                    ParentUnitType = u.ParentUnitType,
+                    QuantityPerParent = u.QuantityPerParent,
+                    QuantityInBaseUnits = u.QuantityInBaseUnits,
+                    Uuid = Guid.NewGuid().ToString()
+                }).ToList(),
+                Uuid = Guid.NewGuid().ToString()
+            };
+
+            inventory = await _inventoryRepository.AddAsync(inventory);
+            newItem.Inventory = inventory;
+
             return _mapper.Map<ItemResDto>(newItem);
         }
 
@@ -132,6 +156,36 @@ namespace pos_service.Services
             await ApplySuppliersAsync(itemToUpdate, itemDto.SupplierIds);
 
             var result = await _itemRepository.UpdateAsync(itemToUpdate);
+
+            var inventory = await _inventoryRepository.GetByItemUuidAsync(itemToUpdate.Uuid)
+                ?? throw new InvalidOperationException($"Inventory not found for item {itemToUpdate.Uuid}");
+
+            inventory.StockQuantity = itemDto.StockQuantity;
+            inventory.AllowsDecimalQuantities = itemDto.AllowsDecimalQuantities;
+            inventory.UnitType = itemDto.UnitType;
+
+            // Only replace Units if the request explicitly supplied them. This prevents
+            // clearing packaging configuration when callers only update scalar fields
+            // such as StockQuantity.
+            if (itemDto.Units != null && itemDto.Units.Any())
+            {
+                inventory.Units.Clear();
+                foreach (var unit in itemDto.Units)
+                {
+                    inventory.Units.Add(new InventoryUnit
+                    {
+                        UnitType = unit.UnitType,
+                        ParentUnitType = unit.ParentUnitType,
+                        QuantityPerParent = unit.QuantityPerParent,
+                        QuantityInBaseUnits = unit.QuantityInBaseUnits,
+                        InventoryId = inventory.Id,
+                        Uuid = Guid.NewGuid().ToString()
+                    });
+                }
+            }
+
+            await _inventoryRepository.UpdateAsync(inventory);
+            result.Inventory = inventory;
 
             return _mapper.Map<ItemResDto>(result); ;
         }
@@ -224,10 +278,14 @@ namespace pos_service.Services
                 return null; // Item not found
             }
 
-            // Handle null StockQuantity by initializing to 0
-            item.StockQuantity = item.StockQuantity + quantity;
+            var inventory = await _inventoryRepository.GetByItemUuidAsync(item.Uuid)
+                ?? throw new InvalidOperationException($"Inventory not found for item {item.Uuid}");
 
-            await _itemRepository.UpdateAsync(item);
+            inventory.StockQuantity += quantity;
+
+            await _inventoryRepository.UpdateAsync(inventory);
+            item.Inventory = inventory;
+
             return _mapper.Map<ItemResDto>(item);
         }
 
@@ -243,7 +301,8 @@ namespace pos_service.Services
             // Creates a dictionary like: { "1001/0": 50, "1001/1": 25 }
             return items.ToDictionary(
                 item => $"{item.Id}/{item.SubId}",
-                item => item.StockQuantity
+                item => item.Inventory?.StockQuantity
+                    ?? throw new InvalidOperationException($"Inventory not found for item {item.Uuid}")
             );
         }
 
@@ -258,7 +317,10 @@ namespace pos_service.Services
             var item = await _itemRepository.GetByUuidAsync(uuid);
             // Returns the quantity, or 0 if the item is found but stock is null.
             // Returns null if the item is not found at all.
-            return item?.StockQuantity ?? (item != null ? 0m : null);
+            return item == null
+                ? null
+                : item.Inventory?.StockQuantity
+                    ?? throw new InvalidOperationException($"Inventory not found for item {item.Uuid}");
         }
 
         /// <summary>
@@ -273,7 +335,10 @@ namespace pos_service.Services
             var item = await _itemRepository.GetByIdAsync(id, subId);
             // Returns the quantity, or 0 if the item is found but stock is null.
             // Returns null if the item is not found at all.
-            return item?.StockQuantity ?? (item != null ? 0m : null);
+            return item == null
+                ? null
+                : item.Inventory?.StockQuantity
+                    ?? throw new InvalidOperationException($"Inventory not found for item {item.Uuid}");
         }
 
         /// <summary>

@@ -1,4 +1,6 @@
 ﻿using pos_service.Models.DTO.Audits;
+using pos_service.Models.DTO.Inventory;
+using pos_service.Models.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace pos_service.Models.DTO.Items
@@ -40,6 +42,25 @@ namespace pos_service.Models.DTO.Items
         public decimal StockQuantity          { get; set; } = 0;
 
         public bool AllowsDecimalQuantities   { get; set; } = false;
+
+        private UnitType? _unitType;
+
+        public UnitType UnitType
+        {
+            get
+            {
+                if (_unitType.HasValue && _unitType != UnitType.None)
+                    return _unitType.Value;
+
+                // Dynamic default logic
+                return AllowsDecimalQuantities
+                    ? UnitType.Kilogram
+                    : UnitType.Packet;
+            }
+            set => _unitType = value;
+        }
+
+        public List<InventoryUnitDto> Units   { get; set; } = new();
 
         [Required]
         public ItemPriceDto Price              { get; set; }

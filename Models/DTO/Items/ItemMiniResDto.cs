@@ -1,4 +1,5 @@
 ﻿using pos_service.Models.DTO.Suppliers;
+using pos_service.Models.Enums;
 
 namespace pos_service.Models.DTO.Items
 {
@@ -11,6 +12,7 @@ namespace pos_service.Models.DTO.Items
         public string PrintName { get; set; }
         public string? BarCode { get; set; }
         public bool AllowsDecimalQuantities { get; set; }
+        public UnitType UnitType { get; set; }
         public ItemPriceDto Price { get; set; }
         public List<ItemExpiryDto> ExpDates { get; set; } = new();
         public bool IsActive { get; set; }

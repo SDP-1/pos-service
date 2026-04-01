@@ -111,7 +111,7 @@ namespace pos_service.Data
                     PasswordHash = passwordHasher.HashPassword("1234"),
                     RoleId = 1, // SystemAdmin role id
                     NIC = "000000000000",
-                    Uuid = Guid.NewGuid().ToString()
+                    Uuid = "312589e9-631c-4511-a65e-b7490179a191"
                 };
                 context.Users.Add(adminUser);
                 await context.SaveChangesAsync();

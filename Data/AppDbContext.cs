@@ -37,6 +37,8 @@ namespace pos_service.Data
         public DbSet<BackupHistory> BackupHistories { get; set; }
         public DbSet<Shop> Shops { get; set; }
         public DbSet<LoanSettlementLog> LoanSettlementLogs { get; set; }
+        public DbSet<Inventory> Inventories { get; set; }
+        public DbSet<InventoryUnit> InventoryUnits { get; set; }
 
         /// <summary>
         /// This method is used to configure the database model using the Fluent API.
@@ -75,11 +77,30 @@ namespace pos_service.Data
                     .HasMaxLength(255)
                     .IsRequired(false);
 
+                // Link CreatedBy to Users(Uuid) so audit fields reference the user who created the row.
+                // On delete set null so that removing a user does not remove the audited record.
+                entity
+                    .HasOne(typeof(User), null)
+                    .WithMany(null)
+                    .HasForeignKey(nameof(IAuditable.CreatedBy))
+                    .HasPrincipalKey(nameof(User.Uuid))
+                    .IsRequired(false)
+                    .OnDelete(DeleteBehavior.SetNull);
+
                 // UpdatedBy is optional and has no DB default; application may set it or leave null.
                 entity
                     .Property<string?>(nameof(IAuditable.UpdatedBy))
                     .HasColumnType("varchar(36)")
                     .HasMaxLength(255);
+
+                // Link UpdatedBy to Users(Uuid) with the same delete behavior as CreatedBy.
+                entity
+                    .HasOne(typeof(User), null)
+                    .WithMany(null)
+                    .HasForeignKey(nameof(IAuditable.UpdatedBy))
+                    .HasPrincipalKey(nameof(User.Uuid))
+                    .IsRequired(false)
+                    .OnDelete(DeleteBehavior.SetNull);
 
                 // IsActive defaults to true
                 entity
@@ -205,6 +226,11 @@ namespace pos_service.Data
             {
                 // Define the composite primary key using both Id and SubId.
                 entity.HasKey(i => new { i.Id, i.SubId });
+                entity.HasOne(i => i.Inventory)
+                      .WithOne(inv => inv.Item)
+                      .HasForeignKey<Inventory>(inv => inv.ItemUuid)
+                      .HasPrincipalKey<Item>(i => i.Uuid)
+                      .OnDelete(DeleteBehavior.Cascade);
                 // Configure one-to-many to the explicit join entity ItemSupplier.
                 entity.HasMany(i => i.ItemSuppliers)
                       .WithOne(isu => isu.Item)
@@ -307,6 +333,36 @@ namespace pos_service.Data
                 entity.HasAlternateKey(e => e.Uuid);
             });
 
+            modelBuilder.Entity<Inventory>(entity =>
+            {
+                entity.HasAlternateKey(i => i.Uuid);
+                entity.HasIndex(i => i.ItemUuid).IsUnique();
+
+                entity.Property(i => i.ItemUuid).HasMaxLength(255).IsRequired();
+                entity.Property(i => i.StockQuantity).HasColumnType("decimal(18,3)");
+                entity.Property(i => i.UnitType).HasConversion<string>().HasMaxLength(50);
+
+                entity.HasOne(i => i.Item)
+                      .WithOne(it => it.Inventory)
+                      .HasForeignKey<Inventory>(i => i.ItemUuid)
+                      .HasPrincipalKey<Item>(it => it.Uuid)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(i => i.Units)
+                      .WithOne(u => u.Inventory)
+                      .HasForeignKey(u => u.InventoryId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<InventoryUnit>(entity =>
+            {
+                entity.HasAlternateKey(u => u.Uuid);
+                entity.Property(u => u.UnitType).HasConversion<string>().HasMaxLength(50);
+                entity.Property(u => u.ParentUnitType).HasConversion<string>().HasMaxLength(50);
+                entity.Property(u => u.QuantityPerParent).HasColumnType("decimal(18,3)");
+                entity.Property(u => u.QuantityInBaseUnits).HasColumnType("decimal(18,3)");
+            });
+
             modelBuilder.Entity<Contact>(entity =>
             {
                 // UUID must be unique
@@ -385,7 +441,7 @@ namespace pos_service.Data
                 var auditableEntity = (IAuditable)entityEntry.Entity;
 
                 // Get current user from the HttpContext accessor
-                string userUuid = "SYSTEM";
+                string userUuid = null;
                 try
                 {
                     var principal = _httpContextAccessor?.HttpContext?.User;
@@ -400,7 +456,7 @@ namespace pos_service.Data
                 }
                 catch
                 {
-                    // ignore and use SYSTEM
+                    // ignore and use null
                 }
 
                 // Only set non-timestamp audit fields here. CreatedAt/UpdatedAt are DB-generated.

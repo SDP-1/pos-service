@@ -12,6 +12,7 @@ using pos_service.Models.DTO.Users;
 using pos_service.Models.DTO.Settings;
 using pos_service.Models.DTO.ReturnedItems;
 using pos_service.Models.DTO.Customers;
+using pos_service.Models.DTO.Inventory;
 
 namespace pos_service.Profiles
 {
@@ -24,15 +25,35 @@ namespace pos_service.Profiles
             CreateMap<ItemPrice, ItemPriceDto>();
             CreateMap<ItemPriceDto, ItemPrice>();
             CreateMap<ItemExpiry, ItemExpiryDto>();
+            CreateMap<InventoryUnit, InventoryUnitDto>();
+            CreateMap<InventoryUnitDto, InventoryUnit>();
+            CreateMap<Inventory, InventoryResDto>()
+                .ForMember(dest => dest.Units, opt => opt.MapFrom(src => src.Units.OrderBy(u => u.QuantityInBaseUnits).ToList()))
+                // Use a resolution function to safely map Item.ExpDates -> InventoryResDto.Expiries
+                .ForMember(dest => dest.Expiries, opt => opt.MapFrom((src, dest, destMember, ctx) =>
+                    src.Item != null
+                        ? ctx.Mapper.Map<IEnumerable<ItemExpiryDto>>(src.Item.ExpDates.OrderBy(e => e.ExpDate))
+                        : new List<ItemExpiryDto>()))
+                // Map item price into inventory response so callers retrieving inventory can also see price
+                .ForMember(dest => dest.Price, opt => opt.MapFrom((src, dest, destMember, ctx) =>
+                    src.Item != null && src.Item.Price != null
+                        ? ctx.Mapper.Map<ItemPriceDto>(src.Item.Price)
+                        : new ItemPriceDto()));
 
             CreateMap<Item, ItemResDto>()
                 .ForMember(dest => dest.Suppliers, opt => opt.MapFrom(src => src.ItemSuppliers.Select(isu => isu.Supplier)))
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price ?? new ItemPrice()))
+                .ForMember(dest => dest.StockQuantity, opt => opt.MapFrom(src => src.Inventory != null ? src.Inventory.StockQuantity : 0m))
+                .ForMember(dest => dest.AllowsDecimalQuantities, opt => opt.MapFrom(src => src.Inventory != null && src.Inventory.AllowsDecimalQuantities))
+                .ForMember(dest => dest.UnitType, opt => opt.MapFrom(src => src.Inventory != null ? src.Inventory.UnitType : Models.Enums.UnitType.Each))
+                .ForMember(dest => dest.Units, opt => opt.MapFrom(src => src.Inventory != null ? src.Inventory.Units.OrderBy(u => u.QuantityInBaseUnits).ToList() : new List<InventoryUnit>()))
                 .ForMember(dest => dest.ExpDates, opt => opt.MapFrom(src => src.ExpDates.OrderBy(e => e.ExpDate)));
 
             CreateMap<Item, ItemMiniResDto>()
                 .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price ?? new ItemPrice()))
-                .ForMember(dest => dest.ExpDates, opt => opt.MapFrom(src => src.ExpDates.OrderBy(e => e.ExpDate)));
+                .ForMember(dest => dest.ExpDates, opt => opt.MapFrom(src => src.ExpDates.OrderBy(e => e.ExpDate)))
+                .ForMember(dest => dest.AllowsDecimalQuantities, opt => opt.MapFrom(src => src.Inventory != null && src.Inventory.AllowsDecimalQuantities))
+                .ForMember(dest => dest.UnitType, opt => opt.MapFrom(src => src.Inventory != null ? src.Inventory.UnitType : Models.Enums.UnitType.Each));
 
             // Map ItemReqDto -> Item but do not overwrite primary key properties when mapping
             // into an existing entity. Keys are assigned by service logic when creating items.
@@ -40,7 +61,8 @@ namespace pos_service.Profiles
                 .ForMember(d => d.Id, opt => opt.Ignore())
                 .ForMember(d => d.SubId, opt => opt.Ignore())
                 .ForMember(d => d.Price, opt => opt.Ignore())
-                .ForMember(d => d.ExpDates, opt => opt.Ignore());
+                .ForMember(d => d.ExpDates, opt => opt.Ignore())
+                .ForMember(d => d.Inventory, opt => opt.Ignore());
 
             // Contact Mappings
             CreateMap<Contact, ContactResDto>();

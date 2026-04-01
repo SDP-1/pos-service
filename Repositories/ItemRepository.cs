@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using pos_service.Data;
 using pos_service.Models;
+using System.Collections.Immutable;
 
 namespace pos_service.Repositories
 {
@@ -20,6 +21,8 @@ namespace pos_service.Repositories
                 .Include(i => i.ExpDates)
                 .Include(i => i.ItemSuppliers)
                     .ThenInclude(isu => isu.Supplier)
+                .Include(i => i.Inventory)
+                    .ThenInclude(u => u.Units)
                 .FirstOrDefaultAsync(i => i.Id == id && i.SubId == subId);
         }
 
@@ -31,6 +34,8 @@ namespace pos_service.Repositories
                 .Include(i => i.ExpDates)
                 .Include(i => i.ItemSuppliers)
                     .ThenInclude(isu => isu.Supplier)
+                .Include(i => i.Inventory)
+                    .ThenInclude(u => u.Units)
                 .ToListAsync();
         }
 
@@ -83,6 +88,8 @@ namespace pos_service.Repositories
                 .Include(i => i.ExpDates)
                 .Include(i => i.ItemSuppliers)
                     .ThenInclude(isu => isu.Supplier)
+                .Include(i => i.Inventory)
+                    .ThenInclude(u => u.Units)
                 .FirstOrDefaultAsync(i => i.Id == id && i.SubId == subId);
         }
 
@@ -115,6 +122,8 @@ namespace pos_service.Repositories
                 .Include(i => i.ExpDates)
                 .Include(i => i.ItemSuppliers)
                     .ThenInclude(isu => isu.Supplier)
+                .Include(i => i.Inventory)
+                    .ThenInclude(u => u.Units)
                 .FirstOrDefaultAsync(i => i.Uuid == uuid);
         }
 

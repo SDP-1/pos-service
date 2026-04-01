@@ -40,18 +40,6 @@ namespace pos_service.Models
         [MaxLength(100)]
         public string? BarCode                 { get; set; }
 
-        /// <summary>
-        /// The current quantity in stock. Can be a fraction (e.g., 10.5 for kg).
-        /// </summary>
-        [Column(TypeName = "decimal(18, 3)")]
-        public decimal StockQuantity           { get; set; } = 0;
-
-        /// <summary>
-        /// If true, allows the item to be sold in fractional quantities (e.g., fruits, vegetables).
-        /// This is your 'decimal' field, renamed for clarity.
-        /// </summary>
-        public bool AllowsDecimalQuantities    { get; set; } = false;
-
         // --- Pricing Information ---
 
         /// <summary>
@@ -69,6 +57,11 @@ namespace pos_service.Models
         /// Use the `ItemSupplier` entity when you need additional columns on the relationship.
         /// </summary>
         public virtual ICollection<ItemSupplier> ItemSuppliers { get; set; } = new List<ItemSupplier>();
+
+        /// <summary>
+        /// Inventory information linked via ItemUuid.
+        /// </summary>
+        public virtual Inventory? Inventory     { get; set; }
 
         // --- Implementation of IAuditable ---
         public string Uuid                    { get; set; }

@@ -1,31 +1,329 @@
 -- need to apply
 
-CREATE TABLE `shops` (
+
+
+/*
+-- appilied
+
+CREATE TABLE `inventories` (
   `Id` int NOT NULL AUTO_INCREMENT,
-  `Name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `Address` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
-  `PhoneNumber` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
-  `Email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
-  `Logo` mediumblob,
-  `Uuid` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `ItemUuid` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `StockQuantity` decimal(18,3) NOT NULL,
+  `AllowsDecimalQuantities` tinyint(1) NOT NULL,
+  `UnitType` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `Uuid` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `CreatedAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   `UpdatedAt` datetime(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   `CreatedBy` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `UpdatedBy` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `IsActive` tinyint(1) NOT NULL DEFAULT '1',
   PRIMARY KEY (`Id`),
-  UNIQUE KEY `AK_Shops_Uuid` (`Uuid`),
-  UNIQUE KEY `IX_Shops_Name` (`Name`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+  UNIQUE KEY `AK_Inventories_Uuid` (`Uuid`),
+  UNIQUE KEY `IX_Inventories_ItemUuid` (`ItemUuid`),
+  KEY `IX_Inventories_CreatedBy` (`CreatedBy`),
+  KEY `IX_Inventories_UpdatedBy` (`UpdatedBy`),
+  CONSTRAINT `FK_Inventories_Items_ItemUuid` FOREIGN KEY (`ItemUuid`) REFERENCES `items` (`Uuid`) ON DELETE CASCADE,
+  CONSTRAINT `FK_Inventories_Users_CreatedBy` FOREIGN KEY (`CreatedBy`) REFERENCES `users` (`Uuid`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `FK_Inventories_Users_UpdatedBy` FOREIGN KEY (`UpdatedBy`) REFERENCES `users` (`Uuid`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=1080 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 
--- chnage user table profileimage type as LONGTEXT to MEDIUMBLOB
+CREATE TABLE `inventoryunits` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `InventoryId` int NOT NULL,
+  `ParentUnitType` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `UnitType` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `QuantityPerParent` decimal(18,3) NOT NULL DEFAULT '0.000',
+  `QuantityInBaseUnits` decimal(18,3) NOT NULL,
+  `Uuid` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `CreatedAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `UpdatedAt` datetime(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  `CreatedBy` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `UpdatedBy` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `IsActive` tinyint(1) NOT NULL DEFAULT '1',
+  PRIMARY KEY (`Id`),
+  UNIQUE KEY `AK_InventoryUnits_Uuid` (`Uuid`),
+  KEY `IX_InventoryUnits_InventoryId` (`InventoryId`),
+  KEY `IX_InventoryUnits_CreatedBy` (`CreatedBy`),
+  KEY `IX_InventoryUnits_UpdatedBy` (`UpdatedBy`),
+  CONSTRAINT `FK_InventoryUnits_Inventories_InventoryId` FOREIGN KEY (`InventoryId`) REFERENCES `inventories` (`Id`) ON DELETE CASCADE,
+  CONSTRAINT `FK_InventoryUnits_Users_CreatedBy` FOREIGN KEY (`CreatedBy`) REFERENCES `users` (`Uuid`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `FK_InventoryUnits_Users_UpdatedBy` FOREIGN KEY (`UpdatedBy`) REFERENCES `users` (`Uuid`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=95 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 
-ALTER TABLE `pos-system`.`users` 
-CHANGE COLUMN `ProfileImage` `ProfileImage` MEDIUMBLOB NULL DEFAULT NULL ;
+INSERT INTO inventories (
+    ItemUuid, 
+    StockQuantity, 
+    AllowsDecimalQuantities, 
+    UnitType, 
+    Uuid, 
+    CreatedBy, 
+    UpdatedBy, 
+    IsActive
+)
+SELECT 
+    i.Uuid,                      
+    0.000,                       
+    i.AllowsDecimalQuantities,   -- 👈 FIX HERE
+    'Packet',                    
+    UUID(),                      
+    NULL,                        
+    NULL,                        
+    1                            
+FROM items i
+LEFT JOIN inventories inv 
+    ON i.Uuid = inv.ItemUuid
+WHERE inv.ItemUuid IS NULL;
+
+------------------------------------
+
+-- BackupHistories
+ALTER TABLE BackupHistories DROP FOREIGN KEY FK_BackupHistories_Users_CreatedBy;
+ALTER TABLE BackupHistories DROP FOREIGN KEY FK_BackupHistories_Users_UpdatedBy;
+
+-- BackupLocations
+ALTER TABLE BackupLocations DROP FOREIGN KEY FK_BackupLocations_Users_CreatedBy;
+ALTER TABLE BackupLocations DROP FOREIGN KEY FK_BackupLocations_Users_UpdatedBy;
+
+-- Contacts
+ALTER TABLE Contacts DROP FOREIGN KEY FK_Contacts_Users_CreatedBy;
+ALTER TABLE Contacts DROP FOREIGN KEY FK_Contacts_Users_UpdatedBy;
+
+-- Customers
+ALTER TABLE Customers DROP FOREIGN KEY FK_Customers_Users_CreatedBy;
+ALTER TABLE Customers DROP FOREIGN KEY FK_Customers_Users_UpdatedBy;
+
+-- Inventories
+ALTER TABLE Inventories DROP FOREIGN KEY FK_Inventories_Users_CreatedBy;
+ALTER TABLE Inventories DROP FOREIGN KEY FK_Inventories_Users_UpdatedBy;
+
+-- InventoryUnits
+ALTER TABLE InventoryUnits DROP FOREIGN KEY FK_InventoryUnits_Users_CreatedBy;
+ALTER TABLE InventoryUnits DROP FOREIGN KEY FK_InventoryUnits_Users_UpdatedBy;
+
+-- ItemExpiries
+ALTER TABLE ItemExpiries DROP FOREIGN KEY FK_ItemExpiries_Users_CreatedBy;
+ALTER TABLE ItemExpiries DROP FOREIGN KEY FK_ItemExpiries_Users_UpdatedBy;
+
+-- ItemPrices
+ALTER TABLE ItemPrices DROP FOREIGN KEY FK_ItemPrices_Users_CreatedBy;
+ALTER TABLE ItemPrices DROP FOREIGN KEY FK_ItemPrices_Users_UpdatedBy;
+
+-- Items
+ALTER TABLE Items DROP FOREIGN KEY FK_Items_Users_CreatedBy;
+ALTER TABLE Items DROP FOREIGN KEY FK_Items_Users_UpdatedBy;
+
+-- ItemSuppliers
+ALTER TABLE ItemSuppliers DROP FOREIGN KEY FK_ItemSuppliers_Users_CreatedBy;
+ALTER TABLE ItemSuppliers DROP FOREIGN KEY FK_ItemSuppliers_Users_UpdatedBy;
+
+-- Orders
+ALTER TABLE Orders DROP FOREIGN KEY FK_Orders_Users_CreatedBy;
+ALTER TABLE Orders DROP FOREIGN KEY FK_Orders_Users_UpdatedBy;
+
+-- OrderItems
+ALTER TABLE OrderItems DROP FOREIGN KEY FK_OrderItems_Users_CreatedBy;
+ALTER TABLE OrderItems DROP FOREIGN KEY FK_OrderItems_Users_UpdatedBy;
+
+-- RolePermissions
+ALTER TABLE RolePermissions DROP FOREIGN KEY FK_RolePermissions_Users_CreatedBy;
+ALTER TABLE RolePermissions DROP FOREIGN KEY FK_RolePermissions_Users_UpdatedBy;
+
+-- Roles
+ALTER TABLE Roles DROP FOREIGN KEY FK_Roles_Users_CreatedBy;
+ALTER TABLE Roles DROP FOREIGN KEY FK_Roles_Users_UpdatedBy;
+
+-- Settings
+ALTER TABLE Settings DROP FOREIGN KEY FK_Settings_Users_CreatedBy;
+ALTER TABLE Settings DROP FOREIGN KEY FK_Settings_Users_UpdatedBy;
+
+-- Shops
+ALTER TABLE Shops DROP FOREIGN KEY FK_Shops_Users_CreatedBy;
+ALTER TABLE Shops DROP FOREIGN KEY FK_Shops_Users_UpdatedBy;
+
+-- Suppliers
+ALTER TABLE Suppliers DROP FOREIGN KEY FK_Suppliers_Users_CreatedBy;
+ALTER TABLE Suppliers DROP FOREIGN KEY FK_Suppliers_Users_UpdatedBy;
+
+-- Users self reference
+ALTER TABLE Users DROP FOREIGN KEY FK_Users_Users_CreatedBy;
+ALTER TABLE Users DROP FOREIGN KEY FK_Users_Users_UpdatedBy;
+
+-- BackupHistories
+ALTER TABLE BackupHistories
+ADD CONSTRAINT FK_BackupHistories_Users_CreatedBy
+FOREIGN KEY (CreatedBy) REFERENCES Users(Uuid)
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE BackupHistories
+ADD CONSTRAINT FK_BackupHistories_Users_UpdatedBy
+FOREIGN KEY (UpdatedBy) REFERENCES Users(Uuid)
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- BackupLocations
+ALTER TABLE BackupLocations
+ADD CONSTRAINT FK_BackupLocations_Users_CreatedBy
+FOREIGN KEY (CreatedBy) REFERENCES Users(Uuid)
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE BackupLocations
+ADD CONSTRAINT FK_BackupLocations_Users_UpdatedBy
+FOREIGN KEY (UpdatedBy) REFERENCES Users(Uuid)
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- Contacts
+ALTER TABLE Contacts
+ADD CONSTRAINT FK_Contacts_Users_CreatedBy
+FOREIGN KEY (CreatedBy) REFERENCES Users(Uuid)
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE Contacts
+ADD CONSTRAINT FK_Contacts_Users_UpdatedBy
+FOREIGN KEY (UpdatedBy) REFERENCES Users(Uuid)
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- Customers
+ALTER TABLE Customers
+ADD CONSTRAINT FK_Customers_Users_CreatedBy
+FOREIGN KEY (CreatedBy) REFERENCES Users(Uuid)
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE Customers
+ADD CONSTRAINT FK_Customers_Users_UpdatedBy
+FOREIGN KEY (UpdatedBy) REFERENCES Users(Uuid)
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- Inventories
+ALTER TABLE Inventories
+ADD CONSTRAINT FK_Inventories_Users_CreatedBy
+FOREIGN KEY (CreatedBy) REFERENCES Users(Uuid)
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE Inventories
+ADD CONSTRAINT FK_Inventories_Users_UpdatedBy
+FOREIGN KEY (UpdatedBy) REFERENCES Users(Uuid)
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- InventoryUnits
+ALTER TABLE InventoryUnits
+ADD CONSTRAINT FK_InventoryUnits_Users_CreatedBy
+FOREIGN KEY (CreatedBy) REFERENCES Users(Uuid)
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE InventoryUnits
+ADD CONSTRAINT FK_InventoryUnits_Users_UpdatedBy
+FOREIGN KEY (UpdatedBy) REFERENCES Users(Uuid)
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- ItemExpiries
+ALTER TABLE ItemExpiries
+ADD CONSTRAINT FK_ItemExpiries_Users_CreatedBy
+FOREIGN KEY (CreatedBy) REFERENCES Users(Uuid)
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE ItemExpiries
+ADD CONSTRAINT FK_ItemExpiries_Users_UpdatedBy
+FOREIGN KEY (UpdatedBy) REFERENCES Users(Uuid)
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- ItemPrices
+ALTER TABLE ItemPrices
+ADD CONSTRAINT FK_ItemPrices_Users_CreatedBy
+FOREIGN KEY (CreatedBy) REFERENCES Users(Uuid)
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE ItemPrices
+ADD CONSTRAINT FK_ItemPrices_Users_UpdatedBy
+FOREIGN KEY (UpdatedBy) REFERENCES Users(Uuid)
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- Items
+ALTER TABLE Items
+ADD CONSTRAINT FK_Items_Users_CreatedBy
+FOREIGN KEY (CreatedBy) REFERENCES Users(Uuid)
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE Items
+ADD CONSTRAINT FK_Items_Users_UpdatedBy
+FOREIGN KEY (UpdatedBy) REFERENCES Users(Uuid)
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- ItemSuppliers
+ALTER TABLE ItemSuppliers
+ADD CONSTRAINT FK_ItemSuppliers_Users_CreatedBy
+FOREIGN KEY (CreatedBy) REFERENCES Users(Uuid)
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE ItemSuppliers
+ADD CONSTRAINT FK_ItemSuppliers_Users_UpdatedBy
+FOREIGN KEY (UpdatedBy) REFERENCES Users(Uuid)
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- Orders
+ALTER TABLE Orders
+ADD CONSTRAINT FK_Orders_Users_CreatedBy
+FOREIGN KEY (CreatedBy) REFERENCES Users(Uuid)
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE Orders
+ADD CONSTRAINT FK_Orders_Users_UpdatedBy
+FOREIGN KEY (UpdatedBy) REFERENCES Users(Uuid)
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- OrderItems
+ALTER TABLE OrderItems
+ADD CONSTRAINT FK_OrderItems_Users_CreatedBy
+FOREIGN KEY (CreatedBy) REFERENCES Users(Uuid)
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE OrderItems
+ADD CONSTRAINT FK_OrderItems_Users_UpdatedBy
+FOREIGN KEY (UpdatedBy) REFERENCES Users(Uuid)
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- Users (self reference)
+ALTER TABLE Users
+ADD CONSTRAINT FK_Users_Users_CreatedBy
+FOREIGN KEY (CreatedBy) REFERENCES Users(Uuid)
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE Users
+ADD CONSTRAINT FK_Users_Users_UpdatedBy
+FOREIGN KEY (UpdatedBy) REFERENCES Users(Uuid)
+ON DELETE SET NULL ON UPDATE CASCADE;
 
 
-/*
--- appilied
+-- IF needed use this 
+
+SET SQL_SAFE_UPDATES = 0;
+UPDATE `pos-system`.`(table name)`
+SET CreatedBy = NULL,
+    UpdatedBy = NULL;
+SET SQL_SAFE_UPDATES = 1;
+
+--------------------------
+
+-- CREATE TABLE `shops` (
+--   `Id` int NOT NULL AUTO_INCREMENT,
+--   `Name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+--   `Address` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+--   `PhoneNumber` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+--   `Email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+--   `Logo` mediumblob,
+--   `Uuid` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+--   `CreatedAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+--   `UpdatedAt` datetime(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+--   `CreatedBy` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+--   `UpdatedBy` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+--   `IsActive` tinyint(1) NOT NULL DEFAULT '1',
+--   PRIMARY KEY (`Id`),
+--   UNIQUE KEY `AK_Shops_Uuid` (`Uuid`),
+--   UNIQUE KEY `IX_Shops_Name` (`Name`)
+-- ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+
+-- -- chnage user table profileimage type as LONGTEXT to MEDIUMBLOB
+
+-- ALTER TABLE `pos-system`.`users` 
+-- CHANGE COLUMN `ProfileImage` `ProfileImage` MEDIUMBLOB NULL DEFAULT NULL ;
 
 --------------
 ALTER TABLE `pos-system`.`settings` 

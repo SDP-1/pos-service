@@ -120,12 +120,15 @@ namespace pos_service.Services
                     if (item == null)
                         throw new ArgumentException($"Item with UUID {itemDto.ItemUuid} not found");
 
-                    if (!item.AllowsDecimalQuantities && itemDto.Quantity % 1 != 0)
+                    var inventory = item.Inventory
+                        ?? throw new InvalidOperationException($"Inventory not configured for item {item.Uuid}");
+
+                    if (!inventory.AllowsDecimalQuantities && itemDto.Quantity % 1 != 0)
                         throw new ArgumentException($"Item {item.PrintName} does not allow decimal quantities");
 
                     // Stock validation only for non-return items
-                    if (!itemDto.IsReturnItem && !allowZeroStock && item.StockQuantity < itemDto.Quantity)
-                        throw new ArgumentException($"Insufficient stock for item {item.PrintName}. Available: {item.StockQuantity}, Requested: {itemDto.Quantity}");
+                    if (!itemDto.IsReturnItem && !allowZeroStock && inventory.StockQuantity < itemDto.Quantity)
+                        throw new ArgumentException($"Insufficient stock for item {item.PrintName}. Available: {inventory.StockQuantity}, Requested: {itemDto.Quantity}");
 
                     // Validate ReturnedOrderItemUuid for return items
                     if (itemDto.IsReturnItem && string.IsNullOrWhiteSpace(itemDto.ReturnedOrderItemUuid))
@@ -143,7 +146,7 @@ namespace pos_service.Services
                     {
                         Uuid                    = Guid.NewGuid().ToString(),
                         OriginalItemUuid        = item.Uuid,
-                        AllowsDecimalQuantities = item.AllowsDecimalQuantities,
+                        AllowsDecimalQuantities = inventory.AllowsDecimalQuantities,
                         PrintName               = itemDto.PrintName,
                         Quantity                = itemDto.Quantity,
                         PriceAtSale             = salePrice,
@@ -236,26 +239,28 @@ namespace pos_service.Services
                 foreach (var (item, quantity) in itemsToUpdate)
                 {
                     bool isReturn = itemReturnFlags[item];
+                    var inventory = item.Inventory
+                        ?? throw new InvalidOperationException($"Inventory not configured for item {item.Uuid}");
 
                     if (isReturn)
                     {
                         // For return items, add the quantity back to stock
-                        item.StockQuantity += quantity;
+                        inventory.StockQuantity += quantity;
                     }
                     else
                     {
                         // For regular sales, deduct from stock
                         if (allowZeroStock)
                         {
-                            var deduct = Math.Min(item.StockQuantity, quantity);
-                            item.StockQuantity -= deduct;
+                            var deduct = Math.Min(inventory.StockQuantity, quantity);
+                            inventory.StockQuantity -= deduct;
                         }
                         else
                         {
-                            item.StockQuantity -= quantity;
+                            inventory.StockQuantity -= quantity;
                         }
                     }
-                    _context.Items.Update(item);
+                    _context.Inventories.Update(inventory);
                 }
 
                 // Update customer loyalty points based on the request DTO (earn/deduct per spec)
@@ -380,8 +385,11 @@ namespace pos_service.Services
                     var item = await _itemRepository.GetByUuidAsync(oldItem.OriginalItemUuid);
                     if (item != null)
                     {
-                        item.StockQuantity += oldItem.Quantity;
-                        _context.Items.Update(item);
+                        var inventory = item.Inventory
+                            ?? throw new InvalidOperationException($"Inventory not configured for item {item.Uuid}");
+
+                        inventory.StockQuantity += oldItem.Quantity;
+                        _context.Inventories.Update(inventory);
                     }
                 }
 
@@ -404,9 +412,15 @@ namespace pos_service.Services
                     if (item == null)
                         throw new ArgumentException($"Item with UUID {itemDto.ItemUuid} not found");
 
+                    var inventory = item.Inventory
+                        ?? throw new InvalidOperationException($"Inventory not configured for item {item.Uuid}");
+
+                    if (!inventory.AllowsDecimalQuantities && itemDto.Quantity % 1 != 0)
+                        throw new ArgumentException($"Item {item.PrintName} does not allow decimal quantities");
+
                     // Check stock availability (respect AllowZeroStock setting)
-                    if (!allowZeroStock && item.StockQuantity < itemDto.Quantity)
-                        throw new ArgumentException($"Insufficient stock for item {item.PrintName}. Available: {item.StockQuantity}, Requested: {itemDto.Quantity}");
+                    if (!itemDto.IsReturnItem && !allowZeroStock && inventory.StockQuantity < itemDto.Quantity)
+                        throw new ArgumentException($"Insufficient stock for item {item.PrintName}. Available: {inventory.StockQuantity}, Requested: {itemDto.Quantity}");
 
                     // Add to tracking dictionary
                     itemsToUpdate[item]   = itemDto.Quantity;
@@ -421,7 +435,7 @@ namespace pos_service.Services
                     {
                         Uuid                    = Guid.NewGuid().ToString(),
                         OriginalItemUuid        = item.Uuid,
-                        AllowsDecimalQuantities = item.AllowsDecimalQuantities,
+                        AllowsDecimalQuantities = inventory.AllowsDecimalQuantities,
                         PrintName               = item.PrintName,
                         Quantity                = itemDto.Quantity,
                         PriceAtSale             = salePrice,
@@ -441,17 +455,29 @@ namespace pos_service.Services
                 // Update item quantities
                 foreach (var (item, quantity) in itemsToUpdate)
                 {
-                    if (allowZeroStock)
+                    var inventory = item.Inventory
+                        ?? throw new InvalidOperationException($"Inventory not configured for item {item.Uuid}");
+
+                    var isReturn = itemReturnFlags[item];
+
+                    if (isReturn)
                     {
-                        var deduct = Math.Min(item.StockQuantity, quantity);
-                        item.StockQuantity -= deduct;
+                        inventory.StockQuantity += quantity;
                     }
                     else
                     {
-                        item.StockQuantity -= quantity;
+                        if (allowZeroStock)
+                        {
+                            var deduct = Math.Min(inventory.StockQuantity, quantity);
+                            inventory.StockQuantity -= deduct;
+                        }
+                        else
+                        {
+                            inventory.StockQuantity -= quantity;
+                        }
                     }
 
-                    _context.Items.Update(item);
+                    _context.Inventories.Update(inventory);
                 }
 
                 // Use frontend-provided (required) order totals
@@ -549,11 +575,14 @@ namespace pos_service.Services
                         var item = await _itemRepository.GetByUuidAsync(orderItem.OriginalItemUuid);
                         if (item != null)
                         {
+                            var inventory = item.Inventory
+                                ?? throw new InvalidOperationException($"Inventory not configured for item {item.Uuid}");
+
                             // If AllowZeroStock is enabled, do not increase stock when deleting orders (since we may not have reduced it previously)
                             if (!allowZeroStock)
                             {
-                                item.StockQuantity += orderItem.Quantity;
-                                _context.Items.Update(item);
+                                inventory.StockQuantity += orderItem.Quantity;
+                                _context.Inventories.Update(inventory);
                             }
                         }
                     }
@@ -600,11 +629,14 @@ namespace pos_service.Services
                         var item = await _itemRepository.GetByUuidAsync(orderItem.OriginalItemUuid);
                         if (item != null)
                         {
+                            var inventory = item.Inventory
+                                ?? throw new InvalidOperationException($"Inventory not configured for item {item.Uuid}");
+
                             // Only restore stock when we had previously deducted it (i.e. AllowZeroStock disabled)
                             if (!allowZeroStock)
                             {
-                                item.StockQuantity += orderItem.Quantity;
-                                _context.Items.Update(item);
+                                inventory.StockQuantity += orderItem.Quantity;
+                                _context.Inventories.Update(inventory);
                             }
                         }
                     }
@@ -617,15 +649,18 @@ namespace pos_service.Services
                         var item = await _itemRepository.GetByUuidAsync(orderItem.OriginalItemUuid);
                         if (!allowZeroStock)
                         {
-                            if (item != null && item.StockQuantity < orderItem.Quantity)
-                            {
-                                throw new InvalidOperationException($"Insufficient stock for item {item.PrintName}. Available: {item.StockQuantity}, Required: {orderItem.Quantity}");
-                            }
-
                             if (item != null)
                             {
-                                item.StockQuantity -= orderItem.Quantity;
-                                _context.Items.Update(item);
+                                var inventory = item.Inventory
+                                    ?? throw new InvalidOperationException($"Inventory not configured for item {item.Uuid}");
+
+                                if (inventory.StockQuantity < orderItem.Quantity)
+                                {
+                                    throw new InvalidOperationException($"Insufficient stock for item {item.PrintName}. Available: {inventory.StockQuantity}, Required: {orderItem.Quantity}");
+                                }
+
+                                inventory.StockQuantity -= orderItem.Quantity;
+                                _context.Inventories.Update(inventory);
                             }
                         }
                         else
@@ -633,9 +668,12 @@ namespace pos_service.Services
                             // allowZeroStock: only deduct available quantity, never go below zero
                             if (item != null)
                             {
-                                var deduct = Math.Min(item.StockQuantity, orderItem.Quantity);
-                                item.StockQuantity -= deduct;
-                                _context.Items.Update(item);
+                                var inventory = item.Inventory
+                                    ?? throw new InvalidOperationException($"Inventory not configured for item {item.Uuid}");
+
+                                var deduct = Math.Min(inventory.StockQuantity, orderItem.Quantity);
+                                inventory.StockQuantity -= deduct;
+                                _context.Inventories.Update(inventory);
                             }
                         }
                     }

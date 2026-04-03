@@ -420,7 +420,7 @@ namespace pos_service.Data
             modelBuilder.Entity<ReturnedItemsSummary>(eb =>
             {
                 eb.HasNoKey();
-                eb.ToView("View_ReturnedItemsSummary");
+                eb.ToView("view_returned_items_summary");
             });
         }
 

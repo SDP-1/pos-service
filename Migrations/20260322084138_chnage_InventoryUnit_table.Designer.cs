@@ -986,7 +986,7 @@ namespace pos_service.Migrations
 
                     b.ToTable((string)null);
 
-                    b.ToView("View_ReturnedItemsSummary", (string)null);
+                    b.ToView("view_returned_items_summary", (string)null);
                 });
 
             modelBuilder.Entity("pos_service.Models.Role", b =>

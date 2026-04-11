@@ -21,7 +21,6 @@
   <ItemGroup>
     <None Remove="Bills\item_barcode.frx" />
     <None Remove="Bills\posbill.frx" />
-    <None Remove="SQL_Changes.sql" />
     <Content Remove="SQL_Changes.sql" />
   </ItemGroup>
 

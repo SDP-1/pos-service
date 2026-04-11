@@ -236,9 +236,9 @@ namespace pos_service.Controllers
         [Permission(PermissionType.ITEM_DELETE)]
         public async Task<IActionResult> DeleteItem(int id, int subId)
         {
-            var success = await _itemService.DeleteItemAsync(id, subId, _currentUser);
-            if (!success)
-                return NotFound();
+            var error = await _itemService.DeleteItemAsync(id, subId, _currentUser);
+            if (error != null)
+                return NotFound(error);
 
             return Ok();
         }

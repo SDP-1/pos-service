@@ -2,6 +2,11 @@
 using pos_service.Data;
 using pos_service.Models;
 using System.Collections.Immutable;
+using pos_service.Models.DTO.Items;
+using pos_service.Models.DTO.Inventory;
+using pos_service.Models.DTO.Suppliers;
+using pos_service.Models.DTO.Contacts;
+using System.Linq;
 
 namespace pos_service.Repositories
 {
@@ -14,37 +19,25 @@ namespace pos_service.Repositories
             _context = context;
         }
 
-        public async Task<Item?> GetByIdAsync(int id, int subId)
+        public async Task<ItemResDto?> GetByIdAsync(int id, int subId)
         {
-            return await _context.Items
-                .Include(i => i.Price)
-                .Include(i => i.ExpDates)
-                .Include(i => i.ItemSuppliers)
-                    .ThenInclude(isu => isu.Supplier)
-                .Include(i => i.Inventory)
-                    .ThenInclude(u => u.Units)
-                .FirstOrDefaultAsync(i => i.Id == id && i.SubId == subId);
+            var query = _context.Items
+                        .Where(i => i.Id == id && i.SubId == subId);
+
+            var result = await makeItemResponceDto(_context, query);
+
+            return result.FirstOrDefault();
         }
 
-        public async Task<IEnumerable<Item>> GetAllAsync()
+        public async Task<IEnumerable<ItemResDto>> GetAllAsync()
         {
-            //return await _context.Items.ToListAsync();
-            return await _context.Items
-                .Include(i => i.Price)
-                .Include(i => i.ExpDates)
-                .Include(i => i.ItemSuppliers)
-                    .ThenInclude(isu => isu.Supplier)
-                .Include(i => i.Inventory)
-                    .ThenInclude(u => u.Units)
-                .ToListAsync();
+            var query = _context.Items.AsQueryable();
+
+            return await makeItemResponceDto(_context, query);
         }
 
         public async Task<Item> AddAsync(Item item)
         {
-            if (string.IsNullOrWhiteSpace(item.Uuid))
-            {
-                item.Uuid = Guid.NewGuid().ToString();
-            }
             _context.Items.Add(item);
             await _context.SaveChangesAsync();
             return item;
@@ -69,10 +62,18 @@ namespace pos_service.Repositories
             return item;
         }
 
-        public async Task DeleteAsync(Item item)
+        public async Task<string?> DeleteAsync(int id, int subId)
         {
+            var item = await _context.Items
+                .FirstOrDefaultAsync(i => i.Id == id && i.SubId == subId);
+
+            if (item == null)
+                return $"Item not found.";
+
             _context.Items.Remove(item);
             await _context.SaveChangesAsync();
+
+            return null;
         }
 
         public async Task<bool> ItemExistsAsync(int id, int subId)
@@ -93,26 +94,24 @@ namespace pos_service.Repositories
                 .FirstOrDefaultAsync(i => i.Id == id && i.SubId == subId);
         }
 
-        public async Task<IEnumerable<Item>> GetByMainIdAsync(int id)
+        public async Task<IEnumerable<ItemResDto>> GetByMainIdAsync(int id)
         {
-            return await _context.Items
-                .Include(i => i.Price)
-                .Include(i => i.ExpDates)
-                .Include(i => i.ItemSuppliers)
-                    .ThenInclude(isu => isu.Supplier)
+            // Avoid eager loading (Include). Build a filtered IQueryable and project in makeItemResponceDto.
+            var query = _context.Items
                 .Where(i => i.Id == id)
-                .ToListAsync();
+                .AsQueryable();
+
+            return await makeItemResponceDto(_context, query);
         }
 
-        public async Task<IEnumerable<Item>> GetByBarCodeAsync(string barCode)
+        public async Task<IEnumerable<ItemResDto>> GetByBarCodeAsync(string barCode)
         {
-            return await _context.Items
-                .Include(i => i.Price)
-                .Include(i => i.ExpDates)
-                .Include(i => i.ItemSuppliers)
-                    .ThenInclude(isu => isu.Supplier)
+            // Avoid eager loading (Include). Build a filtered IQueryable and project in makeItemResponceDto.
+            var query = _context.Items
                 .Where(i => i.BarCode == barCode)
-                .ToListAsync();
+                .AsQueryable();
+
+            return await makeItemResponceDto(_context, query);
         }
 
         public async Task<Item?> GetByUuidAsync(string uuid)
@@ -174,6 +173,77 @@ namespace pos_service.Repositories
             }
 
             return await query.ToListAsync();
+        }
+
+        /// <summary>
+        /// Transforms an <see cref="IQueryable{Item}"/> into a list of <see cref="ItemResDto"/>, 
+        /// performing explicit left joins to retrieve creator and updater names.
+        /// </summary>
+        /// <param name="db">The database context used to join against the Users table.</param>
+        /// <param name="query">The filtered or unfiltered base query of Items to be projected.</param>
+        /// <returns>
+        /// A task that represents the asynchronous operation. 
+        /// The task result contains a list of populated <see cref="ItemResDto"/> objects.
+        /// </returns>
+        private async Task<List<ItemResDto>> makeItemResponceDto(AppDbContext db, IQueryable<Item> query)
+        {
+            // Use explicit left joins to Users to obtain CreatedBy/UpdatedBy user names.
+            var q = from i in query
+                    join cu in db.Users on i.CreatedBy equals cu.Uuid into createdJoin
+                    from createdUser in createdJoin.DefaultIfEmpty()
+                    join uu in db.Users on i.UpdatedBy equals uu.Uuid into updatedJoin
+                    from updatedUser in updatedJoin.DefaultIfEmpty()
+                    select new ItemResDto
+                    {
+                        Id                      = i.Id,
+                        SubId                   = i.SubId,
+                        Name                    = i.Name,
+                        PrintName               = i.PrintName,
+                        BarCode                 = i.BarCode,
+
+                        StockQuantity           = i.Inventory != null ? i.Inventory.StockQuantity : 0m,
+                        AllowsDecimalQuantities = i.Inventory != null ? i.Inventory.AllowsDecimalQuantities : false,
+                        UnitType                = i.Inventory != null ? i.Inventory.UnitType : default,
+                        Units                   = i.Inventory != null ? i.Inventory.Units.Select(u => new InventoryUnitDto
+                        {
+                            UnitType            = u.UnitType,
+                            ParentUnitType      = u.ParentUnitType,
+                            QuantityPerParent   = u.QuantityPerParent,
+                            QuantityInBaseUnits = u.QuantityInBaseUnits
+                        }).ToList() : new List<InventoryUnitDto>(),
+
+                        Price = i.Price != null ? new ItemPriceDto
+                        {
+                            BuyingPrice            = i.Price.BuyingPrice,
+                            MarkedPrice            = i.Price.MarkedPrice,
+                            RetailPrice            = i.Price.RetailPrice,
+                            WholesalePrice         = i.Price.WholesalePrice,
+                            RetailDiscountRatio    = i.Price.RetailDiscountRatio,
+                            WholesaleDiscountRatio = i.Price.WholesaleDiscountRatio
+                        } : new ItemPriceDto(),
+
+                        ExpDates = i.ExpDates.Select(ed => new ItemExpiryDto
+                        {
+                            ExpDate          = ed.ExpDate,
+                            NotifyBeforeDays = ed.NotifyBeforeDays
+                        }).ToList(),
+
+                        Suppliers = i.ItemSuppliers.Select(isu => new SupplierResDto
+                        {
+                            Id   = isu.Supplier.Id,
+                            Name = isu.Supplier.Name,
+                            Uuid = isu.Supplier.Uuid,
+                        }).ToList(),
+
+                        Uuid      = i.Uuid,
+                        CreatedAt = i.CreatedAt,
+                        UpdatedAt = i.UpdatedAt,
+                        CreatedBy = createdUser.FullName,
+                        UpdatedBy = updatedUser.FullName,
+                        IsActive  = i.IsActive,
+                    };
+
+            return await q.AsSplitQuery().ToListAsync();
         }
     }
 }

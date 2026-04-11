@@ -55,6 +55,9 @@ namespace pos_service.Profiles
                 .ForMember(dest => dest.AllowsDecimalQuantities, opt => opt.MapFrom(src => src.Inventory != null && src.Inventory.AllowsDecimalQuantities))
                 .ForMember(dest => dest.UnitType, opt => opt.MapFrom(src => src.Inventory != null ? src.Inventory.UnitType : Models.Enums.UnitType.Each));
 
+            // Map from ItemResDto -> ItemMiniResDto so services can map projected DTOs
+            CreateMap<ItemResDto, ItemMiniResDto>();
+
             // Map ItemReqDto -> Item but do not overwrite primary key properties when mapping
             // into an existing entity. Keys are assigned by service logic when creating items.
             CreateMap<ItemReqDto, Item>()

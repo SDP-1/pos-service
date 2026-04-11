@@ -2,7 +2,7 @@ using System;
 
 namespace pos_service.Models
 {
-    // Keyless entity mapped to DB view 'View_ReturnedItemsSummary'
+    // Keyless entity mapped to DB view 'view_returned_items_summary'
     public class ReturnedItemsSummary
     {
         public int OrderId { get; set; }

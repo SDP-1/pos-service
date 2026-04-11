@@ -1,4 +1,5 @@
 ﻿using pos_service.Models;
+using pos_service.Models.DTO.Items;
 
 namespace pos_service.Repositories
 {
@@ -9,14 +10,14 @@ namespace pos_service.Repositories
         /// </summary>
         /// <param name="id">The main identifier of the item.</param>
         /// <param name="subId">The sub-identifier of the item.</param>
-        /// <returns>The item entity if found, otherwise null.</returns>
-        Task<Item?> GetByIdAsync(int id, int subId);
+        /// <returns>The item response DTO if found, otherwise null.</returns>
+        Task<ItemResDto?> GetByIdAsync(int id, int subId);
 
         /// <summary>
-        /// Retrieves all items from the data store.
+        /// Retrieves all items from the data store projected as response DTOs.
         /// </summary>
-        /// <returns>A list of all item entities.</returns>
-        Task<IEnumerable<Item>> GetAllAsync();
+        /// <returns>A list of item response DTOs.</returns>
+        Task<IEnumerable<ItemResDto>> GetAllAsync();
 
         /// <summary>
         /// Adds a new item to the data store.
@@ -33,10 +34,12 @@ namespace pos_service.Repositories
         Task<Item> UpdateAsync(Item item);
 
         /// <summary>
-        /// Deletes an item from the data store.
+        /// Deletes an item from the data store by its composite identifier.
+        /// If the item is not found, returns an error message string; otherwise returns null.
         /// </summary>
-        /// <param name="item">The item entity to delete.</param>
-        Task DeleteAsync(Item item);
+        /// <param name="id">The main identifier of the item to delete.</param>
+        /// <param name="subId">The sub-identifier of the item to delete.</param>
+        Task<string?> DeleteAsync(int id, int subId);
 
         /// <summary>
         /// Checks if an item with the specified composite identifier exists.
@@ -55,18 +58,18 @@ namespace pos_service.Repositories
         Task<Item?> GetByIdWithSuppliersAsync(int id, int subId);
 
         /// <summary>
-        /// Gets all item variants under a single main ID.
+        /// Gets all item variants under a single main ID projected as response DTOs.
         /// </summary>
         /// <param name="id">The main identifier to search for.</param>
-        /// <returns>A list of item entities sharing the same main ID.</returns>
-        Task<IEnumerable<Item>> GetByMainIdAsync(int id);
+        /// <returns>A list of item response DTOs sharing the same main ID.</returns>
+        Task<IEnumerable<ItemResDto>> GetByMainIdAsync(int id);
 
         /// <summary>
-        /// Gets items by their barcode.
+        /// Gets items by their barcode projected as response DTOs.
         /// </summary>
         /// <param name="barCode">The barcode to search for.</param>
-        /// <returns>A list of item entities matching the barcode.</returns>
-        Task<IEnumerable<Item>> GetByBarCodeAsync(string barCode);
+        /// <returns>A list of item response DTOs matching the barcode.</returns>
+        Task<IEnumerable<ItemResDto>> GetByBarCodeAsync(string barCode);
 
         /// <summary>
         /// Gets a single item by its unique Guid (Uuid).

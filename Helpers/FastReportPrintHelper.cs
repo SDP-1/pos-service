@@ -156,23 +156,41 @@ namespace pos_service.Helpers
                 
                 printDocument.PrinterSettings.PrinterName = printerName;
                 printDocument.PrinterSettings.Copies = 1;
+                printDocument.OriginAtMargins = false;
                 
                 // Set all margins to 0 - template already has its own margins
                 printDocument.DefaultPageSettings.Margins = new Margins(0, 0, 0, 0);
+
+                var currentY = 0;
 
                 printDocument.PrintPage += (sender, e) =>
                 {
                     if (e.Graphics != null)
                     {
-                        // Draw at position (0,0) using full page bounds - no additional margins
-                        var pageWidth = e.PageBounds.Width;
-                        
-                        // Scale image to fit printer width while maintaining aspect ratio
-                        var scale = (float)pageWidth / image.Width;
-                        var newHeight = (int)(image.Height * scale);
-                        
-                        // Draw from (0,0) - template margins are already included in the image
-                        e.Graphics.DrawImage(image, 0, 0, pageWidth, newHeight);
+                        // Draw in slices to support long thermal receipts.
+                        var printableWidth = e.PageBounds.Width;
+                        var printableHeight = e.PageBounds.Height;
+
+                        var scale = (float)printableWidth / image.Width;
+                        var sourceSliceHeight = (int)Math.Floor(printableHeight / scale);
+
+                        if (sourceSliceHeight <= 0)
+                        {
+                            e.HasMorePages = false;
+                            return;
+                        }
+
+                        var remainingSourceHeight = image.Height - currentY;
+                        var drawSourceHeight = Math.Min(sourceSliceHeight, remainingSourceHeight);
+
+                        var srcRect = new Rectangle(0, currentY, image.Width, drawSourceHeight);
+                        var destHeight = (int)Math.Ceiling(drawSourceHeight * scale);
+                        var destRect = new Rectangle(0, 0, printableWidth, destHeight);
+
+                        e.Graphics.DrawImage(image, destRect, srcRect, GraphicsUnit.Pixel);
+
+                        currentY += drawSourceHeight;
+                        e.HasMorePages = currentY < image.Height;
                     }
                 };
 

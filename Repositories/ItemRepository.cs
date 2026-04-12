@@ -152,13 +152,9 @@ namespace pos_service.Repositories
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<Item>> GetBySearchAsync(string searchTerm)
+        public async Task<IEnumerable<ItemResDto>> GetBySearchAsync(string searchTerm)
         {
             var query = _context.Items
-                .Include(i => i.Price)
-                .Include(i => i.ExpDates)
-                .Include(i => i.ItemSuppliers)
-                    .ThenInclude(isu => isu.Supplier)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
@@ -172,7 +168,7 @@ namespace pos_service.Repositories
                 );
             }
 
-            return await query.ToListAsync();
+            return await makeItemResponceDto(_context, query);
         }
 
         /// <summary>
@@ -189,10 +185,6 @@ namespace pos_service.Repositories
         {
             // Use explicit left joins to Users to obtain CreatedBy/UpdatedBy user names.
             var q = from i in query
-                    join cu in db.Users on i.CreatedBy equals cu.Uuid into createdJoin
-                    from createdUser in createdJoin.DefaultIfEmpty()
-                    join uu in db.Users on i.UpdatedBy equals uu.Uuid into updatedJoin
-                    from updatedUser in updatedJoin.DefaultIfEmpty()
                     select new ItemResDto
                     {
                         Id                      = i.Id,
@@ -201,45 +193,79 @@ namespace pos_service.Repositories
                         PrintName               = i.PrintName,
                         BarCode                 = i.BarCode,
 
-                        StockQuantity           = i.Inventory != null ? i.Inventory.StockQuantity : 0m,
-                        AllowsDecimalQuantities = i.Inventory != null ? i.Inventory.AllowsDecimalQuantities : false,
-                        UnitType                = i.Inventory != null ? i.Inventory.UnitType : default,
-                        Units                   = i.Inventory != null ? i.Inventory.Units.Select(u => new InventoryUnitDto
+                        Inventory = i.Inventory != null ? new InventoryResDto
                         {
-                            UnitType            = u.UnitType,
-                            ParentUnitType      = u.ParentUnitType,
-                            QuantityPerParent   = u.QuantityPerParent,
-                            QuantityInBaseUnits = u.QuantityInBaseUnits
-                        }).ToList() : new List<InventoryUnitDto>(),
+                            ItemUuid                = i.Inventory.ItemUuid,
+                            StockQuantity           = i.Inventory.StockQuantity,
+                            AllowsDecimalQuantities = i.Inventory.AllowsDecimalQuantities,
+                            UnitType                = i.Inventory.UnitType,
+                            Units                   = i.Inventory.Units.Select(u => new InventoryUnitResDto
+                            {
+                                UnitType            = u.UnitType,
+                                ParentUnitType      = u.ParentUnitType,
+                                QuantityPerParent   = u.QuantityPerParent,
+                                QuantityInBaseUnits = u.QuantityInBaseUnits,
+                                Uuid                = u.Uuid,
+                                CreatedAt           = u.CreatedAt,
+                                UpdatedAt           = u.UpdatedAt,
+                                CreatedBy           = db.Users.Where(user => user.Uuid == u.CreatedBy).Select(user => user.FullName).FirstOrDefault() ?? u.CreatedBy,
+                                UpdatedBy           = db.Users.Where(user => user.Uuid == u.UpdatedBy).Select(user => user.FullName).FirstOrDefault() ?? u.UpdatedBy,
+                                IsActive            = u.IsActive
+                            }).ToList(),
+                            Uuid                    = i.Inventory.Uuid,
+                            CreatedAt               = i.Inventory.CreatedAt,
+                            UpdatedAt               = i.Inventory.UpdatedAt,
+                            CreatedBy               = db.Users.Where(user => user.Uuid == i.Inventory.CreatedBy).Select(user => user.FullName).FirstOrDefault() ?? i.Inventory.CreatedBy,
+                            UpdatedBy               = db.Users.Where(user => user.Uuid == i.Inventory.UpdatedBy).Select(user => user.FullName).FirstOrDefault() ?? i.Inventory.UpdatedBy,
+                            IsActive                = i.Inventory.IsActive
+                        } : null,
 
-                        Price = i.Price != null ? new ItemPriceDto
+                        Price = i.Price != null ? new ItemPriceResDto
                         {
                             BuyingPrice            = i.Price.BuyingPrice,
                             MarkedPrice            = i.Price.MarkedPrice,
                             RetailPrice            = i.Price.RetailPrice,
                             WholesalePrice         = i.Price.WholesalePrice,
                             RetailDiscountRatio    = i.Price.RetailDiscountRatio,
-                            WholesaleDiscountRatio = i.Price.WholesaleDiscountRatio
-                        } : new ItemPriceDto(),
+                            WholesaleDiscountRatio = i.Price.WholesaleDiscountRatio,
+                            Uuid                   = i.Price.Uuid,
+                            CreatedAt              = i.Price.CreatedAt,
+                            UpdatedAt              = i.Price.UpdatedAt,
+                            CreatedBy              = db.Users.Where(user => user.Uuid == i.Price.CreatedBy).Select(user => user.FullName).FirstOrDefault() ?? i.Price.CreatedBy,
+                            UpdatedBy              = db.Users.Where(user => user.Uuid == i.Price.UpdatedBy).Select(user => user.FullName).FirstOrDefault() ?? i.Price.UpdatedBy,
+                            IsActive               = i.Price.IsActive
+                        } : new ItemPriceResDto(),
 
-                        ExpDates = i.ExpDates.Select(ed => new ItemExpiryDto
+                        ExpDates = i.ExpDates.Select(ed => new ItemExpiryResDto
                         {
                             ExpDate          = ed.ExpDate,
-                            NotifyBeforeDays = ed.NotifyBeforeDays
+                            NotifyBeforeDays = ed.NotifyBeforeDays,
+                            Uuid             = ed.Uuid,
+                            CreatedAt        = ed.CreatedAt,
+                            UpdatedAt        = ed.UpdatedAt,
+                            CreatedBy        = db.Users.Where(user => user.Uuid == ed.CreatedBy).Select(user => user.FullName).FirstOrDefault() ?? ed.CreatedBy,
+                            UpdatedBy        = db.Users.Where(user => user.Uuid == ed.UpdatedBy).Select(user => user.FullName).FirstOrDefault() ?? ed.UpdatedBy,
+                            IsActive         = ed.IsActive
                         }).ToList(),
 
                         Suppliers = i.ItemSuppliers.Select(isu => new SupplierResDto
                         {
-                            Id   = isu.Supplier.Id,
-                            Name = isu.Supplier.Name,
-                            Uuid = isu.Supplier.Uuid,
+                            Id        = isu.Supplier.Id,
+                            Name      = isu.Supplier.Name,
+                            Uuid      = isu.Supplier.Uuid,
+                            Address   = isu.Supplier.Address,
+                            CreatedAt = isu.Supplier.CreatedAt,
+                            UpdatedAt = isu.Supplier.UpdatedAt,
+                            CreatedBy = db.Users.Where(user => user.Uuid == isu.Supplier.CreatedBy).Select(user => user.FullName).FirstOrDefault() ?? isu.Supplier.CreatedBy,
+                            UpdatedBy = db.Users.Where(user => user.Uuid == isu.Supplier.UpdatedBy).Select(user => user.FullName).FirstOrDefault() ?? isu.Supplier.UpdatedBy,
+                            IsActive  = isu.Supplier.IsActive,
                         }).ToList(),
 
                         Uuid      = i.Uuid,
                         CreatedAt = i.CreatedAt,
                         UpdatedAt = i.UpdatedAt,
-                        CreatedBy = createdUser.FullName,
-                        UpdatedBy = updatedUser.FullName,
+                        CreatedBy = db.Users.Where(user => user.Uuid == i.CreatedBy).Select(user => user.FullName).FirstOrDefault() ?? i.CreatedBy,
+                        UpdatedBy = db.Users.Where(user => user.Uuid == i.UpdatedBy).Select(user => user.FullName).FirstOrDefault() ?? i.UpdatedBy,
                         IsActive  = i.IsActive,
                     };
 

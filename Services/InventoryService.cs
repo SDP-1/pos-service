@@ -302,7 +302,7 @@ namespace pos_service.Services
             return true;
         }
 
-        private bool ApplyPrice(Item item, ItemPriceDto? priceDto)
+        private bool ApplyPrice(Item item, ItemPriceReqDto? priceDto)
         {
             // null means caller did not provide price -> no change
             if (priceDto == null)

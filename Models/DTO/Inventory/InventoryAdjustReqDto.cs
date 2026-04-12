@@ -22,11 +22,11 @@ namespace pos_service.Models.DTO.Inventory
         /// Optional expiration dates to add/replace when adjusting inventory.
         /// If null -> do not modify expiries. If empty list -> clear all expiries.
         /// </summary>
-        public List<ItemExpiryDto>? Expiries { get; set; }
+        public List<ItemExpiryReqDto>? Expiries { get; set; }
 
         /// <summary>
         /// Optional price details to update for the related item when adjusting inventory.
         /// </summary>
-        public ItemPriceDto? Price { get; set; }
+        public ItemPriceReqDto? Price { get; set; }
     }
 }

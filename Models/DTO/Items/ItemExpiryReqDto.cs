@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace pos_service.Models.DTO.Items
 {
-    public class ItemExpiryDto
+    public class ItemExpiryReqDto
     {
         [Required]
         public DateTime ExpDate { get; set; }

@@ -96,7 +96,7 @@ namespace pos_service.Repositories
         /// Searches items by a term matching name, print name, barcode or uuid.
         /// If searchTerm is null or empty returns all items.
         /// </summary>
-        Task<IEnumerable<Item>> GetBySearchAsync(string searchTerm);
+        Task<IEnumerable<ItemResDto>> GetBySearchAsync(string searchTerm);
 
         /// <summary>
         /// Returns the next available main Id to use when creating a new item.

@@ -103,6 +103,18 @@ namespace pos_service.Controllers
         }
 
         /// <summary>
+        /// Searches items by matching name, print name, barcode or uuid.
+        /// </summary>
+        /// <param name="searchTerm">The search text to filter items.</param>
+        /// <returns>A list of matching items.</returns>
+        [HttpGet("search")]
+        public async Task<ActionResult<IEnumerable<ItemResDto>>> SearchItemsAsync([FromQuery] string searchTerm = "")
+        {
+            var items = await _itemService.SearchItemsAsync(searchTerm, _currentUser);
+            return Ok(items);
+        }
+
+        /// <summary>
         /// Retrieves an item by its unique UUID identifier.
         /// </summary>
         /// <param name="uuid">The UUID of the item to retrieve.</param>

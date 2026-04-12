@@ -112,7 +112,7 @@ namespace pos_service.Services
                 StockQuantity           = itemDto.StockQuantity,
                 AllowsDecimalQuantities = itemDto.AllowsDecimalQuantities,
                 UnitType                = itemDto.UnitType,
-                Units                   = (itemDto.Units ?? Enumerable.Empty<InventoryUnitDto>()).Select(u => new InventoryUnit
+                Units                   = (itemDto.Units ?? Enumerable.Empty<InventoryUnitReqDto>()).Select(u => new InventoryUnit
                 {
                     UnitType            = u.UnitType,
                     ParentUnitType      = u.ParentUnitType,
@@ -268,10 +268,12 @@ namespace pos_service.Services
             await _inventoryRepository.UpdateAsync(inventory);
 
             // Update DTO fields from inventory
-            itemDto.StockQuantity           = inventory.StockQuantity;
-            itemDto.AllowsDecimalQuantities = inventory.AllowsDecimalQuantities;
-            itemDto.UnitType                = inventory.UnitType;
-            itemDto.Units                   = inventory.Units.Select(u => new InventoryUnitDto
+            itemDto.Inventory ??= new InventoryResDto();
+            itemDto.Inventory.ItemUuid                = inventory.ItemUuid;
+            itemDto.Inventory.StockQuantity           = inventory.StockQuantity;
+            itemDto.Inventory.AllowsDecimalQuantities = inventory.AllowsDecimalQuantities;
+            itemDto.Inventory.UnitType                = inventory.UnitType;
+            itemDto.Inventory.Units                   = inventory.Units.Select(u => new InventoryUnitResDto
             {
                 UnitType            = u.UnitType,
                 ParentUnitType      = u.ParentUnitType,
@@ -294,7 +296,7 @@ namespace pos_service.Services
             // Creates a dictionary like: { "1001/0": 50, "1001/1": 25 }
             return items.ToDictionary(
                 item => $"{item.Id}/{item.SubId}",
-                item => item.StockQuantity
+                item => item.Inventory?.StockQuantity ?? 0m
             );
         }
 
@@ -326,7 +328,7 @@ namespace pos_service.Services
         {
             var item = await _itemRepository.GetByIdAsync(id, subId);
 
-            return item == null? null : item.StockQuantity;
+            return item == null? null : item.Inventory?.StockQuantity ?? 0m;
         }
 
         /// <summary>
@@ -346,8 +348,7 @@ namespace pos_service.Services
         /// </summary>
         public async Task<IEnumerable<ItemResDto>> SearchItemsAsync(string searchTerm, CurrentUser currentUser)
         {
-            var items = await _itemRepository.GetBySearchAsync(searchTerm);
-            return _mapper.Map<IEnumerable<ItemResDto>>(items);
+            return await _itemRepository.GetBySearchAsync(searchTerm);
         }
 
         // Consolidated expiry application. Builds the target expiries from the DTO,
@@ -357,10 +358,10 @@ namespace pos_service.Services
         /// <summary>
         /// Ensures price details are applied to the item and keys are synchronized.
         /// </summary>
-        private void ApplyPrice(Item item, ItemPriceDto? priceDto)
+        private void ApplyPrice(Item item, ItemPriceReqDto? priceDto)
         {
             // Normalize incoming DTO
-            var dto = priceDto ?? new ItemPriceDto();
+            var dto = priceDto ?? new ItemPriceReqDto();
 
             // If there's no existing price, create and map values
             if (item.Price == null)
@@ -405,7 +406,7 @@ namespace pos_service.Services
         private void ApplyExpiries(Item item, ItemReqDto itemDto)
         {
             // Build new expiries from DTO (group by date and notify days)
-            var newExpiryKeys = (itemDto.ExpDates ?? Enumerable.Empty<ItemExpiryDto>())
+            var newExpiryKeys = (itemDto.ExpDates ?? Enumerable.Empty<ItemExpiryReqDto>())
                 .GroupBy(exp => new { Date = exp.ExpDate.Date, exp.NotifyBeforeDays })
                 .Select(g => new { Date = g.Key.Date, g.Key.NotifyBeforeDays })
                 .ToHashSet();
@@ -471,7 +472,7 @@ namespace pos_service.Services
         /// touching the collection when nothing changed, following the pattern of
         /// ApplyExpiries.
         /// </summary>
-        private void ApplyInventoryUnits(Inventory inventory, ICollection<InventoryUnitDto>? unitsDto)
+        private void ApplyInventoryUnits(Inventory inventory, ICollection<InventoryUnitReqDto>? unitsDto)
         {
             if (unitsDto == null || !unitsDto.Any())
                 return;

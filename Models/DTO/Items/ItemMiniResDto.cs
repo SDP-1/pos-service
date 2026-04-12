@@ -13,8 +13,8 @@ namespace pos_service.Models.DTO.Items
         public string? BarCode { get; set; }
         public bool AllowsDecimalQuantities { get; set; }
         public UnitType UnitType { get; set; }
-        public ItemPriceDto Price { get; set; }
-        public List<ItemExpiryDto> ExpDates { get; set; } = new();
+        public ItemPriceResDto Price { get; set; }
+        public List<ItemExpiryResDto> ExpDates { get; set; } = new();
         public bool IsActive { get; set; }
     }
 }

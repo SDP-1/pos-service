@@ -9,11 +9,11 @@ namespace pos_service.Models.DTO.Inventory
         public decimal StockQuantity { get; set; }
         public bool AllowsDecimalQuantities { get; set; }
         public UnitType UnitType { get; set; }
-        public List<InventoryUnitDto> Units { get; set; } = new();
+        public List<InventoryUnitResDto> Units { get; set; } = new();
 
-        public ItemPriceDto Price { get; set; } = new();
+        public ItemPriceResDto Price { get; set; } = new();
 
-        public List<ItemExpiryDto> Expiries { get; set; } = new();
+        public List<ItemExpiryResDto> Expiries { get; set; } = new();
 
         public string Uuid { get; set; }
         public DateTime CreatedAt { get; set; }

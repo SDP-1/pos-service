@@ -162,6 +162,12 @@ namespace pos_service.Data
                 new Permission { Id = (int)PermissionType.CONTACT_UPDATE, PermissionType = PermissionType.CONTACT_UPDATE, PermissionCatagory = PermissionCatagory.CONTACT, Description = "Can update contacts" },
                 new Permission { Id = (int)PermissionType.CONTACT_DELETE, PermissionType = PermissionType.CONTACT_DELETE, PermissionCatagory = PermissionCatagory.CONTACT, Description = "Can delete contacts" },
 
+                //Customers
+                new Permission { Id = (int)PermissionType.CUSTOMER_VIEW, PermissionType = PermissionType.CUSTOMER_VIEW, PermissionCatagory = PermissionCatagory.CUSTOMER, Description = "Can view customers" },
+                new Permission { Id = (int)PermissionType.CUSTOMER_CREATE, PermissionType = PermissionType.CUSTOMER_CREATE, PermissionCatagory = PermissionCatagory.CUSTOMER, Description = "Can create customers" },
+                new Permission { Id = (int)PermissionType.CUSTOMER_UPDATE, PermissionType = PermissionType.CUSTOMER_UPDATE, PermissionCatagory = PermissionCatagory.CUSTOMER, Description = "Can update customers" },
+                new Permission { Id = (int)PermissionType.CUSTOMER_DELETE, PermissionType = PermissionType.CUSTOMER_DELETE, PermissionCatagory = PermissionCatagory.CUSTOMER, Description = "Can delete customers" },
+
                 // Permissions and roles
                 new Permission { Id = (int)PermissionType.PERMISSION_VIEW, PermissionType = PermissionType.PERMISSION_VIEW, PermissionCatagory = PermissionCatagory.PERMISSION, Description = "Can view permissions" },
                 new Permission { Id = (int)PermissionType.PERMISSION_ASSIGN, PermissionType = PermissionType.PERMISSION_ASSIGN, PermissionCatagory = PermissionCatagory.PERMISSION, Description = "Can assign permissions to roles" },

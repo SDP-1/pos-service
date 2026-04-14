@@ -4,6 +4,7 @@ using pos_service.Models.DTO.Inventory;
 using pos_service.Models.DTO.Items;
 using pos_service.Models.Enums;
 using pos_service.Repositories;
+using pos_service.Services.Common.Cache;
 
 namespace pos_service.Services
 {
@@ -12,15 +13,18 @@ namespace pos_service.Services
         private readonly IInventoryRepository _inventoryRepository;
         private readonly IItemRepository _itemRepository;
         private readonly IMapper _mapper;
+        private readonly ICacheService _cache;
 
         public InventoryService(
             IInventoryRepository inventoryRepository,
             IItemRepository itemRepository,
-            IMapper mapper)
+            IMapper mapper,
+            ICacheService cache)
         {
             _inventoryRepository = inventoryRepository;
             _itemRepository = itemRepository;
             _mapper = mapper;
+            _cache = cache;
         }
 
         public async Task<IEnumerable<InventoryResDto>> GetAllAsync(CurrentUser currentUser)
@@ -81,6 +85,8 @@ namespace pos_service.Services
                 await _inventoryRepository.UpdateAsync(inventory);
             }
 
+            InvalidateCache();
+
             // Expiries are managed via inventory adjustments. Upsert no longer modifies Item.ExpDates.
 
             return _mapper.Map<InventoryResDto>(inventory);
@@ -126,6 +132,8 @@ namespace pos_service.Services
                     await _itemRepository.UpdateAsync(item);
                 }
             }
+
+            InvalidateCache();
 
             return _mapper.Map<InventoryResDto>(inventory);
         }
@@ -343,6 +351,11 @@ namespace pos_service.Services
             item.Price.ItemUuid = item.Uuid;
             item.Price.Uuid = Guid.NewGuid().ToString();
             return true;
+        }
+
+        private void InvalidateCache()
+        {
+            _cache.RemovePrimary(ServiceCacheKey.Items);
         }
     }
 }

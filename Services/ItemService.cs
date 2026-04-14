@@ -3,6 +3,7 @@ using pos_service.Models;
 using pos_service.Models.DTO.Items;
 using pos_service.Models.DTO.Inventory;
 using pos_service.Repositories;
+using pos_service.Services.Common.Cache;
 
 namespace pos_service.Services
 {
@@ -12,6 +13,7 @@ namespace pos_service.Services
         private readonly ISupplierRepository _supplierRepository;
         private readonly IInventoryRepository _inventoryRepository;
         private readonly IMapper             _mapper;
+        private readonly ICacheService       _cache;
 
         /// <summary>
         /// Initializes a new instance of the ItemService.
@@ -20,12 +22,14 @@ namespace pos_service.Services
             IItemRepository itemRepository,
             ISupplierRepository supplierRepository,
             IInventoryRepository inventoryRepository,
-            IMapper mapper)
+            IMapper mapper,
+            ICacheService cache)
         {
             _itemRepository      = itemRepository;
             _supplierRepository  = supplierRepository;
             _inventoryRepository = inventoryRepository;
             _mapper              = mapper;
+            _cache               = cache;
         }
 
         /// <summary>
@@ -35,8 +39,8 @@ namespace pos_service.Services
         /// <returns>A list of all item details.</returns>
         public async Task<IEnumerable<ItemResDto>> GetAllItemsAsync(CurrentUser currentUser)
         {
-            // Repository now returns projected ItemResDto instances, so return directly.
-            return await _itemRepository.GetAllAsync();
+            return await _cache.GetOrCreateAsync<IEnumerable<ItemResDto>>(ServiceCacheKey.Items, null,
+                () => _itemRepository.GetAllAsync());
         }
 
         /// <summary>
@@ -126,6 +130,8 @@ namespace pos_service.Services
             inventory         = await _inventoryRepository.AddAsync(inventory);
             newItem.Inventory = inventory;
 
+            InvalidateCache();
+
             return _mapper.Map<ItemResDto>(newItem);
         }
 
@@ -176,6 +182,8 @@ namespace pos_service.Services
             await _inventoryRepository.UpdateAsync(inventory);
             result.Inventory = inventory;
 
+            InvalidateCache();
+
             return _mapper.Map<ItemResDto>(result); ;
         }
 
@@ -191,6 +199,8 @@ namespace pos_service.Services
             var error = await _itemRepository.DeleteAsync(id, subId);
             if (error != null)
                 return error;
+
+            InvalidateCache();
 
             return null;
         }
@@ -280,6 +290,8 @@ namespace pos_service.Services
                 QuantityPerParent   = u.QuantityPerParent,
                 QuantityInBaseUnits = u.QuantityInBaseUnits
             }).ToList();
+
+            InvalidateCache();
 
             return itemDto;
         }
@@ -506,6 +518,11 @@ namespace pos_service.Services
                     Uuid                = Guid.NewGuid().ToString()
                 });
             }
+        }
+
+        private void InvalidateCache()
+        {
+            _cache.RemovePrimary(ServiceCacheKey.Items);
         }
     }
 }

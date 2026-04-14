@@ -160,13 +160,21 @@ namespace pos_service.Repositories
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
                 searchTerm = searchTerm.Trim();
+                var isItemId = int.TryParse(searchTerm, out var itemId);
+
                 query = query.Where(i =>
+                    (isItemId && i.Id == itemId) ||
                     i.Name.Contains(searchTerm) ||
                     i.PrintName.Contains(searchTerm) ||
                     (i.BarCode != null && i.BarCode.Contains(searchTerm)) ||
                     i.Uuid.Contains(searchTerm)
                 );
             }
+
+            query = query
+                .OrderBy(i => i.Id)
+                .ThenBy(i => i.SubId)
+                .Take(10);
 
             return await makeItemResponceDto(_context, query);
         }

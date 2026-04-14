@@ -62,6 +62,10 @@
     <Folder Include="Tests\Services\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include=".github\copilot-instructions.md" />
+  </ItemGroup>
+
   <!-- Ensure environment-specific appsettings file is included in publish output -->
 
 

@@ -22,6 +22,7 @@ namespace pos_service.Models.Enums
         ROLE       = 7,
         SETTING    = 8,
         SHOP       = 9,
+        CUSTOMER   = 10,
     }
 
     // PermissionType enum values MUST match Permission.Id values in the database.
@@ -67,8 +68,14 @@ namespace pos_service.Models.Enums
         CONTACT_UPDATE                      = 502,
         CONTACT_DELETE                      = 503,
 
+        //Customer (start at 550)
+        CUSTOMER_VIEW                       = 550,
+        CUSTOMER_CREATE                     = 551,
+        CUSTOMER_UPDATE                     = 552,
+        CUSTOMER_DELETE                     = 553,
+
         // Permissions (start at 600)
-        PERMISSION_VIEW                     = 600,
+        PERMISSION_VIEW = 600,
         PERMISSION_ASSIGN                   = 601,
 
         //Roles (start at 650)

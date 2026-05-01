@@ -462,19 +462,14 @@ namespace pos_service.Services
 
             foreach (var supplierId in supplierIds)
             {
-                var supplier = await _supplierRepository.GetByIdAsync(supplierId);
-                if (supplier != null)
-                {
                     item.ItemSuppliers.Add(new ItemSupplier
                     {
                         Uuid        = Guid.NewGuid().ToString(),
-                        SuppliersId = supplier.Id,
+                        SuppliersId = supplierId,
                         ItemsId     = item.Id,
                         ItemsSubId  = item.SubId,
-                        Supplier    = supplier,
                         Item        = item
                     });
-                }
             }
         }
 

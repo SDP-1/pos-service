@@ -1,5 +1,13 @@
 -- need to apply
 
+ALTER TABLE `pos-system`.`items` 
+ADD INDEX `IN_Main_Id` (`Id` ASC) VISIBLE,
+ADD INDEX `IN_Barcode` (`BarCode` ASC) INVISIBLE;
+ALTER TABLE `pos-system`.`items` ALTER INDEX `FK_Items_Users_UpdatedBy` INVISIBLE;
+
+
+
+
 -- name chnaged view_returneditemssummary to view_returned_items_summary
 DROP VIEW IF EXISTS `pos-system`.`view_returneditemssummary` ;
 USE `pos-system`;

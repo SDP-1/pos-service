@@ -25,7 +25,7 @@ namespace pos_service.Models.DTO.Suppliers
         public ICollection<string>? ItemUuids { get; set; }
 
         // Optional list of contacts to create/update for this supplier.
-        // If null, service will not modify contacts.
+        // For PUT updates, null or empty clears existing contacts.
         public ICollection<ContactReqDto>? Contacts { get; set; }
     }
 }

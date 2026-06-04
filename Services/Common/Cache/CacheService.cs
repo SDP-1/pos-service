@@ -36,6 +36,9 @@ namespace pos_service.Services.Common.Cache
             return default;
         }
 
+        /// <summary>
+        /// Tries to get the cache entry for the composed key and returns true when present.
+        /// </summary>
         public bool TryGetValue<T>(ServiceCacheKey primaryKey, string? secondaryKey, out T value)
         {
             var composed = ComposeKey(primaryKey, secondaryKey);

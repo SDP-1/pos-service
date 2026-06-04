@@ -8,14 +8,27 @@ namespace pos_service.Repositories
     public class CustomerRepository : ICustomerRepository
     {
         private readonly AppDbContext _context;
+        /// <summary>
+        /// Initializes a new instance of the CustomerRepository.
+        /// </summary>
+        /// <param name="context">The application's database context.</param>
         public CustomerRepository(AppDbContext context) { _context = context; }
 
+        /// <summary>
+        /// Retrieves all customers as response DTOs.
+        /// </summary>
+        /// <returns>Collection of CustomerResDto.</returns>
         public async Task<IEnumerable<CustomerResDto>> GetAllAsync()
         {
             var query = _context.Customers.AsQueryable();
             return await makeCustomreResponceDto(_context, query);
         }
 
+        /// <summary>
+        /// Retrieves a customer by database id as a response DTO.
+        /// </summary>
+        /// <param name="id">Database id of the customer.</param>
+        /// <returns>CustomerResDto when found; otherwise null.</returns>
         public async Task<CustomerResDto?> GetByIdAsync(int id)
         {
             var query = _context.Customers.Where(c => c.Id == id);
@@ -23,6 +36,11 @@ namespace pos_service.Repositories
             return result.FirstOrDefault();
         }
 
+        /// <summary>
+        /// Retrieves a customer by email address as a response DTO.
+        /// </summary>
+        /// <param name="email">Email address to search for.</param>
+        /// <returns>CustomerResDto when found; otherwise null.</returns>
         public async Task<CustomerResDto?> GetByEmailAsync(string email)
         {
             if (string.IsNullOrWhiteSpace(email)) return null;
@@ -32,6 +50,11 @@ namespace pos_service.Repositories
             return result.FirstOrDefault();
         }
 
+        /// <summary>
+        /// Retrieves a customer by phone number as a response DTO.
+        /// </summary>
+        /// <param name="phoneNumber">Phone number to search for.</param>
+        /// <returns>CustomerResDto when found; otherwise null.</returns>
         public async Task<CustomerResDto?> GetByPhoneNumberAsync(string phoneNumber)
         {
             var query = _context.Customers.Where(c => c.PhoneNumber == phoneNumber);
@@ -39,6 +62,11 @@ namespace pos_service.Repositories
             return result.FirstOrDefault();
         }
 
+        /// <summary>
+        /// Searches customers by a search term across name, phone number and email. Returns up to 10 matches ordered by phone number.
+        /// </summary>
+        /// <param name="searchTerm">Search term to match against customer fields.</param>
+        /// <returns>Collection of matching CustomerResDto.</returns>
         public async Task<IEnumerable<CustomerResDto>> GetBySearchAsync(string searchTerm)
         {
             var query = _context.Customers.AsQueryable();
@@ -62,6 +90,11 @@ namespace pos_service.Repositories
             return await makeCustomreResponceDto(_context, query);
         }
 
+        /// <summary>
+        /// Adds a new customer to the database and assigns a UUID.
+        /// </summary>
+        /// <param name="customer">Customer entity to add.</param>
+        /// <returns>The added Customer entity.</returns>
         public async Task<Customer> AddAsync(Customer customer)
         {
             customer.Uuid = Guid.NewGuid().ToString();
@@ -70,6 +103,12 @@ namespace pos_service.Repositories
             return customer;
         }
 
+        /// <summary>
+        /// Updates an existing customer with values from the request DTO.
+        /// </summary>
+        /// <param name="id">Database id of the customer to update.</param>
+        /// <param name="dto">Request DTO containing updated customer values.</param>
+        /// <returns>The updated Customer when successful; otherwise null if not found.</returns>
         public async Task<Customer?> UpdateAsync(int id, CustomerReqDto dto)
         {
             var existing = await _context.Customers.FindAsync(id);
@@ -87,6 +126,11 @@ namespace pos_service.Repositories
             return existing;
         }
 
+        /// <summary>
+        /// Deletes a customer by id.
+        /// </summary>
+        /// <param name="id">Database id of the customer to delete.</param>
+        /// <returns>True when deleted; false if the customer was not found.</returns>
         public async Task<bool> DeleteAsync(int id)
         {
             var existing = await _context.Customers.FindAsync(id);

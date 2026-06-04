@@ -90,4 +90,4 @@ Contributions are welcome. If you plan to extend the project:
 
 ## License
 
-No license has been specified for this project yet. Add one if you want to define how the code can be used or distributed.
+ Apache License - Version 2.0

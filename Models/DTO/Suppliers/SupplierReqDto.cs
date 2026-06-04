@@ -16,13 +16,13 @@ namespace pos_service.Models.DTO.Suppliers
             set => _name = value?.ToUpperInvariant();
         }
 
-        public string? Address { get; set; }
+        public string? Address                      { get; set; }
 
-        public bool IsActive   { get; set; } = true;
+        public bool IsActive                        { get; set; } = true;
 
         // Optional list of item UUIDs to associate with this supplier.
         // If null, service will not modify item associations.
-        public ICollection<string>? ItemUuids { get; set; }
+        public ICollection<string>? ItemUuids       { get; set; }
 
         // Optional list of contacts to create/update for this supplier.
         // For PUT updates, null or empty clears existing contacts.

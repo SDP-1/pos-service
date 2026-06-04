@@ -9,7 +9,7 @@ namespace pos_service.Models.Enums
         /// <summary>
         /// Contact is associated with a User entity.
         /// </summary>
-        User = 1,
+        User     = 1,
 
         /// <summary>
         /// Contact is associated with a Supplier entity.

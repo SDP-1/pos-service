@@ -24,6 +24,10 @@ namespace pos_service.Controllers
             _logger = logger;
         }
 
+        /// <summary>
+        /// Retrieves the shop configuration.
+        /// </summary>
+        /// <returns>200 OK with the ShopResDto or 404 NotFound if not configured.</returns>
         [HttpGet]
         public async Task<IActionResult> Get()
         {
@@ -32,6 +36,11 @@ namespace pos_service.Controllers
             return Ok(dto);
         }
 
+        /// <summary>
+        /// Creates or updates the shop configuration. Accepts multipart form data for uploaded assets.
+        /// </summary>
+        /// <param name="req">Shop request DTO containing shop details and optional files.</param>
+        /// <returns>200 OK with the updated ShopResDto.</returns>
         [HttpPost]
         [Consumes("multipart/form-data")]
         [Permission(PermissionType.SHOP_DETAILS_UPDATE)]

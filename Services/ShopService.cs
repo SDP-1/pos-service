@@ -21,12 +21,16 @@ namespace pos_service.Services
 
         public ShopService(IShopRepository repo, ILogger<ShopService> logger, IMapper mapper, ICacheService cache)
         {
-            _repo = repo;
+            _repo   = repo;
             _logger = logger;
             _mapper = mapper;
-            _cache = cache;
+            _cache  = cache;
         }
 
+        /// <summary>
+        /// Retrieves shop configuration (there is expected to be a single shop record).
+        /// Uses cache to avoid repeated DB hits.
+        /// </summary>
         public async Task<ShopResDto?> GetAsync()
         {
             // Use cache for shop details. There is only one shop entry expected, so secondary key is null.
@@ -42,6 +46,12 @@ namespace pos_service.Services
             return mapped;
         }
 
+        /// <summary>
+        /// Creates or updates the shop configuration and updates the cached value.
+        /// Handles logo file according to the DTO (remove/replace/keep).
+        /// </summary>
+        /// <param name="req">Request DTO with shop fields and optional logo file.</param>
+        /// <param name="currentUser">Current user performing the operation.</param>
         public async Task<ShopResDto> CreateOrUpdateAsync(ShopReqDto req, CurrentUser currentUser)
         {
             // convert incoming DTO + optional file into entity, persist, and return DTO
@@ -51,19 +61,19 @@ namespace pos_service.Services
             {
                 shop = new Shop
                 {
-                    Name = req.Name,
-                    Address = req.Address,
+                    Name        = req.Name,
+                    Address     = req.Address,
                     PhoneNumber = req.PhoneNumber,
-                    Email = req.Email
+                    Email       = req.Email
                 };
             }
             else
             {
-                existing.Name = req.Name;
-                existing.Address = req.Address;
+                existing.Name        = req.Name;
+                existing.Address     = req.Address;
                 existing.PhoneNumber = req.PhoneNumber;
-                existing.Email = req.Email;
-                shop = existing;
+                existing.Email       = req.Email;
+                shop                 = existing;
             }
 
             // Handle logo according to DTO flags similar to user RemoveImage behavior:

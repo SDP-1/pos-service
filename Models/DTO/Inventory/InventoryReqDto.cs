@@ -7,14 +7,14 @@ namespace pos_service.Models.DTO.Inventory
     {
         [Required]
         [Range(0, double.MaxValue)]
-        public decimal StockQuantity { get; set; }
+        public decimal StockQuantity                   { get; set; }
 
-        public bool AllowsDecimalQuantities { get; set; }
+        public bool AllowsDecimalQuantities            { get; set; }
 
         [Required]
-        public UnitType UnitType { get; set; }
+        public UnitType UnitType                       { get; set; }
 
-        public List<InventoryUnitReqDto> Units { get; set; } = new();
+        public List<InventoryUnitReqDto> Units         { get; set; } = new();
 
         /// <summary>
         /// Optional hierarchical packaging definitions (e.g., Pack contains 12 Bottle, Box contains 3 Pack).

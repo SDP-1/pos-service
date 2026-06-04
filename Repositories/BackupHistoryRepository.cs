@@ -13,6 +13,11 @@ namespace pos_service.Repositories
             _context = context;
         }
 
+        /// <summary>
+        /// Adds a new backup history record and assigns a UUID.
+        /// </summary>
+        /// <param name="history">BackupHistory entity to add.</param>
+        /// <returns>The added BackupHistory entity with identity fields populated.</returns>
         public async Task<BackupHistory> AddAsync(BackupHistory history)
         {
             history.Uuid = Guid.NewGuid().ToString();
@@ -21,6 +26,11 @@ namespace pos_service.Repositories
             return history;
         }
 
+        /// <summary>
+        /// Retrieves recent backup history records ordered by execution time descending.
+        /// </summary>
+        /// <param name="maxRecords">Maximum number of records to return. Defaults to 50 when not provided or invalid.</param>
+        /// <returns>A collection of BackupHistory records.</returns>
         public async Task<IEnumerable<BackupHistory>> GetAllAsync(int maxRecords = 50)
         {
             if (maxRecords <= 0) maxRecords = 50;

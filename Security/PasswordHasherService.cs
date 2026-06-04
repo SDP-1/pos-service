@@ -3,7 +3,7 @@
 namespace pos_service.Security
 {
     // Implementation uses the built-in ASP.NET Core Identity PasswordHasher
-    public class PasswordHasherService : IPasswordHasher
+    public class PasswordHasherService : IPasswordHasherService
     {
         private readonly PasswordHasher<object> _passwordHasher = new PasswordHasher<object>();
 
@@ -22,7 +22,7 @@ namespace pos_service.Security
         /// </summary>
         public bool VerifyPassword(string password, string passwordHash)
         {
-            var result = _passwordHasher.VerifyHashedPassword(null, passwordHash, password);
+            var result    = _passwordHasher.VerifyHashedPassword(null, passwordHash, password);
             return result == PasswordVerificationResult.Success;
         }
     }

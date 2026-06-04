@@ -60,18 +60,18 @@ namespace pos_service.Models.DTO.Items
             set => _unitType = value;
         }
 
-        public List<InventoryUnitReqDto> Units   { get; set; } = new();
+        public List<InventoryUnitReqDto> Units        { get; set; } = new();
 
         [Required]
-        public ItemPriceReqDto Price              { get; set; }
+        public ItemPriceReqDto Price                  { get; set; }
 
         public ICollection<ItemExpiryReqDto> ExpDates { get; set; } = new List<ItemExpiryReqDto>();
 
         /// <summary>
         /// A list of supplier IDs to associate with this item.
         /// </summary>
-        public ICollection<int> SupplierIds   { get; set; } = new List<int>();
+        public ICollection<int> SupplierIds           { get; set; } = new List<int>();
 
-        public bool IsActive                  { get; set; } = true;
+        public bool IsActive                          { get; set; } = true;
     }
 }

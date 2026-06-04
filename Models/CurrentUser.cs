@@ -6,9 +6,9 @@ namespace pos_service.Models
 {
     public class CurrentUser : UserResDto
     {
-            public string Uuid          { get; set; } = string.Empty;
+            public string Uuid                         { get; set; } = string.Empty;
 
-            public bool IsAuthenticated { get; set; }
+            public bool IsAuthenticated                { get; set; }
 
             // populated at runtime
             public ICollection<Permission> Permissions { get; set; } = new List<Permission>();

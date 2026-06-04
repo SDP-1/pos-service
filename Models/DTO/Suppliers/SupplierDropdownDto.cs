@@ -5,7 +5,7 @@ namespace pos_service.Models.DTO.Suppliers
     /// </summary>
     public class SupplierDropdownDto
     {
-        public int Id { get; set; }
+        public int Id      { get; set; }
         public string Name { get; set; }
     }
 }

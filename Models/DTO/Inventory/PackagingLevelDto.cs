@@ -10,10 +10,10 @@ namespace pos_service.Models.DTO.Inventory
     public class PackagingLevelDto
     {
         [Required]
-        public UnitType UnitType { get; set; }
+        public UnitType UnitType         { get; set; }
 
         [Required]
-        public UnitType ParentUnitType { get; set; }
+        public UnitType ParentUnitType   { get; set; }
 
         [Range(0.0001, double.MaxValue)]
         public decimal QuantityPerParent { get; set; }

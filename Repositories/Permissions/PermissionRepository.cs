@@ -14,11 +14,20 @@ namespace pos_service.Repositories.Permissions
             _context = context;
         }
 
+        /// <summary>
+        /// Retrieves all permissions configured in the system.
+        /// </summary>
+        /// <returns>A collection of Permission entities.</returns>
         public async Task<IEnumerable<Permission>> GetAllAsync()
         {
             return await _context.Permissions.AsNoTracking().ToListAsync();
         }
 
+        /// <summary>
+        /// Retrieves permissions that are assigned to a specific role.
+        /// </summary>
+        /// <param name="roleId">Database id of the role.</param>
+        /// <returns>A collection of Permission entities assigned to the role.</returns>
         public async Task<IEnumerable<Permission>> GetForRoleAsync(int roleId)
         {
             return await _context.RolePermissions
@@ -28,6 +37,13 @@ namespace pos_service.Repositories.Permissions
                 .ToListAsync();
         }
 
+        /// <summary>
+        /// Adds the named permission to the specified role. If the permission does not exist in the Permissions table it will be created.
+        /// </summary>
+        /// <param name="roleId">Database id of the role.</param>
+        /// <param name="permissionName">The name of the permission (must match a PermissionType enum value).</param>
+        /// <returns>True if the permission was added; false if the mapping already existed.</returns>
+        /// <exception cref="ArgumentException">Thrown when permissionName is not a valid PermissionType.</exception>
         public async Task<bool> AddPermissionToRoleAsync(int roleId, string permissionName)
         {
             if (!Enum.TryParse<PermissionType>(permissionName, true, out var permType))
@@ -63,6 +79,12 @@ namespace pos_service.Repositories.Permissions
             return true;
         }
 
+        /// <summary>
+        /// Removes the named permission mapping from the specified role.
+        /// </summary>
+        /// <param name="roleId">Database id of the role.</param>
+        /// <param name="permissionName">The name of the permission (must match a PermissionType enum value).</param>
+        /// <returns>True when the mapping was removed; false if the permission or mapping was not found or the permission name is invalid.</returns>
         public async Task<bool> RemovePermissionFromRoleAsync(int roleId, string permissionName)
         {
             if (!Enum.TryParse<PermissionType>(permissionName, true, out var permType))

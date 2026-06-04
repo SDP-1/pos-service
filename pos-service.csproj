@@ -10,12 +10,16 @@
   <ItemGroup>
     <Compile Remove="Initialize-backup-db\**" />
     <Compile Remove="Repositories\Base\**" />
+    <Compile Remove="Services\Helpers\**" />
     <Content Remove="Initialize-backup-db\**" />
     <Content Remove="Repositories\Base\**" />
+    <Content Remove="Services\Helpers\**" />
     <EmbeddedResource Remove="Initialize-backup-db\**" />
     <EmbeddedResource Remove="Repositories\Base\**" />
+    <EmbeddedResource Remove="Services\Helpers\**" />
     <None Remove="Initialize-backup-db\**" />
     <None Remove="Repositories\Base\**" />
+    <None Remove="Services\Helpers\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -56,10 +60,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Services\Helpers\" />
     <Folder Include="Data\Utilities\" />
-    <Folder Include="SQL\" />
-    <Folder Include="Tests\Services\" />
   </ItemGroup>
 
   <ItemGroup>

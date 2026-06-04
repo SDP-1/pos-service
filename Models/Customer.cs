@@ -8,20 +8,20 @@ namespace pos_service.Models
         /// <summary>
         /// The unique primary key for the customer.
         /// </summary>
-        public int Id { get; set; }
+        public int Id                            { get; set; }
 
         /// <summary>
         /// The customer's first name.
         /// </summary>
         [Required]
         [MaxLength(50)]
-        public string FirstName { get; set; }
+        public string FirstName                  { get; set; }
 
         /// <summary>
         /// The customer's last name.
         /// </summary>
         [MaxLength(50)]
-        public string? LastName { get; set; }
+        public string? LastName                  { get; set; }
 
         /// <summary>
         /// Customers's full name.
@@ -36,24 +36,24 @@ namespace pos_service.Models
         /// </summary>
         [Required]
         [MaxLength(20)]
-        public string PhoneNumber { get; set; }
+        public string PhoneNumber                { get; set; }
 
         /// <summary>
         /// The customer's email address. Optional.
         /// </summary>
         [EmailAddress]
         [MaxLength(100)]
-        public string? Email { get; set; }
+        public string? Email                     { get; set; }
 
         /// <summary>
         /// The customer's physical address. Optional.
         /// </summary>
-        public string? Address { get; set; }
+        public string? Address                   { get; set; }
 
         /// <summary>
         /// The total loyalty points accumulated by the customer.
         /// </summary>
-        public int LoyaltyPoints { get; set; } = 0;
+        public int LoyaltyPoints                 { get; set; } = 0;
 
         /// <summary>
         /// A collection of orders associated with this customer.
@@ -61,11 +61,11 @@ namespace pos_service.Models
         public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 
         // --- Implementation of IAuditable ---
-        public string Uuid { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public DateTime? UpdatedAt { get; set; }
-        public string CreatedBy { get; set; }
-        public string? UpdatedBy { get; set; }
-        public bool IsActive { get; set; } = true;
+        public string Uuid                       { get; set; }
+        public DateTime CreatedAt                { get; set; }
+        public DateTime? UpdatedAt               { get; set; }
+        public string CreatedBy                  { get; set; }
+        public string? UpdatedBy                 { get; set; }
+        public bool IsActive                     { get; set; } = true;
     }
 }

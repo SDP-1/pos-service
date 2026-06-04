@@ -6,7 +6,7 @@ using pos_service.Models;
 
 namespace pos_service.Security
 {
-    public class JwtGeneratorService : IJwtGenerator
+    public class JwtGeneratorService : IJwtGeneratorService
     {
         private readonly string _secretKey;
         private readonly string _issuer;
@@ -17,6 +17,13 @@ namespace pos_service.Security
             _secretKey = configuration["JwtSettings:SecretKey"];
         }
 
+        /// <summary>
+        /// Generates a signed JSON Web Token (JWT) for the given user.
+        /// </summary>
+        /// <param name="user">The user for whom the token will be generated. Must not be null.</param>
+        /// <returns>A signed JWT as a string.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when user is null.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when JWT secret key is not configured.</exception>
         public string GenerateToken(User user)
         {
             if (user == null) throw new ArgumentNullException(nameof(user));
@@ -43,8 +50,8 @@ namespace pos_service.Security
             // 2. Create the token descriptor
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.Now.AddDays(1), // Token valid for 1 days
+                Subject            = new ClaimsIdentity(claims),
+                Expires            = DateTime.Now.AddDays(1), // Token valid for 1 days
                 SigningCredentials = new SigningCredentials(
                     new SymmetricSecurityKey(key),
                     SecurityAlgorithms.HmacSha256Signature

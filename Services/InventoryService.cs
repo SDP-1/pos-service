@@ -30,18 +30,37 @@ namespace pos_service.Services
             _cache               = cache;
         }
 
+        /// <summary>
+        /// Retrieves all inventory records from the repository and maps to DTOs.
+        /// </summary>
+        /// <param name="currentUser">Current user context for potential authorization/audit.</param>
+        /// <returns>Collection of InventoryResDto.</returns>
         public async Task<IEnumerable<InventoryResDto>> GetAllAsync(CurrentUser currentUser)
         {
             var inventories = await _inventoryRepository.GetAllAsync();
             return _mapper.Map<IEnumerable<InventoryResDto>>(inventories);
         }
 
+        /// <summary>
+        /// Retrieves inventory for a specific item UUID.
+        /// </summary>
+        /// <param name="itemUuid">UUID of the item.</param>
+        /// <param name="currentUser">Current user context.</param>
+        /// <returns>Inventory DTO when found, otherwise null.</returns>
         public async Task<InventoryResDto?> GetByItemUuidAsync(string itemUuid, CurrentUser currentUser)
         {
             var inventory = await _inventoryRepository.GetByItemUuidAsync(itemUuid);
             return _mapper.Map<InventoryResDto?>(inventory);
         }
 
+        /// <summary>
+        /// Creates or updates the inventory record for the specified item UUID.
+        /// When creating, initializes units based on provided packaging levels.
+        /// </summary>
+        /// <param name="itemUuid">UUID of the item.</param>
+        /// <param name="dto">Inventory upsert DTO.</param>
+        /// <param name="currentUser">Current user context.</param>
+        /// <returns>The created or updated inventory DTO.</returns>
         public async Task<InventoryResDto> UpsertAsync(string itemUuid, InventoryReqDto dto, CurrentUser currentUser)
         {
             var item = await _itemRepository.GetByUuidAsync(itemUuid);
@@ -95,6 +114,14 @@ namespace pos_service.Services
             return _mapper.Map<InventoryResDto>(inventory);
         }
 
+        /// <summary>
+        /// Adjusts the stock quantity for an item. Supports increasing or decreasing stock,
+        /// validates packaging units and optional reason when decreasing, and can update expiries and price on the item.
+        /// </summary>
+        /// <param name="itemUuid">UUID of the item to adjust.</param>
+        /// <param name="dto">Inventory adjustment request DTO.</param>
+        /// <param name="currentUser">Current user performing the adjustment.</param>
+        /// <returns>Updated inventory DTO when successful; otherwise null if inventory not found.</returns>
         public async Task<InventoryResDto?> AdjustStockAsync(string itemUuid, InventoryAdjustReqDto dto, CurrentUser currentUser)
         {
             var inventory = await _inventoryRepository.GetByItemUuidAsync(itemUuid);

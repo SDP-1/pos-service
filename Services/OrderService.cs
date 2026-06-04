@@ -39,6 +39,15 @@ namespace pos_service.Services
             _context = context;
             _logger = logger;
         }
+        /// <summary>
+        /// Records a settlement payment for a loan order. Validates amounts and updates order financials.
+        /// Commits a LoanSettlementLog entry and updates the order balance and status when fully settled.
+        /// </summary>
+        /// <param name="orderId">Target order identifier.</param>
+        /// <param name="amountPaid">Amount paid in this settlement.</param>
+        /// <param name="description">Optional description for the settlement log.</param>
+        /// <param name="currentUser">Current user performing the operation.</param>
+        /// <returns>Updated order DTO after recording the settlement.</returns>
 
         public async Task<OrderResDto> RecordSettlementAsync(int orderId, decimal amountPaid, string? description, CurrentUser currentUser)
         {
@@ -68,13 +77,13 @@ namespace pos_service.Services
                 var remaining = Math.Max(0, order.NetAmount - order.AmountPaid);
                 var log = new LoanSettlementLog
                 {
-                    Uuid = Guid.NewGuid().ToString(),
-                    OrderId = order.Id,
-                    PaymentDate = DateTime.Now,
-                    Description = description,
-                    AmountPaid = amountPaid,
+                    Uuid             = Guid.NewGuid().ToString(),
+                    OrderId          = order.Id,
+                    PaymentDate      = DateTime.Now,
+                    Description      = description,
+                    AmountPaid       = amountPaid,
                     RemainingBalance = remaining,
-                    Status = remaining <= 0 ? LoanSettlementStatus.Completed : LoanSettlementStatus.PartiallySettled
+                    Status           = remaining <= 0 ? LoanSettlementStatus.Completed : LoanSettlementStatus.PartiallySettled
                 };
 
                 _context.LoanSettlementLogs.Add(log);
@@ -99,6 +108,13 @@ namespace pos_service.Services
             }
         }
 
+        /// <summary>
+        /// Creates a new order in the system.
+        /// Validates stock, customer and settings, persists order and adjusts inventory and loyalty points.
+        /// </summary>
+        /// <param name="orderDto">The order request DTO containing items and totals.</param>
+        /// <param name="currentUser">The current user creating the order.</param>
+        /// <returns>The created order details.</returns>
         public async Task<OrderResDto> CreateOrderAsync(OrderReqDto orderDto, CurrentUser currentUser)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -296,11 +312,25 @@ namespace pos_service.Services
             }
         }
 
+        /// <summary>
+        /// Retrieves an order by its primary key id.
+        /// </summary>
+        /// <param name="id">Order id.</param>
+        /// <param name="currentUser">Current user context.</param>
+        /// <returns>Order DTO when found; otherwise null.</returns>
+
         public async Task<OrderResDto?> GetOrderAsync(int id, CurrentUser currentUser)
         {
             var order = await _orderRepository.GetByIdAsync(id);
             return order == null ? null : _mapper.Map<OrderResDto>(order);
         }
+
+        /// <summary>
+        /// Retrieves an order by its order number.
+        /// </summary>
+        /// <param name="orderNumber">Order number string.</param>
+        /// <param name="currentUser">Current user context.</param>
+        /// <returns>Order DTO when found; otherwise null.</returns>
         public async Task<OrderResDto?> GetOrderByOrderNumberAsync(string orderNumber, CurrentUser currentUser)
         {
             var order = await _orderRepository.GetByOrderNumberAsync(orderNumber);
@@ -308,9 +338,14 @@ namespace pos_service.Services
         }
 
         /// <summary>
-        /// Returns order header with order items enriched with returned quantities from the view.
-        /// Uses LINQ to query the view-mapped keyless entity and joins in-memory after mapping order.
+        /// Returns order header with order items enriched with returned quantities from the returned-items summary view.
         /// </summary>
+        /// <param name="orderNumber">Order number to fetch.</param>
+        /// <param name="currentUser">Current user context.</param>
+        /// <returns>
+        /// An <see cref="OrderResDto"/> when found, with each <c>OrderItems.ReturnSummary</c> populated when applicable; otherwise null.
+        /// Returns null when no order exists for the specified order number.
+        /// </returns>
         public async Task<OrderResDto?> GetOrderWithReturnedItemsAsync(string orderNumber, CurrentUser currentUser)
         {
             var order = await _orderRepository.GetByOrderNumberAsync(orderNumber);
@@ -340,11 +375,24 @@ namespace pos_service.Services
             return dto;
         }
 
+        /// <summary>
+        /// Retrieves an order by its unique UUID identifier.
+        /// </summary>
+        /// <param name="uuid">The UUID of the order to retrieve.</param>
+        /// <param name="currentUser">The current user requesting the order.</param>
+        /// <returns>The order details if found, otherwise null.</returns>
         public async Task<OrderResDto?> GetOrderByUuidAsync(string uuid, CurrentUser currentUser)
         {
             var order = await _orderRepository.GetByUuidAsync(uuid);
             return order == null ? null : _mapper.Map<OrderResDto>(order);
         }
+
+        /// <summary>
+        /// Retrieves a single order by its UUID identifier.
+        /// </summary>
+        /// <param name="uuid">Order UUID.</param>
+        /// <param name="currentUser">Current user context.</param>
+        /// <returns>Order DTO when found; otherwise null.</returns>
 
         public async Task<OrderListResDto> GetOrdersAsync(OrderQueryDto query, CurrentUser currentUser)
         {
@@ -361,6 +409,13 @@ namespace pos_service.Services
             };
         }
 
+        /// <summary>
+        /// Updates an existing order with the specified identifier.
+        /// </summary>
+        /// <param name="id">The unique identifier of the order to update.</param>
+        /// <param name="orderDto">The order data transfer object containing updated information.</param>
+        /// <param name="currentUser">The current user updating the order.</param>
+        /// <returns>The updated order details.</returns>
         public async Task<OrderResDto> UpdateOrderAsync(int id, OrderReqDto orderDto, CurrentUser currentUser)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -562,6 +617,14 @@ namespace pos_service.Services
             }
         }
 
+        /// <summary>
+        /// Deletes an order with the specified identifier.
+        /// Performs soft-delete by default, which restores stock when appropriate. Use isPermanent=true to remove permanently.
+        /// </summary>
+        /// <param name="id">The unique identifier of the order to delete.</param>
+        /// <param name="currentUser">The current user deleting the order.</param>
+        /// <param name="isPermanent">permanent delete - Default false.</param>
+        /// <returns>True if deletion was successful, otherwise false.</returns>
         public async Task<bool> DeleteOrderAsync(int id, CurrentUser currentUser, bool isPermanent = false)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -614,6 +677,13 @@ namespace pos_service.Services
             }
         }
 
+        /// <summary>
+        /// Updates the status of an existing order.
+        /// </summary>
+        /// <param name="id">The unique identifier of the order to update.</param>
+        /// <param name="status">The new status to set for the order.</param>
+        /// <param name="currentUser">The current user updating the order status.</param>
+        /// <returns>The updated order details.</returns>
         public async Task<OrderResDto> UpdateOrderStatusAsync(int id, MainOrderStatus status, CurrentUser currentUser)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -747,7 +817,11 @@ namespace pos_service.Services
 
         public async Task<List<pos_service.Models.DTO.ReturnedItems.ReturnedItemsSummaryResDto>> GetReturnedItemsSummaryByOrderNumberAsync(string orderNumber, CurrentUser currentUser)
         {
-            // Use repository to get view-backed rows
+            /// <summary>
+            /// Retrieves returned-items summary rows from the returned-items view for a given order number.
+            /// </summary>
+            /// <param name="orderNumber">Order number to query returned items for.</param>
+            /// <param name="currentUser">Current user context.</param>
             var rows = await _orderRepository.GetReturnedItemsSummaryByOrderNumberAsync(orderNumber);
             return _mapper.Map<List<pos_service.Models.DTO.ReturnedItems.ReturnedItemsSummaryResDto>>(rows);
         }

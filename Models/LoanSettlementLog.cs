@@ -7,31 +7,31 @@ namespace pos_service.Models
 {
     public class LoanSettlementLog : IAuditable
     {
-        public int Id { get; set; }
+        public int Id                      { get; set; }
 
         [Required]
-        public int OrderId { get; set; }
-        public virtual Order Order { get; set; }
+        public int OrderId                 { get; set; }
+        public virtual Order Order         { get; set; }
 
-        public DateTime PaymentDate { get; set; }
+        public DateTime PaymentDate        { get; set; }
 
         [MaxLength(500)]
-        public string? Description { get; set; }
+        public string? Description         { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
-        public decimal AmountPaid { get; set; }
+        public decimal AmountPaid          { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
-        public decimal RemainingBalance { get; set; }
+        public decimal RemainingBalance    { get; set; }
 
         public LoanSettlementStatus Status { get; set; } = LoanSettlementStatus.Created;
 
         // IAuditable
-        public string Uuid { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public DateTime? UpdatedAt { get; set; }
-        public string CreatedBy { get; set; }
-        public string? UpdatedBy { get; set; }
-        public bool IsActive { get; set; } = true;
+        public string Uuid                 { get; set; }
+        public DateTime CreatedAt          { get; set; }
+        public DateTime? UpdatedAt         { get; set; }
+        public string CreatedBy            { get; set; }
+        public string? UpdatedBy           { get; set; }
+        public bool IsActive               { get; set; } = true;
     }
 }

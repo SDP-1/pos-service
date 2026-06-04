@@ -13,6 +13,11 @@ namespace pos_service.Repositories
             _context = context;
         }
 
+        /// <summary>
+        /// Adds a new backup location and assigns a UUID. If marked as default, will unset other defaults.
+        /// </summary>
+        /// <param name="loc">BackupLocation entity to add.</param>
+        /// <returns>The added BackupLocation with identity fields populated.</returns>
         public async Task<BackupLocation> AddAsync(BackupLocation loc)
         {
             loc.Uuid = Guid.NewGuid().ToString();
@@ -32,6 +37,11 @@ namespace pos_service.Repositories
             return loc;
         }
 
+        /// <summary>
+        /// Deletes the specified backup location. Prevents deleting the last remaining active location.
+        /// </summary>
+        /// <param name="loc">BackupLocation entity to remove.</param>
+        /// <exception cref="InvalidOperationException">Thrown when attempting to remove the last active location.</exception>
         public async Task DeleteAsync(BackupLocation loc)
         {
             // Prevent deleting the last remaining active location
@@ -45,21 +55,40 @@ namespace pos_service.Repositories
             await _context.SaveChangesAsync();
         }
 
+        /// <summary>
+        /// Retrieves all backup locations.
+        /// </summary>
+        /// <returns>Collection of BackupLocation entities.</returns>
         public async Task<IEnumerable<BackupLocation>> GetAllAsync()
         {
             return await _context.Set<BackupLocation>().AsNoTracking().ToListAsync();
         }
 
+        /// <summary>
+        /// Finds a backup location by database id.
+        /// </summary>
+        /// <param name="id">Database id of the backup location.</param>
+        /// <returns>The BackupLocation when found; otherwise null.</returns>
         public async Task<BackupLocation?> GetByIdAsync(int id)
         {
             return await _context.Set<BackupLocation>().FindAsync(id);
         }
 
+        /// <summary>
+        /// Finds an active backup location by UUID.
+        /// </summary>
+        /// <param name="uuid">UUID identifier of the backup location.</param>
+        /// <returns>The BackupLocation when found and active; otherwise null.</returns>
         public async Task<BackupLocation?> GetByUuidAsync(string uuid)
         {
             return await _context.Set<BackupLocation>().FirstOrDefaultAsync(l => l.Uuid == uuid && l.IsActive);
         }
 
+        /// <summary>
+        /// Updates an existing backup location. If marked as default, will unset other defaults.
+        /// </summary>
+        /// <param name="loc">BackupLocation entity with updated values.</param>
+        /// <returns>The updated BackupLocation.</returns>
         public async Task<BackupLocation> UpdateAsync(BackupLocation loc)
         {
             // If updated location is set as default, unset other defaults

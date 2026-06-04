@@ -1,4 +1,4 @@
--- need to apply
+-- need to apply in prod
 
 ALTER TABLE `pos-system`.`items` 
 ADD INDEX `IN_Main_Id` (`Id` ASC) VISIBLE,
@@ -35,6 +35,9 @@ VIEW `view_returned_items_summary` AS
     WHERE
         (`return_item`.`IsReturnItem` = 1)
     GROUP BY `o`.`Id` , `o`.`OrderNumber` , `o`.`Uuid` , `original_item`.`Uuid` , `original_item`.`PrintName` , `original_item`.`Quantity` , `original_item`.`PriceAtSale`;
+
+    -- file
+    InventoryAudit_SQL.sql
 
 
 /*

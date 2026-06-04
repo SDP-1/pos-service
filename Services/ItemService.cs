@@ -2,6 +2,7 @@
 using pos_service.Models;
 using pos_service.Models.DTO.Items;
 using pos_service.Models.DTO.Inventory;
+using pos_service.Models.Enums;
 using pos_service.Repositories;
 using pos_service.Services.Common.Cache;
 
@@ -9,25 +10,25 @@ namespace pos_service.Services
 {
     public class ItemService : IItemService
     {
-        private readonly IItemRepository     _itemRepository;
-        private readonly ISupplierRepository _supplierRepository;
+        private readonly IItemRepository      _itemRepository;
         private readonly IInventoryRepository _inventoryRepository;
-        private readonly IMapper             _mapper;
-        private readonly ICacheService       _cache;
+        private readonly ISettingService      _settingService;
+        private readonly IMapper              _mapper;
+        private readonly ICacheService        _cache;
 
         /// <summary>
         /// Initializes a new instance of the ItemService.
         /// </summary>
         public ItemService(
             IItemRepository itemRepository,
-            ISupplierRepository supplierRepository,
             IInventoryRepository inventoryRepository,
+            ISettingService settingService,
             IMapper mapper,
             ICacheService cache)
         {
             _itemRepository      = itemRepository;
-            _supplierRepository  = supplierRepository;
             _inventoryRepository = inventoryRepository;
+            _settingService      = settingService;
             _mapper              = mapper;
             _cache               = cache;
         }
@@ -163,24 +164,40 @@ namespace pos_service.Services
 
             var result = await _itemRepository.UpdateAsync(itemToUpdate);
 
-            var inventory = await _inventoryRepository.GetByItemUuidAsync(itemToUpdate.Uuid)
-                ?? throw new InvalidOperationException($"Inventory not found for item {itemToUpdate.Uuid}");
+            // Check if inventory update is disabled
+            var disableInventoryUpdateSetting = await _settingService.GetByKeyAsync(SettingKey.DisableInventoryUpdateInItemEdit, currentUser);
+            var shouldDisableInventoryUpdate = disableInventoryUpdateSetting?.SettingValue == true;
 
-            inventory.StockQuantity           = itemDto.StockQuantity;
-            inventory.AllowsDecimalQuantities = itemDto.AllowsDecimalQuantities;
-            inventory.UnitType                = itemDto.UnitType;
-
-            // Only replace Units if the request explicitly supplied them. This prevents
-            // clearing packaging configuration when callers only update scalar fields
-            // such as StockQuantity. Use ApplyInventoryUnits to only change when
-            // units actually differ from existing ones.
-            if (itemDto.Units != null && itemDto.Units.Any())
+            if (!shouldDisableInventoryUpdate)
             {
-                ApplyInventoryUnits(inventory, itemDto.Units);
-            }
+                var inventory = await _inventoryRepository.GetByItemUuidAsync(itemToUpdate.Uuid)
+                    ?? throw new InvalidOperationException($"Inventory not found for item {itemToUpdate.Uuid}");
 
-            await _inventoryRepository.UpdateAsync(inventory);
-            result.Inventory = inventory;
+                inventory.StockQuantity           = itemDto.StockQuantity;
+                inventory.AllowsDecimalQuantities = itemDto.AllowsDecimalQuantities;
+                inventory.UnitType                = itemDto.UnitType;
+
+                // Only replace Units if the request explicitly supplied them. This prevents
+                // clearing packaging configuration when callers only update scalar fields
+                // such as StockQuantity. Use ApplyInventoryUnits to only change when
+                // units actually differ from existing ones.
+                if (itemDto.Units != null && itemDto.Units.Any())
+                {
+                    ApplyInventoryUnits(inventory, itemDto.Units);
+                }
+
+                // Mark as user-adjusted for audit trail tracking
+                inventory.IsUserAdjusted = true;
+
+                await _inventoryRepository.UpdateAsync(inventory);
+                result.Inventory = inventory;
+            }
+            else
+            {
+                // Load inventory but don't update it
+                var inventory = await _inventoryRepository.GetByItemUuidAsync(itemToUpdate.Uuid);
+                result.Inventory = inventory;
+            }
 
             InvalidateCache();
 

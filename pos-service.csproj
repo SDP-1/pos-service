@@ -21,7 +21,6 @@
   <ItemGroup>
     <None Remove="Bills\item_barcode.frx" />
     <None Remove="Bills\posbill.frx" />
-    <Content Remove="SQL_Changes.sql" />
   </ItemGroup>
 
   <ItemGroup>
@@ -58,6 +57,7 @@
 
   <ItemGroup>
     <Folder Include="Services\Helpers\" />
+    <Folder Include="Data\Utilities\" />
     <Folder Include="SQL\" />
     <Folder Include="Tests\Services\" />
   </ItemGroup>

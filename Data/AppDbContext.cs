@@ -19,26 +19,27 @@ namespace pos_service.Data
 
         // Define a DbSet for each of your models.
         // This tells EF Core to create a table for each one.
-        public DbSet<User> Users           { get; set; }
-        public DbSet<Contact> Contacts     { get; set; }
-        public DbSet<Customer> Customers   { get; set; }
-        public DbSet<Supplier> Suppliers   { get; set; }
-        public DbSet<Item> Items           { get; set; }
-        public DbSet<ItemPrice> ItemPrices { get; set; }
-        public DbSet<ItemExpiry> ItemExpiries { get; set; }
-        public DbSet<ItemSupplier> ItemSuppliers { get; set; }
-        public DbSet<Order> Orders         { get; set; }
-        public DbSet<OrderItem> OrderItems { get; set; }
-        public DbSet<Permission> Permissions { get; set; }
-        public DbSet<RolePermission> RolePermissions { get; set; }
-        public DbSet<Role> Roles { get; set; }
-        public DbSet<Setting> Settings { get; set; }
-        public DbSet<BackupLocation> BackupLocations { get; set; }
-        public DbSet<BackupHistory> BackupHistories { get; set; }
-        public DbSet<Shop> Shops { get; set; }
-        public DbSet<LoanSettlementLog> LoanSettlementLogs { get; set; }
-        public DbSet<Inventory> Inventories { get; set; }
-        public DbSet<InventoryUnit> InventoryUnits { get; set; }
+        public DbSet<User> Users                                 { get; set; }
+        public DbSet<Contact> Contacts                           { get; set; }
+        public DbSet<Customer> Customers                         { get; set; }
+        public DbSet<Supplier> Suppliers                         { get; set; }
+        public DbSet<Item> Items                                 { get; set; }
+        public DbSet<ItemPrice> ItemPrices                       { get; set; }
+        public DbSet<ItemExpiry> ItemExpiries                    { get; set; }
+        public DbSet<ItemSupplier> ItemSuppliers                 { get; set; }
+        public DbSet<Order> Orders                               { get; set; }
+        public DbSet<OrderItem> OrderItems                       { get; set; }
+        public DbSet<Permission> Permissions                     { get; set; }
+        public DbSet<RolePermission> RolePermissions             { get; set; }
+        public DbSet<Role> Roles                                 { get; set; }
+        public DbSet<Setting> Settings                           { get; set; }
+        public DbSet<BackupLocation> BackupLocations             { get; set; }
+        public DbSet<BackupHistory> BackupHistories              { get; set; }
+        public DbSet<Shop> Shops                                 { get; set; }
+        public DbSet<LoanSettlementLog> LoanSettlementLogs       { get; set; }
+        public DbSet<Inventory> Inventories                      { get; set; }
+        public DbSet<InventoryUnit> InventoryUnits               { get; set; }
+        public DbSet<InventoryAdjustAudit> InventoryAdjustAudits { get; set; }
 
         /// <summary>
         /// This method is used to configure the database model using the Fluent API.
@@ -282,7 +283,7 @@ namespace pos_service.Data
 
             modelBuilder.Entity<ItemExpiry>(entity =>
             {
-                entity.HasKey(e => e.Id);
+                entity.HasKey(e   => e.Id);
                 entity.Property(e => e.ItemUuid).HasMaxLength(255).IsRequired();
             });
 
@@ -361,6 +362,26 @@ namespace pos_service.Data
                 entity.Property(u => u.ParentUnitType).HasConversion<string>().HasMaxLength(50);
                 entity.Property(u => u.QuantityPerParent).HasColumnType("decimal(18,3)");
                 entity.Property(u => u.QuantityInBaseUnits).HasColumnType("decimal(18,3)");
+            });
+
+            modelBuilder.Entity<InventoryAdjustAudit>(entity =>
+            {
+                entity.HasAlternateKey(a => a.Uuid);
+                entity.Property(a => a.InventoryUuid).HasMaxLength(36).IsRequired();
+                entity.Property(a => a.ItemUuid).HasMaxLength(36).IsRequired();
+                entity.Property(a => a.PreviousQuantity).HasColumnType("decimal(18,3)");
+                entity.Property(a => a.NewQuantity).HasColumnType("decimal(18,3)");
+                entity.Property(a => a.AdjustmentQuantity).HasColumnType("decimal(18,3)");
+                entity.Property(a => a.UnitType).HasConversion<string>().HasMaxLength(50);
+                entity.Property(a => a.Comment).HasMaxLength(255);
+                entity.Property(a => a.Reason).HasMaxLength(255);
+
+                entity.HasOne(a => a.Inventory)
+                      .WithMany()
+                      .HasForeignKey(a => a.InventoryUuid)
+                      .HasPrincipalKey(i => i.Uuid)
+                      .IsRequired()
+                      .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<Contact>(entity =>

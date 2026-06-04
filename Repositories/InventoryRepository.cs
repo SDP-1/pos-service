@@ -1,16 +1,21 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using pos_service.Data;
+using pos_service.Data.Utilities;
 using pos_service.Models;
+using pos_service.Models.DTO.Inventory;
+using System.Data.Common;
 
 namespace pos_service.Repositories
 {
-    public class InventoryRepository : IInventoryRepository
+    public class InventoryRepository : BaseOperations, IInventoryRepository
     {
         private readonly AppDbContext _context;
 
-        public InventoryRepository(AppDbContext context)
+        public InventoryRepository(AppDbContext context, ILogger<InventoryRepository>? logger = null) 
+            : base(logger as ILogger<BaseOperations>)
         {
-            _context = context;
+            _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
         public async Task<Inventory?> GetByItemUuidAsync(string itemUuid)
@@ -66,6 +71,30 @@ namespace pos_service.Repositories
 
             await _context.SaveChangesAsync();
             return inventory;
+        }
+
+        public async Task<IEnumerable<InventoryAdjustAuditResDto>> GetAuditHistoryAsync(
+            string itemUuid,
+            DateTime? startDate = null,
+            DateTime? endDate = null,
+            int? maxRecords = null)
+        {
+            // Build parameters for stored procedure using inherited CreateParameter method
+            var parameters = new DbParameter[]
+            {
+                CreateParameter(_context, "@p_item_uuid", itemUuid ?? (object)DBNull.Value),
+                CreateParameter(_context, "@p_start_date", startDate ?? (object)DBNull.Value),
+                CreateParameter(_context, "@p_end_date", endDate ?? (object)DBNull.Value),
+                CreateParameter(_context, "@p_max_records", maxRecords ?? 100)
+            };
+
+            // Execute stored procedure using inherited method
+            var results = await ExecuteStoredProcedureAsync<InventoryAdjustAuditResDto>(
+                _context,
+                "sp_get_inventory_audit_history",
+                parameters);
+
+            return results;
         }
     }
 }

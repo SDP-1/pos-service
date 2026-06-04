@@ -8,6 +8,7 @@ using pos_service.Repositories;
 using Microsoft.Extensions.Logging;
 using pos_service.Models.DTO.ReturnedItems;
 using pos_service.Models.DTO.OrderItems;
+using pos_service.Services.Common.Cache;
 
 namespace pos_service.Services
 {
@@ -16,6 +17,7 @@ namespace pos_service.Services
         private readonly IOrderRepository _orderRepository;
         private readonly IItemRepository _itemRepository;
         private readonly ISettingService _settingService;
+        private readonly ICacheService _cache;
         private readonly IMapper _mapper;
         private readonly AppDbContext _context;
         private readonly ILogger<OrderService> _logger;
@@ -23,7 +25,8 @@ namespace pos_service.Services
         public OrderService(
             IOrderRepository orderRepository, 
             IItemRepository itemRepository, 
-            ISettingService settingService, 
+            ISettingService settingService,
+            ICacheService cache,
             IMapper mapper, 
             AppDbContext context,
             ILogger<OrderService> logger)
@@ -31,6 +34,7 @@ namespace pos_service.Services
             _orderRepository = orderRepository;
             _itemRepository = itemRepository;
             _settingService = settingService;
+            _cache = cache;
             _mapper = mapper;
             _context = context;
             _logger = logger;
@@ -279,6 +283,9 @@ namespace pos_service.Services
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
+
+                // Clear items cache to reflect inventory changes
+                _cache.Remove(ServiceCacheKey.Items);
 
                 return _mapper.Map<OrderResDto>(createdOrder);
             }

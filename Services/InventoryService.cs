@@ -11,20 +11,23 @@ namespace pos_service.Services
     public class InventoryService : IInventoryService
     {
         private readonly IInventoryRepository _inventoryRepository;
-        private readonly IItemRepository _itemRepository;
-        private readonly IMapper _mapper;
-        private readonly ICacheService _cache;
+        private readonly IItemRepository      _itemRepository;
+        private readonly ISettingService      _settingService;
+        private readonly IMapper              _mapper;
+        private readonly ICacheService        _cache;
 
         public InventoryService(
             IInventoryRepository inventoryRepository,
             IItemRepository itemRepository,
+            ISettingService settingService,
             IMapper mapper,
             ICacheService cache)
         {
             _inventoryRepository = inventoryRepository;
-            _itemRepository = itemRepository;
-            _mapper = mapper;
-            _cache = cache;
+            _itemRepository      = itemRepository;
+            _settingService      = settingService;
+            _mapper              = mapper;
+            _cache               = cache;
         }
 
         public async Task<IEnumerable<InventoryResDto>> GetAllAsync(CurrentUser currentUser)
@@ -52,33 +55,33 @@ namespace pos_service.Services
             {
                 inventory = new Inventory
                 {
-                    ItemUuid = itemUuid,
-                    StockQuantity = dto.StockQuantity,
+                    ItemUuid                = itemUuid,
+                    StockQuantity           = dto.StockQuantity,
                     AllowsDecimalQuantities = dto.AllowsDecimalQuantities,
-                    UnitType = dto.UnitType,
-                    Units = BuildUnits(dto, dto.UnitType),
-                    Uuid = Guid.NewGuid().ToString()
+                    UnitType                = dto.UnitType,
+                    Units                   = BuildUnits(dto, dto.UnitType),
+                    Uuid                    = Guid.NewGuid().ToString()
                 };
 
                 await _inventoryRepository.AddAsync(inventory);
             }
             else
             {
-                inventory.StockQuantity = dto.StockQuantity;
+                inventory.StockQuantity           = dto.StockQuantity;
                 inventory.AllowsDecimalQuantities = dto.AllowsDecimalQuantities;
-                inventory.UnitType = dto.UnitType;
+                inventory.UnitType                = dto.UnitType;
 
                 inventory.Units.Clear();
                 foreach (var unit in BuildUnits(dto, dto.UnitType))
                 {
                     inventory.Units.Add(new InventoryUnit
                     {
-                        UnitType = unit.UnitType,
-                        ParentUnitType = unit.ParentUnitType,
-                        QuantityPerParent = unit.QuantityPerParent,
+                        UnitType            = unit.UnitType,
+                        ParentUnitType      = unit.ParentUnitType,
+                        QuantityPerParent   = unit.QuantityPerParent,
                         QuantityInBaseUnits = unit.QuantityInBaseUnits,
-                        InventoryId = inventory.Id,
-                        Uuid = Guid.NewGuid().ToString()
+                        InventoryId         = inventory.Id,
+                        Uuid                = Guid.NewGuid().ToString()
                     });
                 }
 
@@ -112,9 +115,26 @@ namespace pos_service.Services
                 throw new InvalidOperationException($"Insufficient stock. Available {inventory.StockQuantity}, requested {baseQuantity}");
             }
 
+            // Validate reason if decreasing stock and setting requires it
+            if (!dto.Increase)
+            {
+                var requireReasonSetting = await _settingService.GetByKeyAsync(SettingKey.RequireReasonOnDecreaseStock, currentUser);
+                if (requireReasonSetting?.SettingValue == true && string.IsNullOrWhiteSpace(dto.Reason))
+                {
+                    throw new InvalidOperationException("Reason is required when decreasing inventory stock. Please provide a reason for this adjustment.");
+                }
+            }
+
             inventory.StockQuantity = dto.Increase
                 ? inventory.StockQuantity + baseQuantity
                 : inventory.StockQuantity - baseQuantity;
+
+            // Update comment and reason on inventory record
+            inventory.Comment = dto.Comment;
+            inventory.Reason = dto.Reason;
+
+            // Mark as user-adjusted for audit trail tracking
+            inventory.IsUserAdjusted = true;
 
             await _inventoryRepository.UpdateAsync(inventory);
 
@@ -218,11 +238,11 @@ namespace pos_service.Services
                     // QuantityInBaseUnits with the "2nd" option: QuantityInBaseUnits = baseFactors[parent]
                     units.Add(new InventoryUnit
                     {
-                        UnitType = rel.UnitType,
-                        ParentUnitType = rel.ParentUnitType,
-                        QuantityPerParent = rel.QuantityPerParent,
+                        UnitType            = rel.UnitType,
+                        ParentUnitType      = rel.ParentUnitType,
+                        QuantityPerParent   = rel.QuantityPerParent,
                         QuantityInBaseUnits = baseFactors[rel.ParentUnitType],
-                        Uuid = Guid.NewGuid().ToString()
+                        Uuid                = Guid.NewGuid().ToString()
                     });
                 }
 
@@ -231,11 +251,11 @@ namespace pos_service.Services
                 {
                     units.Add(new InventoryUnit
                     {
-                        UnitType = baseUnit,
-                        ParentUnitType = baseUnit,
-                        QuantityPerParent = 1m,
+                        UnitType            = baseUnit,
+                        ParentUnitType      = baseUnit,
+                        QuantityPerParent   = 1m,
                         QuantityInBaseUnits = 1m,
-                        Uuid = Guid.NewGuid().ToString()
+                        Uuid                = Guid.NewGuid().ToString()
                     });
                 }
 
@@ -269,12 +289,12 @@ namespace pos_service.Services
                 .GroupBy(exp => new { Date = exp.ExpDate.Date, exp.NotifyBeforeDays })
                 .Select(group => new ItemExpiry
                 {
-                    ItemsId = item.Id,
-                    ItemsSubId = item.SubId,
-                    ItemUuid = item.Uuid,
-                    ExpDate = group.Key.Date,
+                    ItemsId          = item.Id,
+                    ItemsSubId       = item.SubId,
+                    ItemUuid         = item.Uuid,
+                    ExpDate          = group.Key.Date,
                     NotifyBeforeDays = group.Key.NotifyBeforeDays,
-                    Uuid = Guid.NewGuid().ToString()
+                    Uuid             = Guid.NewGuid().ToString()
                 })
                 .ToList();
         }
@@ -320,16 +340,16 @@ namespace pos_service.Services
             {
                 item.Price = new ItemPrice
                 {
-                    ItemsId = item.Id,
+                    ItemsId    = item.Id,
                     ItemsSubId = item.SubId,
-                    ItemUuid = item.Uuid,
+                    ItemUuid   = item.Uuid,
                 };
 
                 _mapper.Map(priceDto, item.Price);
-                item.Price.ItemsId = item.Id;
+                item.Price.ItemsId    = item.Id;
                 item.Price.ItemsSubId = item.SubId;
-                item.Price.ItemUuid = item.Uuid;
-                item.Price.Uuid = Guid.NewGuid().ToString();
+                item.Price.ItemUuid   = item.Uuid;
+                item.Price.Uuid       = Guid.NewGuid().ToString();
                 return true;
             }
 
@@ -346,16 +366,45 @@ namespace pos_service.Services
 
             // Apply mapping and update keys
             _mapper.Map(priceDto, item.Price);
-            item.Price.ItemsId = item.Id;
+            item.Price.ItemsId    = item.Id;
             item.Price.ItemsSubId = item.SubId;
-            item.Price.ItemUuid = item.Uuid;
-            item.Price.Uuid = Guid.NewGuid().ToString();
+            item.Price.ItemUuid   = item.Uuid;
+            item.Price.Uuid       = Guid.NewGuid().ToString();
             return true;
         }
 
         private void InvalidateCache()
         {
             _cache.RemovePrimary(ServiceCacheKey.Items);
+        }
+
+        public async Task<IEnumerable<InventoryAdjustAuditResDto>> GetAuditHistoryAsync(
+            string itemUuid,
+            DateTime? startDate = null,
+            DateTime? endDate = null,
+            int? maxRecords = null,
+            CurrentUser currentUser = null)
+        {
+            // Validate itemUuid
+            if (string.IsNullOrWhiteSpace(itemUuid))
+                throw new ArgumentException("ItemUuid is required");
+
+            // Validate date range if both provided
+            if (startDate.HasValue && endDate.HasValue && startDate > endDate)
+                throw new ArgumentException("StartDate cannot be greater than EndDate");
+
+            // Validate max records
+            if (maxRecords.HasValue && maxRecords < 1)
+                throw new ArgumentException("MaxRecords must be at least 1");
+
+            // Query audit history from repository
+            var auditHistory = await _inventoryRepository.GetAuditHistoryAsync(
+                itemUuid,
+                startDate,
+                endDate,
+                maxRecords ?? 100);
+
+            return auditHistory;
         }
     }
 }

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using pos_service.Data;
+using pos_service.Data.Utilities;
 using pos_service.Exceptions;
 using pos_service.Middlewares;
 using pos_service.Repositories;

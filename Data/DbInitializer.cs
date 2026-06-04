@@ -49,6 +49,8 @@ namespace pos_service.Data
                 new Setting { Id = (int)SettingKey.CalculateLoyaltyPointsForCreditOrders, SettingKey = SettingKey.CalculateLoyaltyPointsForCreditOrders, SettingName = "Allow loyalty points for credit orders", SettingValue = false, Description = "Allow to calculate loyalty point for credit orders." },
                 new Setting { Id = (int)SettingKey.AlwaysFocusBarcodeField, SettingKey = SettingKey.AlwaysFocusBarcodeField, SettingName = "Keep Focus on Barcode", SettingValue = false, Description = "When this setting is enabled, the cursor always returns to the Barcode field after each scan, allowing continuous scanning without pressing Enter. If you need to change the quantity, you must manually navigate to the Qty field (forexample, using the arrow keys), enter the value, and confirm it.<br/><br/>When this setting is disabled, after scanning a barcode the cursor automatically moves to the Qty field. You can immediately enter the quantity and press Enter to add the item to the order, without manually navigating to the quantity field." },
                 new Setting { Id = (int)SettingKey.AllowDeleteOrder, SettingKey = SettingKey.AllowDeleteOrder, SettingName = "Allow delete order", SettingValue = false, Description = "When enabled, users are allowed to delete orders from the system. When disabled, order deletion is prevented by the application (Not recommend).<br/>If AllowZeroStock is enabled, This action increase stock when deleting orders." },
+                new Setting { Id = (int)SettingKey.RequireReasonOnDecreaseStock, SettingKey = SettingKey.RequireReasonOnDecreaseStock, SettingName = "Require reason on inventory decrease", SettingValue = true, Description = "When enabled, a reason is required when decreasing (Increase = false) inventory during adjustments. When disabled, the reason field is optional for all adjustments." },
+                new Setting { Id = (int)SettingKey.DisableInventoryUpdateInItemEdit, SettingKey = SettingKey.DisableInventoryUpdateInItemEdit, SettingName = "Disable inventory update in item edit", SettingValue = false, Description = "When enabled, inventory (stock quantity) cannot be updated when editing/updating items via the item edit section. When disabled, inventory can be freely updated during item edits." },
             };
 
             foreach (var s in desired)
@@ -104,14 +106,14 @@ namespace pos_service.Data
             {
                 var adminUser = new User
                 {
-                    Id = 1,
-                    FirstName = "Sehan",
-                    LastName = "devinda",
-                    UserName = "sehandevinda1@gmail.com",
+                    Id           = 1,
+                    FirstName    = "Sehan",
+                    LastName     = "devinda",
+                    UserName     = "sehandevinda1@gmail.com",
                     PasswordHash = passwordHasher.HashPassword("1234"),
-                    RoleId = 1, // SystemAdmin role id
-                    NIC = "000000000000",
-                    Uuid = "312589e9-631c-4511-a65e-b7490179a191"
+                    RoleId       = 1, // SystemAdmin role id
+                    NIC          = "000000000000",
+                    Uuid         = "312589e9-631c-4511-a65e-b7490179a191"
                 };
                 context.Users.Add(adminUser);
                 await context.SaveChangesAsync();

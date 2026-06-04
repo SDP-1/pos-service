@@ -24,6 +24,14 @@ namespace pos_service.Models
         public string? LastName { get; set; }
 
         /// <summary>
+        /// Customers's full name.
+        /// </summary>
+        public string FullName
+        {
+            get { return $"{FirstName} {LastName}"; }
+        }
+
+        /// <summary>
         /// The customer's primary contact number, used for identification.
         /// </summary>
         [Required]

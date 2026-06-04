@@ -16,7 +16,7 @@ namespace pos_service.Models.DTO.Orders
         /// The amount of money received from the customer.
         /// </summary>
         [Required]
-        [Range(0, double.MaxValue)]
+        [Range(double.MinValue, double.MaxValue)]
         public decimal AmountPaid { get; set; }
 
         /// <summary>
@@ -24,21 +24,21 @@ namespace pos_service.Models.DTO.Orders
         /// use this instead of recalculating from item master data.
         /// </summary>
         [Required]
-        [Range(0, double.MaxValue)]
+        [Range(double.MinValue, double.MaxValue)]
         public decimal GrossAmount { get; set; }
 
         /// <summary>
         /// Total discount calculated by frontend.
         /// </summary>
         [Required]
-        [Range(0, double.MaxValue)]
+        [Range(double.MinValue, double.MaxValue)]
         public decimal TotalDiscount { get; set; }
 
         /// <summary>
         /// Net amount (GrossAmount - TotalDiscount) provided by frontend.
         /// </summary>
         [Required]
-        [Range(0, double.MaxValue)]
+        [Range(double.MinValue, double.MaxValue)]
         public decimal NetAmount { get; set; }
 
         /// <summary>

@@ -9,8 +9,9 @@ namespace pos_service.Services.Common.Cache
         OneHour,
         TwoHours,
         SixHours,
+        TwelveHours,
         OneDay,
         ThreeDays,
-        TwelveHours
+        
     }
 }

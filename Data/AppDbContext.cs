@@ -19,22 +19,27 @@ namespace pos_service.Data
 
         // Define a DbSet for each of your models.
         // This tells EF Core to create a table for each one.
-        public DbSet<User> Users           { get; set; }
-        public DbSet<Contact> Contacts     { get; set; }
-        public DbSet<Customer> Customers   { get; set; }
-        public DbSet<Supplier> Suppliers   { get; set; }
-        public DbSet<Item> Items           { get; set; }
-        public DbSet<ItemPrice> ItemPrices { get; set; }
-        public DbSet<ItemExpiry> ItemExpiries { get; set; }
-        public DbSet<ItemSupplier> ItemSuppliers { get; set; }
-        public DbSet<Order> Orders         { get; set; }
-        public DbSet<OrderItem> OrderItems { get; set; }
-        public DbSet<Permission> Permissions { get; set; }
-        public DbSet<RolePermission> RolePermissions { get; set; }
-        public DbSet<Role> Roles { get; set; }
-        public DbSet<Setting> Settings { get; set; }
-        public DbSet<BackupLocation> BackupLocations { get; set; }
-        public DbSet<BackupHistory> BackupHistories { get; set; }
+        public DbSet<User> Users                                 { get; set; }
+        public DbSet<Contact> Contacts                           { get; set; }
+        public DbSet<Customer> Customers                         { get; set; }
+        public DbSet<Supplier> Suppliers                         { get; set; }
+        public DbSet<Item> Items                                 { get; set; }
+        public DbSet<ItemPrice> ItemPrices                       { get; set; }
+        public DbSet<ItemExpiry> ItemExpiries                    { get; set; }
+        public DbSet<ItemSupplier> ItemSuppliers                 { get; set; }
+        public DbSet<Order> Orders                               { get; set; }
+        public DbSet<OrderItem> OrderItems                       { get; set; }
+        public DbSet<Permission> Permissions                     { get; set; }
+        public DbSet<RolePermission> RolePermissions             { get; set; }
+        public DbSet<Role> Roles                                 { get; set; }
+        public DbSet<Setting> Settings                           { get; set; }
+        public DbSet<BackupLocation> BackupLocations             { get; set; }
+        public DbSet<BackupHistory> BackupHistories              { get; set; }
+        public DbSet<Shop> Shops                                 { get; set; }
+        public DbSet<LoanSettlementLog> LoanSettlementLogs       { get; set; }
+        public DbSet<Inventory> Inventories                      { get; set; }
+        public DbSet<InventoryUnit> InventoryUnits               { get; set; }
+        public DbSet<InventoryAdjustAudit> InventoryAdjustAudits { get; set; }
 
         /// <summary>
         /// This method is used to configure the database model using the Fluent API.
@@ -69,15 +74,34 @@ namespace pos_service.Data
                 // CreatedBy is optional and has no DB default; application may set it or leave null.
                 entity
                     .Property<string?>(nameof(IAuditable.CreatedBy))
-                    .HasColumnType("varchar(255)")
+                    .HasColumnType("varchar(36)")
                     .HasMaxLength(255)
                     .IsRequired(false);
+
+                // Link CreatedBy to Users(Uuid) so audit fields reference the user who created the row.
+                // On delete set null so that removing a user does not remove the audited record.
+                entity
+                    .HasOne(typeof(User), null)
+                    .WithMany(null)
+                    .HasForeignKey(nameof(IAuditable.CreatedBy))
+                    .HasPrincipalKey(nameof(User.Uuid))
+                    .IsRequired(false)
+                    .OnDelete(DeleteBehavior.SetNull);
 
                 // UpdatedBy is optional and has no DB default; application may set it or leave null.
                 entity
                     .Property<string?>(nameof(IAuditable.UpdatedBy))
-                    .HasColumnType("varchar(255)")
+                    .HasColumnType("varchar(36)")
                     .HasMaxLength(255);
+
+                // Link UpdatedBy to Users(Uuid) with the same delete behavior as CreatedBy.
+                entity
+                    .HasOne(typeof(User), null)
+                    .WithMany(null)
+                    .HasForeignKey(nameof(IAuditable.UpdatedBy))
+                    .HasPrincipalKey(nameof(User.Uuid))
+                    .IsRequired(false)
+                    .OnDelete(DeleteBehavior.SetNull);
 
                 // IsActive defaults to true
                 entity
@@ -86,6 +110,21 @@ namespace pos_service.Data
                     .HasDefaultValue(true)
                     .ValueGeneratedOnAdd();
             }
+            // --- Shop Configuration ---
+            modelBuilder.Entity<Shop>(entity =>
+            {
+                // Ensure shop name is unique to avoid duplicate entries with same name.
+                entity.HasIndex(s => s.Name).IsUnique();
+
+                entity.Property(s => s.Name).HasMaxLength(255).IsRequired();
+                entity.Property(s => s.Address).HasMaxLength(255);
+                entity.Property(s => s.PhoneNumber).HasMaxLength(20);
+                entity.Property(s => s.Email).HasMaxLength(255);
+                entity.Property(s => s.Logo).HasColumnType("mediumblob");
+
+                // Provide alternate key on Uuid like other auditable entities.
+                entity.HasAlternateKey(s => s.Uuid);
+            });
 
             // --- Role configuration ---
             modelBuilder.Entity<Role>(entity =>
@@ -102,8 +141,8 @@ namespace pos_service.Data
                 entity.HasIndex(p => p.PermissionType).IsUnique();
 
                 // store enums as ints
-                entity.Property(p => p.PermissionType).HasConversion<string>();
-                entity.Property(p => p.PermissionCatagory).HasConversion<string>();
+                entity.Property(p => p.PermissionType).HasConversion<string>().HasMaxLength(50);
+                entity.Property(p => p.PermissionCatagory).HasConversion<string>().HasMaxLength(50);
             });
 
             modelBuilder.Entity<RolePermission>(entity =>
@@ -144,6 +183,11 @@ namespace pos_service.Data
                 // 1. Define Uuid as a unique, alternate key.
                 // This is REQUIRED to use it as a foreign key target.
                 entity.HasAlternateKey(u => u.Uuid);
+
+                // Ensure ProfileImage column uses MEDIUMBLOB (byte[] mapped by EF)
+                entity.Property(u => u.ProfileImage)
+                      .HasColumnType("mediumblob")
+                      .IsRequired(false);
             });
 
             // --- Supplier Configuration ---
@@ -170,6 +214,9 @@ namespace pos_service.Data
                 // Make the PhoneNumber unique as it's the primary identifier for customers.
                 entity.HasIndex(c => c.PhoneNumber).IsUnique();
 
+                // Make Email unique when provided.
+                entity.HasIndex(c => c.Email).IsUnique();
+
                 // 1. Define Uuid as a unique, alternate key.
                 // This is REQUIRED to use it as a foreign key target.
                 entity.HasAlternateKey(u => u.Uuid);
@@ -180,6 +227,11 @@ namespace pos_service.Data
             {
                 // Define the composite primary key using both Id and SubId.
                 entity.HasKey(i => new { i.Id, i.SubId });
+                entity.HasOne(i => i.Inventory)
+                      .WithOne(inv => inv.Item)
+                      .HasForeignKey<Inventory>(inv => inv.ItemUuid)
+                      .HasPrincipalKey<Item>(i => i.Uuid)
+                      .OnDelete(DeleteBehavior.Cascade);
                 // Configure one-to-many to the explicit join entity ItemSupplier.
                 entity.HasMany(i => i.ItemSuppliers)
                       .WithOne(isu => isu.Item)
@@ -202,6 +254,26 @@ namespace pos_service.Data
                 entity.HasAlternateKey(i => i.Uuid);   // creates unique constraint
             });
 
+            modelBuilder.Entity<LoanSettlementLog>(entity =>
+            {
+                entity.HasOne(ls => ls.Order)
+                      .WithMany(o => o.LoanSettlementLogs)
+                      .HasForeignKey(ls => ls.OrderId)
+                      .IsRequired()
+                      .OnDelete(DeleteBehavior.Cascade);
+                // Let the database populate PaymentDate with CURRENT_TIMESTAMP(6) when not supplied
+                entity
+                    .Property<DateTime>(ls => ls.PaymentDate)
+                    .HasColumnType("datetime(6)")
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP(6)")
+                    .ValueGeneratedOnAdd();
+
+                entity.Property(ls => ls.Status).HasConversion<string>().HasMaxLength(50);
+                entity.Property(ls => ls.AmountPaid).HasColumnType("decimal(18,2)");
+                entity.Property(ls => ls.RemainingBalance).HasColumnType("decimal(18,2)");
+                entity.HasAlternateKey(ls => ls.Uuid);
+            });
+
             modelBuilder.Entity<ItemPrice>(entity =>
             {
                 entity.HasKey(p => new { p.ItemsId, p.ItemsSubId });
@@ -211,7 +283,7 @@ namespace pos_service.Data
 
             modelBuilder.Entity<ItemExpiry>(entity =>
             {
-                entity.HasKey(e => e.Id);
+                entity.HasKey(e   => e.Id);
                 entity.Property(e => e.ItemUuid).HasMaxLength(255).IsRequired();
             });
 
@@ -219,7 +291,7 @@ namespace pos_service.Data
             modelBuilder.Entity<Setting>(entity =>
             {
                 entity.HasIndex(s => s.SettingKey).IsUnique();
-                entity.Property(s => s.SettingKey).HasConversion<string>();
+                entity.Property(s => s.SettingKey).HasConversion<string>().HasMaxLength(50);
                 entity.Property(s => s.Description).HasMaxLength(500);
                 entity.HasAlternateKey(s => s.Uuid);
             });
@@ -262,6 +334,56 @@ namespace pos_service.Data
                 entity.HasAlternateKey(e => e.Uuid);
             });
 
+            modelBuilder.Entity<Inventory>(entity =>
+            {
+                entity.HasAlternateKey(i => i.Uuid);
+                entity.HasIndex(i => i.ItemUuid).IsUnique();
+
+                entity.Property(i => i.ItemUuid).HasMaxLength(255).IsRequired();
+                entity.Property(i => i.StockQuantity).HasColumnType("decimal(18,3)");
+                entity.Property(i => i.UnitType).HasConversion<string>().HasMaxLength(50);
+
+                entity.HasOne(i => i.Item)
+                      .WithOne(it => it.Inventory)
+                      .HasForeignKey<Inventory>(i => i.ItemUuid)
+                      .HasPrincipalKey<Item>(it => it.Uuid)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(i => i.Units)
+                      .WithOne(u => u.Inventory)
+                      .HasForeignKey(u => u.InventoryId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<InventoryUnit>(entity =>
+            {
+                entity.HasAlternateKey(u => u.Uuid);
+                entity.Property(u => u.UnitType).HasConversion<string>().HasMaxLength(50);
+                entity.Property(u => u.ParentUnitType).HasConversion<string>().HasMaxLength(50);
+                entity.Property(u => u.QuantityPerParent).HasColumnType("decimal(18,3)");
+                entity.Property(u => u.QuantityInBaseUnits).HasColumnType("decimal(18,3)");
+            });
+
+            modelBuilder.Entity<InventoryAdjustAudit>(entity =>
+            {
+                entity.HasAlternateKey(a => a.Uuid);
+                entity.Property(a => a.InventoryUuid).HasMaxLength(36).IsRequired();
+                entity.Property(a => a.ItemUuid).HasMaxLength(36).IsRequired();
+                entity.Property(a => a.PreviousQuantity).HasColumnType("decimal(18,3)");
+                entity.Property(a => a.NewQuantity).HasColumnType("decimal(18,3)");
+                entity.Property(a => a.AdjustmentQuantity).HasColumnType("decimal(18,3)");
+                entity.Property(a => a.UnitType).HasConversion<string>().HasMaxLength(50);
+                entity.Property(a => a.Comment).HasMaxLength(255);
+                entity.Property(a => a.Reason).HasMaxLength(255);
+
+                entity.HasOne(a => a.Inventory)
+                      .WithMany()
+                      .HasForeignKey(a => a.InventoryUuid)
+                      .HasPrincipalKey(i => i.Uuid)
+                      .IsRequired()
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
             modelBuilder.Entity<Contact>(entity =>
             {
                 // UUID must be unique
@@ -275,9 +397,10 @@ namespace pos_service.Data
                 entity.HasIndex(o => o.OrderNumber).IsUnique();
 
                 // Convert enums to strings for readability in the database.
-                entity.Property(o => o.Status).HasConversion<string>();
-                entity.Property(o => o.PaymentMethod).HasConversion<string>();
-                entity.Property(o => o.SaleType).HasConversion<string>();
+                entity.Property(o => o.MainStatus).HasConversion<string>().HasMaxLength(50);
+                entity.Property(o => o.SubStatus).HasConversion<string>().HasMaxLength(50);
+                entity.Property(o => o.PaymentMethod).HasConversion<string>().HasMaxLength(50);
+                entity.Property(o => o.SaleType).HasConversion<string>().HasMaxLength(50);
 
                 // Configure the relationship to the User (Cashier).
                 entity.HasOne(o => o.Cashier)
@@ -313,6 +436,13 @@ namespace pos_service.Data
 
                 entity.HasAlternateKey(i => i.Uuid);   // creates unique constraint
             });
+
+            // --- ReturnedItemsSummary DB view mapping (keyless) ---
+            modelBuilder.Entity<ReturnedItemsSummary>(eb =>
+            {
+                eb.HasNoKey();
+                eb.ToView("view_returned_items_summary");
+            });
         }
 
         /// <summary>
@@ -332,7 +462,7 @@ namespace pos_service.Data
                 var auditableEntity = (IAuditable)entityEntry.Entity;
 
                 // Get current user from the HttpContext accessor
-                string userUuid = "SYSTEM";
+                string userUuid = null;
                 try
                 {
                     var principal = _httpContextAccessor?.HttpContext?.User;
@@ -347,7 +477,7 @@ namespace pos_service.Data
                 }
                 catch
                 {
-                    // ignore and use SYSTEM
+                    // ignore and use null
                 }
 
                 // Only set non-timestamp audit fields here. CreatedAt/UpdatedAt are DB-generated.

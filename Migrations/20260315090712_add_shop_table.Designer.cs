@@ -12,8 +12,8 @@ using pos_service.Data;
 namespace pos_service.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260207115358_table_updates")]
-    partial class table_updates
+    [Migration("20260315090712_add_shop_table")]
+    partial class add_shop_table
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -40,7 +40,7 @@ namespace pos_service.Migrations
 
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(36)");
 
                     b.Property<DateTime>("ExecutedAt")
                         .HasColumnType("datetime(6)");
@@ -80,7 +80,7 @@ namespace pos_service.Migrations
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(36)");
 
                     b.Property<string>("Uuid")
                         .IsRequired()
@@ -108,7 +108,7 @@ namespace pos_service.Migrations
 
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(36)");
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
@@ -139,7 +139,7 @@ namespace pos_service.Migrations
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(36)");
 
                     b.Property<string>("Uuid")
                         .IsRequired()
@@ -167,7 +167,7 @@ namespace pos_service.Migrations
 
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(36)");
 
                     b.Property<string>("Designation")
                         .HasMaxLength(100)
@@ -203,7 +203,7 @@ namespace pos_service.Migrations
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(36)");
 
                     b.Property<int?>("UserId")
                         .HasColumnType("int");
@@ -241,7 +241,7 @@ namespace pos_service.Migrations
 
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(36)");
 
                     b.Property<string>("Email")
                         .HasMaxLength(100)
@@ -278,7 +278,7 @@ namespace pos_service.Migrations
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(36)");
 
                     b.Property<string>("Uuid")
                         .IsRequired()
@@ -287,6 +287,9 @@ namespace pos_service.Migrations
                     b.HasKey("Id");
 
                     b.HasAlternateKey("Uuid");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
 
                     b.HasIndex("PhoneNumber")
                         .IsUnique();
@@ -316,7 +319,7 @@ namespace pos_service.Migrations
 
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(36)");
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
@@ -345,7 +348,7 @@ namespace pos_service.Migrations
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(36)");
 
                     b.Property<string>("Uuid")
                         .IsRequired()
@@ -371,7 +374,7 @@ namespace pos_service.Migrations
 
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(36)");
 
                     b.Property<DateTime>("ExpDate")
                         .HasColumnType("date");
@@ -404,7 +407,7 @@ namespace pos_service.Migrations
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(36)");
 
                     b.Property<string>("Uuid")
                         .IsRequired()
@@ -435,7 +438,7 @@ namespace pos_service.Migrations
 
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(36)");
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
@@ -465,7 +468,7 @@ namespace pos_service.Migrations
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(36)");
 
                     b.Property<string>("Uuid")
                         .IsRequired()
@@ -502,7 +505,7 @@ namespace pos_service.Migrations
 
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(36)");
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
@@ -518,7 +521,7 @@ namespace pos_service.Migrations
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(36)");
 
                     b.Property<string>("Uuid")
                         .IsRequired()
@@ -531,6 +534,75 @@ namespace pos_service.Migrations
                     b.HasIndex("ItemsId", "ItemsSubId");
 
                     b.ToTable("ItemSuppliers");
+                });
+
+            modelBuilder.Entity("pos_service.Models.LoanSettlementLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("AmountPaid")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(36)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("PaymentDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
+
+                    b.Property<decimal>("RemainingBalance")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlComputedColumn(b.Property<DateTime?>("UpdatedAt"));
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(36)");
+
+                    b.Property<string>("Uuid")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.HasKey("Id");
+
+                    b.HasAlternateKey("Uuid");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("LoanSettlementLogs");
                 });
 
             modelBuilder.Entity("pos_service.Models.Order", b =>
@@ -557,7 +629,7 @@ namespace pos_service.Migrations
 
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(36)");
 
                     b.Property<int?>("CustomerId")
                         .HasColumnType("int");
@@ -576,6 +648,11 @@ namespace pos_service.Migrations
                     b.Property<int>("ItemCount")
                         .HasColumnType("int");
 
+                    b.Property<string>("MainStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
                     b.Property<decimal>("NetAmount")
                         .HasColumnType("decimal(18, 2)");
 
@@ -586,15 +663,17 @@ namespace pos_service.Migrations
 
                     b.Property<string>("PaymentMethod")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<string>("SaleType")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("longtext");
+                    b.Property<string>("SubStatus")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<decimal>("TotalCost")
                         .HasColumnType("decimal(18, 2)");
@@ -611,7 +690,7 @@ namespace pos_service.Migrations
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(36)");
 
                     b.Property<string>("Uuid")
                         .IsRequired()
@@ -652,12 +731,19 @@ namespace pos_service.Migrations
 
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(36)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("tinyint(1)")
                         .HasDefaultValue(true);
+
+                    b.Property<bool>("IsReturnItem")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<decimal>("LineTotal")
                         .HasColumnType("decimal(18, 2)");
@@ -682,6 +768,10 @@ namespace pos_service.Migrations
                     b.Property<decimal>("Quantity")
                         .HasColumnType("decimal(18, 3)");
 
+                    b.Property<string>("ReturnedOrderItemUuid")
+                        .HasMaxLength(36)
+                        .HasColumnType("varchar(36)");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("datetime(6)")
@@ -691,7 +781,7 @@ namespace pos_service.Migrations
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(36)");
 
                     b.Property<string>("Uuid")
                         .IsRequired()
@@ -722,11 +812,13 @@ namespace pos_service.Migrations
 
                     b.Property<string>("PermissionCatagory")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<string>("PermissionType")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.HasKey("Id");
 
@@ -734,6 +826,47 @@ namespace pos_service.Migrations
                         .IsUnique();
 
                     b.ToTable("Permissions");
+                });
+
+            modelBuilder.Entity("pos_service.Models.ReturnedItemsSummary", b =>
+                {
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OrderNumber")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("OrderUuid")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<decimal>("OriginalPurchasedQty")
+                        .HasColumnType("decimal(65,30)");
+
+                    b.Property<decimal>("PriceAtSale")
+                        .HasColumnType("decimal(65,30)");
+
+                    b.Property<string>("PrintName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<decimal>("RemainingQty")
+                        .HasColumnType("decimal(65,30)");
+
+                    b.Property<string>("ReturnedOrderItemUuid")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<decimal>("TotalRefundAmountValue")
+                        .HasColumnType("decimal(65,30)");
+
+                    b.Property<decimal>("TotalReturnedQty")
+                        .HasColumnType("decimal(65,30)");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("view_returned_items_summary", (string)null);
                 });
 
             modelBuilder.Entity("pos_service.Models.Role", b =>
@@ -751,7 +884,7 @@ namespace pos_service.Migrations
 
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(36)");
 
                     b.Property<string>("Description")
                         .HasMaxLength(250)
@@ -776,7 +909,7 @@ namespace pos_service.Migrations
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(36)");
 
                     b.Property<string>("Uuid")
                         .IsRequired()
@@ -807,7 +940,7 @@ namespace pos_service.Migrations
 
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(36)");
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
@@ -829,7 +962,7 @@ namespace pos_service.Migrations
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(36)");
 
                     b.Property<string>("Uuid")
                         .IsRequired()
@@ -861,7 +994,7 @@ namespace pos_service.Migrations
 
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(36)");
 
                     b.Property<string>("Description")
                         .HasMaxLength(500)
@@ -874,7 +1007,13 @@ namespace pos_service.Migrations
 
                     b.Property<string>("SettingKey")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("SettingName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
 
                     b.Property<bool>("SettingValue")
                         .HasColumnType("tinyint(1)");
@@ -888,7 +1027,7 @@ namespace pos_service.Migrations
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(36)");
 
                     b.Property<string>("Uuid")
                         .IsRequired()
@@ -902,6 +1041,73 @@ namespace pos_service.Migrations
                         .IsUnique();
 
                     b.ToTable("Settings");
+                });
+
+            modelBuilder.Entity("pos_service.Models.Shop", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(36)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
+
+                    b.Property<byte[]>("Logo")
+                        .HasColumnType("blob");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlComputedColumn(b.Property<DateTime?>("UpdatedAt"));
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(36)");
+
+                    b.Property<string>("Uuid")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.HasKey("Id");
+
+                    b.HasAlternateKey("Uuid");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Shops");
                 });
 
             modelBuilder.Entity("pos_service.Models.Supplier", b =>
@@ -922,7 +1128,7 @@ namespace pos_service.Migrations
 
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(36)");
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
@@ -943,7 +1149,7 @@ namespace pos_service.Migrations
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(36)");
 
                     b.Property<string>("Uuid")
                         .IsRequired()
@@ -974,7 +1180,7 @@ namespace pos_service.Migrations
 
                     b.Property<string>("CreatedBy")
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(36)");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
@@ -1014,7 +1220,7 @@ namespace pos_service.Migrations
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("varchar(36)");
 
                     b.Property<string>("UserName")
                         .IsRequired()
@@ -1092,6 +1298,17 @@ namespace pos_service.Migrations
                     b.Navigation("Item");
 
                     b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("pos_service.Models.LoanSettlementLog", b =>
+                {
+                    b.HasOne("pos_service.Models.Order", "Order")
+                        .WithMany("LoanSettlementLogs")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
                 });
 
             modelBuilder.Entity("pos_service.Models.Order", b =>
@@ -1177,6 +1394,8 @@ namespace pos_service.Migrations
 
             modelBuilder.Entity("pos_service.Models.Order", b =>
                 {
+                    b.Navigation("LoanSettlementLogs");
+
                     b.Navigation("OrderItems");
                 });
 

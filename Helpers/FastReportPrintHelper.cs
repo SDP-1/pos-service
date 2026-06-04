@@ -2,34 +2,49 @@ using FastReport;
 using FastReport.Export.Image;
 using pos_service.Models.DTO.Orders;
 using pos_service.Models.DTO.Items;
+using pos_service.Services;
 using System.Drawing.Printing;
+using System.Drawing;
+using System.Runtime.Versioning;
+using pos_service.Models.DTO.Settings;
 
 namespace pos_service.Helpers
 {
     public static class FastReportPrintHelper
     {
+        [SupportedOSPlatform("windows")]
         public static async Task<bool> PrintReceiptAsync(
-            OrderResDto order, 
-            string printerName, 
-            string reportTemplatePath)
+            OrderResDto order,
+            string printerName,
+            string reportTemplatePath,
+            ShopResDto? shop)
         {
-            return await PrintReportAsync(reportTemplatePath, printerName, report =>
+            return await PrintReportAsync(reportTemplatePath, printerName, async report =>
             {
                 // Prepare report items data
                 var items = order.OrderItems.Select((item, index) => new
                 {
-                    no = index + 1,
+                    no          = index + 1,
                     description = item.PrintName,
-                    mprice = item.MarkedPriceAtSale.ToString("F2"),
-                    ourprice = item.PriceAtSale.ToString("F2"),
-                    qty = item.Quantity.ToString(item.AllowsDecimalQuantities ? "F2" : "F0"),
-                    nextAmount = item.LineTotal.ToString("F2")
+                    mprice      = item.MarkedPriceAtSale.ToString("F2"),
+                    ourprice    = item.PriceAtSale.ToString("F2"),
+                    qty         = item.Quantity.ToString(item.AllowsDecimalQuantities ? "F2" : "F0"),
+                    nextAmount  = item.LineTotal.ToString("F2")
                 }).ToList();
+
+                // Shop details, set "-" when value missing.
+                var storeName  = shop?.Name.ToUpper().ToString() ?? "-";
+                var storeAddr  = shop?.Address?.ToString() ?? "-";
+                var storePhone = shop?.PhoneNumber?.ToString() ?? "-";
+
+                report.SetParameterValue("StoreName", storeName);
+                report.SetParameterValue("StoreAddress", storeAddr);
+                report.SetParameterValue("StorePhoneNumber", storePhone);
 
                 // Register data source
                 report.RegisterData(items, "Items");
 
-                // Set report parameters
+                // Set report parameters for the order
                 report.SetParameterValue("date", order.CreatedAt.ToString("yyyy/MM/dd"));
                 report.SetParameterValue("time", order.CreatedAt.ToString("h:mm:ss tt"));
                 report.SetParameterValue("DateTime", order.CreatedAt.ToString());
@@ -39,15 +54,17 @@ namespace pos_service.Helpers
                 report.SetParameterValue("Cash", order.AmountPaid.ToString("F2"));
                 report.SetParameterValue("Balance", order.Balance.ToString("F2"));
                 report.SetParameterValue("GrosAmount", order.GrossAmount.ToString("F2"));
+                report.SetParameterValue("Barcode", order.OrderNumber.ToString());
+
             });
         }
 
         public static async Task<bool> PrintBarcodeAsync(
-            ItemResDto item, 
-            string printerName, 
+            ItemResDto item,
+            string printerName,
             string reportTemplatePath)
         {
-            return await PrintReportAsync(reportTemplatePath, printerName, report =>
+            return await PrintReportAsync(reportTemplatePath, printerName, async report =>
             {
                 // Set barcode parameters
                 report.SetParameterValue("Name", item.Name.ToString());
@@ -55,19 +72,20 @@ namespace pos_service.Helpers
                 report.SetParameterValue("BarCode", item.BarCode.ToString());
                 //report.SetParameterValue("Price", item.RetailPrice.ToString("F2"));
                 report.SetParameterValue("ItemId", $"{item.Id}-{item.SubId}");
+                await Task.CompletedTask;
             });
         }
 
         private static async Task<bool> PrintReportAsync(
-            string reportTemplatePath, 
-            string printerName, 
-            Action<Report> configureReport)
+            string reportTemplatePath,
+            string printerName,
+            Func<Report, Task> configureReport)
         {
-            return await Task.Run(() =>
+            return await Task.Run(async () =>
             {
                 try
                 {
-                    var report = LoadAndPrepareReport(reportTemplatePath, configureReport);
+                    var report = await LoadAndPrepareReport(reportTemplatePath, configureReport);
                     if (report == null)
                         return false;
 
@@ -82,7 +100,7 @@ namespace pos_service.Helpers
             });
         }
 
-        private static Report? LoadAndPrepareReport(string reportTemplatePath, Action<Report> configureReport)
+        private static async Task<Report?> LoadAndPrepareReport(string reportTemplatePath, Func<Report, Task> configureReport)
         {
             try
             {
@@ -94,8 +112,11 @@ namespace pos_service.Helpers
                 var report = new Report();
                 report.Load(reportTemplatePath);
 
-                // Configure report with specific parameters
-                configureReport(report);
+                // Configure report with specific parameters (async)
+                if (configureReport != null)
+                {
+                    await configureReport(report);
+                }
 
                 // Prepare the report
                 if (!report.Prepare())
@@ -131,27 +152,45 @@ namespace pos_service.Helpers
 
                 // Print the exported image
                 using var printDocument = new PrintDocument();
-                using var image = System.Drawing.Image.FromFile(tempPath);
+                using var image = Image.FromFile(tempPath);
                 
                 printDocument.PrinterSettings.PrinterName = printerName;
                 printDocument.PrinterSettings.Copies = 1;
+                printDocument.OriginAtMargins = false;
                 
                 // Set all margins to 0 - template already has its own margins
-                printDocument.DefaultPageSettings.Margins = new System.Drawing.Printing.Margins(0, 0, 0, 0);
+                printDocument.DefaultPageSettings.Margins = new Margins(0, 0, 0, 0);
+
+                var currentY = 0;
 
                 printDocument.PrintPage += (sender, e) =>
                 {
                     if (e.Graphics != null)
                     {
-                        // Draw at position (0,0) using full page bounds - no additional margins
-                        var pageWidth = e.PageBounds.Width;
-                        
-                        // Scale image to fit printer width while maintaining aspect ratio
-                        var scale = (float)pageWidth / image.Width;
-                        var newHeight = (int)(image.Height * scale);
-                        
-                        // Draw from (0,0) - template margins are already included in the image
-                        e.Graphics.DrawImage(image, 0, 0, pageWidth, newHeight);
+                        // Draw in slices to support long thermal receipts.
+                        var printableWidth = e.PageBounds.Width;
+                        var printableHeight = e.PageBounds.Height;
+
+                        var scale = (float)printableWidth / image.Width;
+                        var sourceSliceHeight = (int)Math.Floor(printableHeight / scale);
+
+                        if (sourceSliceHeight <= 0)
+                        {
+                            e.HasMorePages = false;
+                            return;
+                        }
+
+                        var remainingSourceHeight = image.Height - currentY;
+                        var drawSourceHeight = Math.Min(sourceSliceHeight, remainingSourceHeight);
+
+                        var srcRect = new Rectangle(0, currentY, image.Width, drawSourceHeight);
+                        var destHeight = (int)Math.Ceiling(drawSourceHeight * scale);
+                        var destRect = new Rectangle(0, 0, printableWidth, destHeight);
+
+                        e.Graphics.DrawImage(image, destRect, srcRect, GraphicsUnit.Pixel);
+
+                        currentY += drawSourceHeight;
+                        e.HasMorePages = currentY < image.Height;
                     }
                 };
 

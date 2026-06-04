@@ -85,16 +85,14 @@ namespace pos_service.Services.Common.Cache
 
         public void Remove(ServiceCacheKey primaryKey, string? secondaryKey = null)
         {
-            if (string.IsNullOrEmpty(secondaryKey))
-            {
-                RemovePrimary(primaryKey);
-                return;
-            }
+            //if (string.IsNullOrEmpty(secondaryKey))
+            //{
+            //    RemovePrimary(primaryKey);
+            //    return;
+            //}
 
             var composed = ComposeKey(primaryKey, secondaryKey);
             _memoryCache.Remove(composed);
-
-            // also try to remove from index bag - can't remove specific item from ConcurrentBag, so leave it (harmless)
         }
 
         public IEnumerable<string> GetPrimaryKeys()

@@ -35,6 +35,7 @@ namespace pos_service.Controllers
         /// </summary>
         /// <returns>A list of all items in the system.</returns>
         [HttpGet]
+        [Permission(PermissionType.ITEM_VIEW)]
         public async Task<ActionResult<IEnumerable<ItemResDto>>> GetAllItems()
         {
             var items = await _itemService.GetAllItemsAsync(_currentUser);
@@ -48,6 +49,7 @@ namespace pos_service.Controllers
         /// <param name="subId">The sub-identifier of the item.</param>
         /// <returns>The item details if found, otherwise returns NotFound.</returns>
         [HttpGet("{id:int}/{subId:int}")]
+        [Permission(PermissionType.ITEM_VIEW)]
         public async Task<ActionResult<ItemResDto>> GetItemById(int id, int subId)
         {
             var item = await _itemService.GetItemByIdAsync(id, subId, _currentUser);
@@ -64,6 +66,7 @@ namespace pos_service.Controllers
         /// <param name="id">The main identifier to search for.</param>
         /// <returns>A list of items with the specified main ID.</returns>
         [HttpGet("main/{id:int}")]
+        [Permission(PermissionType.ITEM_VIEW)]
         public async Task<ActionResult<IEnumerable<ItemResDto>>> GetItemsByMainId(int id)
         {
             var items = await _itemService.GetItemsByMainIdAsync(id, _currentUser);
@@ -76,6 +79,7 @@ namespace pos_service.Controllers
         /// <param name="barCode">The barcode to search for.</param>
         /// <returns>Minimal item details if found, otherwise returns NotFound.</returns>
         [HttpGet("barcode/{barCode}/min")]
+        [Permission(PermissionType.ITEM_VIEW)]
         public async Task<ActionResult<IEnumerable<ItemMiniResDto>>> GetItemMinDetailsByBarCode(string barCode)
         {
             var items = await _itemService.GetItemMinDetailsByBarCodeAsync(barCode, _currentUser);
@@ -92,6 +96,7 @@ namespace pos_service.Controllers
         /// <param name="barCode">The barcode to search for.</param>
         /// <returns>Complete item details if found, otherwise returns NotFound.</returns>
         [HttpGet("barcode/{barCode}")]
+        [Permission(PermissionType.ITEM_VIEW)]
         public async Task<ActionResult<IEnumerable<ItemResDto>>> GetItemByBarCode(string barCode)
         {
             var item = await _itemService.GetItemByBarCodeAsync(barCode, _currentUser);
@@ -103,11 +108,25 @@ namespace pos_service.Controllers
         }
 
         /// <summary>
+        /// Searches items by matching name, print name, barcode or uuid.
+        /// </summary>
+        /// <param name="searchTerm">The search text to filter items.</param>
+        /// <returns>A list of matching items.</returns>
+        [HttpGet("search")]
+        [Permission(PermissionType.ITEM_VIEW)]
+        public async Task<ActionResult<IEnumerable<ItemResDto>>> SearchItemsAsync([FromQuery] string searchTerm = "")
+        {
+            var items = await _itemService.SearchItemsAsync(searchTerm, _currentUser);
+            return Ok(items);
+        }
+
+        /// <summary>
         /// Retrieves an item by its unique UUID identifier.
         /// </summary>
         /// <param name="uuid">The UUID of the item to retrieve.</param>
         /// <returns>The item details if found, otherwise returns NotFound.</returns>
         [HttpGet("uuid/{uuid:guid}")]
+        [Permission(PermissionType.ITEM_VIEW)]
         public async Task<ActionResult<ItemResDto>> GetItemByUuid(string uuid)
         {
             var item = await _itemService.GetItemByUuidAsync(uuid, _currentUser);
@@ -124,6 +143,7 @@ namespace pos_service.Controllers
         /// <param name="id">The main identifier to search for.</param>
         /// <returns>A dictionary containing quantity information for the items.</returns>
         [HttpGet("quantity/main/{id:int}")]
+        [Permission(PermissionType.ITEM_VIEW)]
         public async Task<ActionResult<Dictionary<string, decimal>>> GetQuantitiesByMainId(int id)
         {
             var quantities = await _itemService.GetQuantitiesByMainIdAsync(id, _currentUser);
@@ -136,6 +156,7 @@ namespace pos_service.Controllers
         /// <param name="uuid">The UUID of the item.</param>
         /// <returns>The quantity value if found, otherwise returns NotFound.</returns>
         [HttpGet("quantity/uuid/{uuid:guid}")]
+        [Permission(PermissionType.ITEM_VIEW)]
         public async Task<ActionResult<decimal>> GetQuantityByUuid(string uuid)
         {
             var quantity = await _itemService.GetQuantityByUuidAsync(uuid, _currentUser);
@@ -153,6 +174,7 @@ namespace pos_service.Controllers
         /// <param name="subId">The sub-identifier of the item.</param>
         /// <returns>The quantity value if found, otherwise returns NotFound.</returns>
         [HttpGet("quantity/id/{id:int}/{subId:int}")]
+        [Permission(PermissionType.ITEM_VIEW)]
         public async Task<ActionResult<decimal>> GetQuantityById(int id, int subId)
         {
             var quantity = await _itemService.GetQuantityByIdAsync(id, subId, _currentUser);
@@ -169,6 +191,7 @@ namespace pos_service.Controllers
         /// <param name="itemDto">The item data transfer object containing item information.</param>
         /// <returns>The newly created item details with location header.</returns>
         [HttpPost]
+        [Permission(PermissionType.ITEM_ADD)]
         public async Task<ActionResult<ItemResDto>> CreateItem([FromBody] ItemReqDto itemDto)
         {
             var newItem = await _itemService.CreateItemAsync(itemDto, _currentUser);
@@ -236,9 +259,9 @@ namespace pos_service.Controllers
         [Permission(PermissionType.ITEM_DELETE)]
         public async Task<IActionResult> DeleteItem(int id, int subId)
         {
-            var success = await _itemService.DeleteItemAsync(id, subId, _currentUser);
-            if (!success)
-                return NotFound();
+            var error = await _itemService.DeleteItemAsync(id, subId, _currentUser);
+            if (error != null)
+                return NotFound(error);
 
             return Ok();
         }
@@ -249,6 +272,7 @@ namespace pos_service.Controllers
         /// <param name="supplierId">The unique identifier of the supplier.</param>
         /// <returns>A list of items associated with the specified supplier.</returns>
         [HttpGet("supplier/{supplierId:int}")]
+        [Permission(PermissionType.ITEM_VIEW)]
         public async Task<ActionResult<IEnumerable<ItemResDto>>> GetItemsBySupplierId(int supplierId)
         {
             var items = await _itemService.GetItemsBySupplierIdAsync(supplierId, _currentUser);

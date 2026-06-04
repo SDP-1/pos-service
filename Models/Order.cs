@@ -16,7 +16,9 @@ namespace pos_service.Models
         [MaxLength(50)]
         public string OrderNumber                        { get; set; }
 
-        public OrderStatus Status                        { get; set; } = OrderStatus.Pending;
+        // Main status and optional sub-status. SubStatus can be null when not applicable.
+        public MainOrderStatus MainStatus                { get; set; } = MainOrderStatus.Pending;
+        public OrderSubStatus? SubStatus                 { get; set; } = null;
         public PaymentMethod PaymentMethod               { get; set; } = PaymentMethod.Cash;
 
         /// <summary>
@@ -84,6 +86,11 @@ namespace pos_service.Models
         /// A collection of order irem associated with this order.
         /// </summary>
         public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+
+        /// <summary>
+        /// Loan settlement history for this order (if the order was created as a loan/credit).
+        /// </summary>
+        public virtual ICollection<LoanSettlementLog> LoanSettlementLogs { get; set; } = new List<LoanSettlementLog>();
 
         /// <summary>
         /// Optional description or notes for the order.

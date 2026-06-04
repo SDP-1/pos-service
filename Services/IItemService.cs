@@ -45,8 +45,8 @@ namespace pos_service.Services
         /// <param name="id">The main identifier of the item to delete.</param>
         /// <param name="subId">The sub-identifier of the item to delete.</param>
         /// <param name="currentUser">The current user deleting the item.</param>
-        /// <returns>True if deletion was successful, otherwise false.</returns>
-        Task<bool> DeleteItemAsync(int id, int subId, CurrentUser currentUser);
+        /// <returns>Null if deletion was successful, otherwise an error message string.</returns>
+        Task<string?> DeleteItemAsync(int id, int subId, CurrentUser currentUser);
 
         /// <summary>
         /// Adds stock quantity to an existing item.

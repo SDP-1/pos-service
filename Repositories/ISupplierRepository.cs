@@ -1,4 +1,5 @@
 ﻿using pos_service.Models;
+using pos_service.Models.DTO.Suppliers;
 
 namespace pos_service.Repositories
 {
@@ -8,38 +9,45 @@ namespace pos_service.Repositories
         /// Retrieves a specific supplier by its unique identifier.
         /// </summary>
         /// <param name="id">The unique identifier of the supplier.</param>
+        /// <returns>The supplier response DTO if found, otherwise null.</returns>
+        Task<SupplierResDto?> GetByIdAsync(int id);
+
+        /// <summary>
+        /// Retrieves a supplier entity by ID.
+        /// </summary>
+        /// <param name="id">The unique identifier of the supplier.</param>
         /// <returns>The supplier entity if found, otherwise null.</returns>
-        Task<Supplier?> GetByIdAsync(int id);
+        Task<Supplier?> GetSupplierByIdAsync(int id);
 
         /// <summary>
         /// Retrieves a supplier by its unique identifier including related data.
         /// </summary>
         /// <param name="id">The unique identifier of the supplier.</param>
-        /// <returns>The supplier entity with related data if found, otherwise null.</returns>
-        Task<Supplier?> GetByIdWithDetailsAsync(int id);
+        /// <returns>The supplier response DTO with related data if found, otherwise null.</returns>
+        Task<SupplierResDto?> GetByIdWithDetailsAsync(int id);
 
         /// <summary>
         /// Retrieves a supplier and its items by supplier id.
         /// </summary>
-        Task<Supplier?> GetSupplierWithItemsAsync(int id);
+        Task<SupplierResDto?> GetSupplierWithItemsAsync(int id);
 
         /// <summary>
         /// Retrieves a supplier entity by its Name.
         /// Used to enforce unique supplier names.
         /// </summary>
-        Task<Supplier?> GetByNameAsync(string name);
+        Task<SupplierResDto?> GetByNameAsync(string name);
 
         /// <summary>
         /// Retrieves all suppliers from the data store.
         /// </summary>
-        /// <returns>A list of all supplier entities.</returns>
-        Task<IEnumerable<Supplier>> GetAllAsync();
+        /// <returns>A list of all supplier response DTOs.</returns>
+        Task<IEnumerable<SupplierResDto>> GetAllAsync();
 
         /// <summary>
         /// Retrieves all suppliers without loading related navigation properties.
         /// Use this for lightweight queries (e.g. dropdowns) to avoid eager-loading contacts and items.
         /// </summary>
-        Task<IEnumerable<Supplier>> GetAllBasicAsync();
+        Task<IEnumerable<SupplierResDto>> GetAllBasicAsync();
 
         /// <summary>
         /// Adds a new supplier to the data store.

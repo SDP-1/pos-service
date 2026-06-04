@@ -6,6 +6,7 @@ namespace pos_service.Services.Roles
     public interface IRoleService
     {
         Task<IEnumerable<RoleResDto>> GetAllAsync();
+        Task<IEnumerable<RoleResDto>> GetActiveAsync();
         Task<RoleResDto?> GetByIdAsync(int id);
         Task<RoleResDto?> CreateAsync(RoleReqDto role);
         Task<RoleResDto?> UpdateAsync(int id, RoleReqDto role);

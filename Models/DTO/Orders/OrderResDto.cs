@@ -8,7 +8,8 @@ namespace pos_service.Models.DTO.Orders
     {
         public int Id { get; set; }
         public string OrderNumber { get; set; }
-        public OrderStatus Status { get; set; }
+        public pos_service.Models.Enums.MainOrderStatus MainStatus { get; set; }
+        public pos_service.Models.Enums.OrderSubStatus? SubStatus { get; set; }
         public PaymentMethod PaymentMethod { get; set; }
         public SaleType SaleType { get; set; }
         public int ItemCount { get; set; }
@@ -32,7 +33,10 @@ namespace pos_service.Models.DTO.Orders
         public string CustomerPhone { get; set; }
 
         // Order items
-        public List<OrderItemMiniResDto> OrderItems { get; set; } = new List<OrderItemMiniResDto>();
+        public List<OrderItemResDto> OrderItems { get; set; } = new List<OrderItemResDto>();
+
+        // Loan settlement history (if any)
+        public List<LoanSettlementLogResDto> LoanSettlementLogs { get; set; } = new List<LoanSettlementLogResDto>();
 
         // Audit fields
         public string Uuid { get; set; }

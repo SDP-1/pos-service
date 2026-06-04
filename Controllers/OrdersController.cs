@@ -54,9 +54,20 @@ namespace pos_service.Controllers
         {
            var order = await _orderService.GetOrderAsync(id, _currentUser);
            if (order == null)
-               return Ok("Order not found");
+               return NotFound("Order not found");
 
-           return Ok(order);
+            return Ok(order);
+        }
+
+        /// <summary>
+        /// Record a loan settlement payment for an order.
+        /// </summary>
+        [HttpPost("{id:int}/settle")]
+        [Permission(PermissionType.ORDER_SETTLEMENT)]
+        public async Task<ActionResult<OrderResDto>> RecordSettlement(int id, [FromBody] LoanSettlementLogReqDto dto)
+        {
+            var order = await _orderService.RecordSettlementAsync(id, dto.AmountPaid, dto.Description, _currentUser);
+            return Ok(order);
         }
 
         /// <summary>
@@ -70,9 +81,9 @@ namespace pos_service.Controllers
         {
            var order = await _orderService.GetOrderByUuidAsync(uuid, _currentUser);
            if (order == null)
-               return Ok("Order not found");
+               return NotFound("Order not found");
 
-           return Ok(order);
+            return Ok(order);
         }
 
         /// <summary>
@@ -86,8 +97,22 @@ namespace pos_service.Controllers
         {
             var order = await _orderService.GetOrderByOrderNumberAsync(number, _currentUser);
             if (order == null)
-                return Ok("Order not found");
-           
+                return NotFound("Order not found");
+
+            return Ok(order);
+        }
+
+        /// <summary>
+        /// Returns the order and enriches each order item with returned quantity and remaining quantity.
+        /// </summary>
+        [HttpGet("number/{number}/with-returns")]
+        [Permission(PermissionType.ORDER_VIEW)]
+        public async Task<ActionResult<OrderResDto>> GetOrderByOrderNumberWithReturns(string number)
+        {
+            var order = await _orderService.GetOrderWithReturnedItemsAsync(number, _currentUser);
+            if (order == null)
+                return NotFound("Order not found");
+
             return Ok(order);
         }
 
@@ -139,15 +164,15 @@ namespace pos_service.Controllers
 
         /// <summary>
         /// Updates the status of an existing order.
-        /// </summary>
+        /// /// </summary>
         /// <param name="id">The unique identifier of the order to update.</param>
         /// <param name="status"> New status.</param>
         /// <returns>The updated order details if successful.</returns>
         [HttpPatch("{id:int}/status/{status:int}")]
         [Permission(PermissionType.ORDER_UPDATE_STATUS)]
-        public async Task<ActionResult<OrderResDto>> UpdateOrderStatus(int id, OrderStatus status)
+        public async Task<ActionResult<OrderResDto>> UpdateOrderStatus(int id, pos_service.Models.Enums.MainOrderStatus status)
         {
-            if (status == OrderStatus.Default)
+            if (status == pos_service.Models.Enums.MainOrderStatus.Default)
                 return BadRequest("status is required.");
 
                 var order = await _orderService.UpdateOrderStatusAsync(id, status, _currentUser);
@@ -173,9 +198,21 @@ namespace pos_service.Controllers
         public async Task<ActionResult<List<OrderResDto>>> GetOrdersByDateAndStatus(
             [FromQuery] DateTime? startDate, 
             [FromQuery] DateTime? endDate, 
-            [FromQuery] OrderStatus? status)
+            [FromQuery] pos_service.Models.Enums.MainOrderStatus? status,
+            [FromQuery] pos_service.Models.Enums.OrderSubStatus? subStatus)
         {
-            var orders = await _orderService.GetOrdersByDateAndStatusAsync(startDate, endDate, status, _currentUser);
+            var orders = await _orderService.GetOrdersByDateAndStatusAsync(startDate, endDate, status, subStatus, _currentUser);
+            return Ok(orders);
+        }
+
+        /// <summary>
+        /// Retrieves all inactive orders (IsActive == false).
+        /// </summary>
+        [HttpGet("inactive")]
+        [Permission(PermissionType.ORDER_VIEW)]
+        public async Task<ActionResult<List<OrderResDto>>> GetInactiveOrders()
+        {
+            var orders = await _orderService.GetInactiveOrdersAsync(_currentUser);
             return Ok(orders);
         }
     }

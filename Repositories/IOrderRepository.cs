@@ -84,6 +84,15 @@ namespace pos_service.Repositories
         /// <param name="endDate">End date for the date range filter. If null, includes all dates from startDate onwards.</param>
         /// <param name="status">Order status filter. If null, returns all statuses.</param>
         /// <returns>List of active orders matching the criteria, ordered by CreatedAt descending.</returns>
-        Task<List<Order>> GetOrdersByDateAndStatusAsync(DateTime? startDate, DateTime? endDate, OrderStatus? status);
+        Task<List<Order>> GetOrdersByDateAndStatusAsync(DateTime? startDate, DateTime? endDate, MainOrderStatus? status, OrderSubStatus? subStatus);
+
+        // Returns returned-items summary rows (backed by view) for given order number
+        Task<List<pos_service.Models.ReturnedItemsSummary>> GetReturnedItemsSummaryByOrderNumberAsync(string orderNumber);
+
+        /// <summary>
+        /// Retrieves all orders that are inactive (IsActive == false).
+        /// </summary>
+        /// <returns>List of inactive orders.</returns>
+        Task<List<Order>> GetInactiveOrdersAsync();
     }
 }

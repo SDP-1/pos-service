@@ -1,27 +1,36 @@
 ﻿using AutoMapper;
 using pos_service.Models;
 using pos_service.Models.DTO.Items;
+using pos_service.Models.DTO.Inventory;
+using pos_service.Models.Enums;
 using pos_service.Repositories;
+using pos_service.Services.Common.Cache;
 
 namespace pos_service.Services
 {
     public class ItemService : IItemService
     {
-        private readonly IItemRepository     _itemRepository;
-        private readonly ISupplierRepository _supplierRepository;
-        private readonly IMapper             _mapper;
+        private readonly IItemRepository      _itemRepository;
+        private readonly IInventoryRepository _inventoryRepository;
+        private readonly ISettingService      _settingService;
+        private readonly IMapper              _mapper;
+        private readonly ICacheService        _cache;
 
         /// <summary>
         /// Initializes a new instance of the ItemService.
         /// </summary>
         public ItemService(
             IItemRepository itemRepository,
-            ISupplierRepository supplierRepository,
-            IMapper mapper)
+            IInventoryRepository inventoryRepository,
+            ISettingService settingService,
+            IMapper mapper,
+            ICacheService cache)
         {
-            _itemRepository     = itemRepository;
-            _supplierRepository = supplierRepository;
-            _mapper             = mapper;
+            _itemRepository      = itemRepository;
+            _inventoryRepository = inventoryRepository;
+            _settingService      = settingService;
+            _mapper              = mapper;
+            _cache               = cache;
         }
 
         /// <summary>
@@ -31,8 +40,8 @@ namespace pos_service.Services
         /// <returns>A list of all item details.</returns>
         public async Task<IEnumerable<ItemResDto>> GetAllItemsAsync(CurrentUser currentUser)
         {
-            var items = await _itemRepository.GetAllAsync();
-            return _mapper.Map<IEnumerable<ItemResDto>>(items);
+            return await _cache.GetOrCreateAsync<IEnumerable<ItemResDto>>(ServiceCacheKey.Items, null,
+                () => _itemRepository.GetAllAsync());
         }
 
         /// <summary>
@@ -44,8 +53,7 @@ namespace pos_service.Services
         /// <returns>The item details if found, otherwise null.</returns>
         public async Task<ItemResDto?> GetItemByIdAsync(int id, int subId, CurrentUser currentUser)
         {
-            var item = await _itemRepository.GetByIdAsync(id, subId);
-            return _mapper.Map<ItemResDto?>(item);
+            return await _itemRepository.GetByIdAsync(id, subId);
         }
 
         /// <summary>
@@ -62,7 +70,7 @@ namespace pos_service.Services
 
             if (itemDto.Id.HasValue && itemDto.SubId.HasValue)
             {
-                idToUse = itemDto.Id.Value;
+                idToUse    = itemDto.Id.Value;
                 subIdToUse = itemDto.SubId.Value;
 
                 if (await _itemRepository.ItemExistsAsync(idToUse, subIdToUse))
@@ -84,12 +92,12 @@ namespace pos_service.Services
             else
             {
                 // No Id provided. Get next main id and start subId at 0
-                idToUse = await _itemRepository.GetNextMainIdAsync();
+                idToUse    = await _itemRepository.GetNextMainIdAsync();
                 subIdToUse = 0;
             }
 
-            var item = _mapper.Map<Item>(itemDto);
-            item.Id = idToUse;
+            var item   = _mapper.Map<Item>(itemDto);
+            item.Id    = idToUse;
             item.SubId = subIdToUse;
             if (string.IsNullOrWhiteSpace(item.Uuid))
             {
@@ -102,6 +110,29 @@ namespace pos_service.Services
             await ApplySuppliersAsync(item, itemDto.SupplierIds);
 
             var newItem = await _itemRepository.AddAsync(item);
+
+            var inventory = new Inventory
+            {
+                ItemUuid                = newItem.Uuid,
+                StockQuantity           = itemDto.StockQuantity,
+                AllowsDecimalQuantities = itemDto.AllowsDecimalQuantities,
+                UnitType                = itemDto.UnitType,
+                Units                   = (itemDto.Units ?? Enumerable.Empty<InventoryUnitReqDto>()).Select(u => new InventoryUnit
+                {
+                    UnitType            = u.UnitType,
+                    ParentUnitType      = u.ParentUnitType,
+                    QuantityPerParent   = u.QuantityPerParent,
+                    QuantityInBaseUnits = u.QuantityInBaseUnits,
+                    Uuid                = Guid.NewGuid().ToString()
+                }).ToList(),
+                Uuid                    = Guid.NewGuid().ToString()
+            };
+
+            inventory         = await _inventoryRepository.AddAsync(inventory);
+            newItem.Inventory = inventory;
+
+            InvalidateCache();
+
             return _mapper.Map<ItemResDto>(newItem);
         }
 
@@ -133,6 +164,43 @@ namespace pos_service.Services
 
             var result = await _itemRepository.UpdateAsync(itemToUpdate);
 
+            // Check if inventory update is disabled
+            var disableInventoryUpdateSetting = await _settingService.GetByKeyAsync(SettingKey.DisableInventoryUpdateInItemEdit, currentUser);
+            var shouldDisableInventoryUpdate = disableInventoryUpdateSetting?.SettingValue == true;
+
+            if (!shouldDisableInventoryUpdate)
+            {
+                var inventory = await _inventoryRepository.GetByItemUuidAsync(itemToUpdate.Uuid)
+                    ?? throw new InvalidOperationException($"Inventory not found for item {itemToUpdate.Uuid}");
+
+                inventory.StockQuantity           = itemDto.StockQuantity;
+                inventory.AllowsDecimalQuantities = itemDto.AllowsDecimalQuantities;
+                inventory.UnitType                = itemDto.UnitType;
+
+                // Only replace Units if the request explicitly supplied them. This prevents
+                // clearing packaging configuration when callers only update scalar fields
+                // such as StockQuantity. Use ApplyInventoryUnits to only change when
+                // units actually differ from existing ones.
+                if (itemDto.Units != null && itemDto.Units.Any())
+                {
+                    ApplyInventoryUnits(inventory, itemDto.Units);
+                }
+
+                // Mark as user-adjusted for audit trail tracking
+                inventory.IsUserAdjusted = true;
+
+                await _inventoryRepository.UpdateAsync(inventory);
+                result.Inventory = inventory;
+            }
+            else
+            {
+                // Load inventory but don't update it
+                var inventory = await _inventoryRepository.GetByItemUuidAsync(itemToUpdate.Uuid);
+                result.Inventory = inventory;
+            }
+
+            InvalidateCache();
+
             return _mapper.Map<ItemResDto>(result); ;
         }
 
@@ -143,17 +211,15 @@ namespace pos_service.Services
         /// <param name="subId">The sub-identifier of the item to delete.</param>
         /// <param name="currentUser">The current user deleting the item.</param>
         /// <returns>True if deletion was successful, otherwise false.</returns>
-        public async Task<bool> DeleteItemAsync(int id, int subId, CurrentUser currentUser)
+        public async Task<string?> DeleteItemAsync(int id, int subId, CurrentUser currentUser)
         {
-            var itemToDelete = await _itemRepository.GetByIdAsync(id, subId);
-            if (itemToDelete == null)
-            {
-                // Item not found.
-                return false;
-            }
+            var error = await _itemRepository.DeleteAsync(id, subId);
+            if (error != null)
+                return error;
 
-            await _itemRepository.DeleteAsync(itemToDelete);
-            return true;
+            InvalidateCache();
+
+            return null;
         }
 
         /// <summary>
@@ -164,8 +230,8 @@ namespace pos_service.Services
         /// <returns>A list of items with the specified main ID.</returns>
         public async Task<IEnumerable<ItemResDto>> GetItemsByMainIdAsync(int id, CurrentUser currentUser)
         {
-            var items = await _itemRepository.GetByMainIdAsync(id);
-            return _mapper.Map<IEnumerable<ItemResDto>>(items);
+            // Repository now returns ItemResDto directly
+            return await _itemRepository.GetByMainIdAsync(id);
         }
 
         /// <summary>
@@ -176,8 +242,7 @@ namespace pos_service.Services
         /// <returns>Complete item details if found, otherwise empty collection.</returns>
         public async Task<IEnumerable<ItemResDto>> GetItemByBarCodeAsync(string barCode, CurrentUser currentUser)
         {
-            var items = await _itemRepository.GetByBarCodeAsync(barCode);
-            return _mapper.Map<IEnumerable<ItemResDto>>(items);
+            return await _itemRepository.GetByBarCodeAsync(barCode);
         }
 
         /// <summary>
@@ -190,10 +255,8 @@ namespace pos_service.Services
         {
             var items = await _itemRepository.GetByBarCodeAsync(barCode);
 
-            //Filter active items 
-            var activeItems = items.Where(x => x.IsActive == true);
 
-            return _mapper.Map<IEnumerable<ItemMiniResDto>>(activeItems);
+            return _mapper.Map<IEnumerable<ItemMiniResDto>>(items);
         }
 
         /// <summary>
@@ -218,17 +281,36 @@ namespace pos_service.Services
         /// <returns>The updated item details if successful, otherwise null.</returns>
         public async Task<ItemResDto?> AddStockAsync(int id, int subId, decimal quantity, CurrentUser currentUser)
         {
-            var item = await _itemRepository.GetByIdAsync(id, subId);
-            if (item == null)
+            var itemDto = await _itemRepository.GetByIdAsync(id, subId);
+            if (itemDto == null)
             {
                 return null; // Item not found
             }
 
-            // Handle null StockQuantity by initializing to 0
-            item.StockQuantity = item.StockQuantity + quantity;
+            var inventory = await _inventoryRepository.GetByItemUuidAsync(itemDto.Uuid)
+                ?? throw new InvalidOperationException($"Inventory not found for item {itemDto.Uuid}");
 
-            await _itemRepository.UpdateAsync(item);
-            return _mapper.Map<ItemResDto>(item);
+            inventory.StockQuantity += quantity;
+
+            await _inventoryRepository.UpdateAsync(inventory);
+
+            // Update DTO fields from inventory
+            itemDto.Inventory ??= new InventoryResDto();
+            itemDto.Inventory.ItemUuid                = inventory.ItemUuid;
+            itemDto.Inventory.StockQuantity           = inventory.StockQuantity;
+            itemDto.Inventory.AllowsDecimalQuantities = inventory.AllowsDecimalQuantities;
+            itemDto.Inventory.UnitType                = inventory.UnitType;
+            itemDto.Inventory.Units                   = inventory.Units.Select(u => new InventoryUnitResDto
+            {
+                UnitType            = u.UnitType,
+                ParentUnitType      = u.ParentUnitType,
+                QuantityPerParent   = u.QuantityPerParent,
+                QuantityInBaseUnits = u.QuantityInBaseUnits
+            }).ToList();
+
+            InvalidateCache();
+
+            return itemDto;
         }
 
         /// <summary>
@@ -243,7 +325,7 @@ namespace pos_service.Services
             // Creates a dictionary like: { "1001/0": 50, "1001/1": 25 }
             return items.ToDictionary(
                 item => $"{item.Id}/{item.SubId}",
-                item => item.StockQuantity
+                item => item.Inventory?.StockQuantity ?? 0m
             );
         }
 
@@ -258,7 +340,10 @@ namespace pos_service.Services
             var item = await _itemRepository.GetByUuidAsync(uuid);
             // Returns the quantity, or 0 if the item is found but stock is null.
             // Returns null if the item is not found at all.
-            return item?.StockQuantity ?? (item != null ? 0m : null);
+            return item == null
+                ? null
+                : item.Inventory?.StockQuantity
+                    ?? throw new InvalidOperationException($"Inventory not found for item {item.Uuid}");
         }
 
         /// <summary>
@@ -271,9 +356,8 @@ namespace pos_service.Services
         public async Task<decimal?> GetQuantityByIdAsync(int id, int subId, CurrentUser currentUser)
         {
             var item = await _itemRepository.GetByIdAsync(id, subId);
-            // Returns the quantity, or 0 if the item is found but stock is null.
-            // Returns null if the item is not found at all.
-            return item?.StockQuantity ?? (item != null ? 0m : null);
+
+            return item == null? null : item.Inventory?.StockQuantity ?? 0m;
         }
 
         /// <summary>
@@ -293,51 +377,55 @@ namespace pos_service.Services
         /// </summary>
         public async Task<IEnumerable<ItemResDto>> SearchItemsAsync(string searchTerm, CurrentUser currentUser)
         {
-            var items = await _itemRepository.GetBySearchAsync(searchTerm);
-            return _mapper.Map<IEnumerable<ItemResDto>>(items);
+            return await _itemRepository.GetBySearchAsync(searchTerm);
         }
 
-        private static List<ItemExpiry> ResolveExpiries(ItemReqDto itemDto, Item item)
-        {
-            if (itemDto.ExpDates == null || !itemDto.ExpDates.Any())
-            {
-                return new List<ItemExpiry>();
-            }
-
-            return itemDto.ExpDates
-                .GroupBy(exp => new { Date = exp.ExpDate.Date, exp.NotifyBeforeDays })
-                .Select(group => new ItemExpiry
-                {
-                    ItemsId = item.Id,
-                    ItemsSubId = item.SubId,
-                    ItemUuid = item.Uuid,
-                    ExpDate = group.Key.Date,
-                    NotifyBeforeDays = group.Key.NotifyBeforeDays,
-                    Uuid = Guid.NewGuid().ToString()
-                })
-                .ToList();
-        }
+        // Consolidated expiry application. Builds the target expiries from the DTO,
+        // compares them to the existing ones and only applies (replaces) when there
+        // is a difference. This avoids touching the collection when nothing changed.
 
         /// <summary>
         /// Ensures price details are applied to the item and keys are synchronized.
         /// </summary>
-        private void ApplyPrice(Item item, ItemPriceDto? priceDto)
+        private void ApplyPrice(Item item, ItemPriceReqDto? priceDto)
         {
+            // Normalize incoming DTO
+            var dto = priceDto ?? new ItemPriceReqDto();
 
+            // If there's no existing price, create and map values
             if (item.Price == null)
             {
                 item.Price = new ItemPrice
                 {
                     ItemsId    = item.Id,
                     ItemsSubId = item.SubId,
-                    ItemUuid   = item.Uuid
+                    ItemUuid   = item.Uuid,
+                    Uuid       = Guid.NewGuid().ToString()
                 };
+
+                _mapper.Map(dto, item.Price);
+                item.Price.ItemsId    = item.Id;
+                item.Price.ItemsSubId = item.SubId;
+                item.Price.ItemUuid   = item.Uuid;
+                return;
             }
 
-            _mapper.Map(priceDto ?? new ItemPriceDto(), item.Price);
+            // Determine if any meaningful price field changed. If not, avoid touching the entity.
+            bool changed =
+                item.Price.BuyingPrice           != dto.BuyingPrice ||
+                item.Price.MarkedPrice           != dto.MarkedPrice ||
+                item.Price.RetailPrice           != dto.RetailPrice ||
+                item.Price.WholesalePrice        != dto.WholesalePrice ||
+                item.Price.RetailDiscountRatio   != dto.RetailDiscountRatio ||
+                item.Price.WholesaleDiscountRatio!= dto.WholesaleDiscountRatio;
+
+            if (!changed)
+                return;
+
+            // Apply new values but preserve identity fields (Uuid) and keys.
+            _mapper.Map(dto, item.Price);
             item.Price.ItemsId    = item.Id;
             item.Price.ItemsSubId = item.SubId;
-            item.Price.Uuid       = Guid.NewGuid().ToString();
             item.Price.ItemUuid   = item.Uuid;
         }
 
@@ -346,11 +434,35 @@ namespace pos_service.Services
         /// </summary>
         private void ApplyExpiries(Item item, ItemReqDto itemDto)
         {
+            // Build new expiries from DTO (group by date and notify days)
+            var newExpiryKeys = (itemDto.ExpDates ?? Enumerable.Empty<ItemExpiryReqDto>())
+                .GroupBy(exp => new { Date = exp.ExpDate.Date, exp.NotifyBeforeDays })
+                .Select(g => new { Date = g.Key.Date, g.Key.NotifyBeforeDays })
+                .ToHashSet();
+
+            // Build existing expiry key set for comparison
+            var existingExpiryKeys = (item.ExpDates ?? Enumerable.Empty<ItemExpiry>())
+                .Select(e => new { Date = e.ExpDate.Date, e.NotifyBeforeDays })
+                .ToHashSet();
+
+            // If nothing changed, avoid touching the collection
+            if (existingExpiryKeys.SetEquals(newExpiryKeys))
+                return;
+
+            // Replace expiries since there is a change
             item.ExpDates.Clear();
-            var expiries = ResolveExpiries(itemDto, item);
-            foreach (var expiry in expiries)
+
+            foreach (var key in newExpiryKeys.OrderBy(k => k.Date))
             {
-                item.ExpDates.Add(expiry);
+                item.ExpDates.Add(new ItemExpiry
+                {
+                    ItemsId          = item.Id,
+                    ItemsSubId       = item.SubId,
+                    ItemUuid         = item.Uuid,
+                    ExpDate          = key.Date,
+                    NotifyBeforeDays = key.NotifyBeforeDays,
+                    Uuid             = Guid.NewGuid().ToString()
+                });
             }
         }
 
@@ -367,20 +479,62 @@ namespace pos_service.Services
 
             foreach (var supplierId in supplierIds)
             {
-                var supplier = await _supplierRepository.GetByIdAsync(supplierId);
-                if (supplier != null)
-                {
                     item.ItemSuppliers.Add(new ItemSupplier
                     {
                         Uuid        = Guid.NewGuid().ToString(),
-                        SuppliersId = supplier.Id,
+                        SuppliersId = supplierId,
                         ItemsId     = item.Id,
                         ItemsSubId  = item.SubId,
-                        Supplier    = supplier,
                         Item        = item
                     });
-                }
             }
+        }
+
+        /// <summary>
+        /// Replaces inventory units only when there is a difference between the
+        /// existing units and the desired units from the request DTO. This avoids
+        /// touching the collection when nothing changed, following the pattern of
+        /// ApplyExpiries.
+        /// </summary>
+        private void ApplyInventoryUnits(Inventory inventory, ICollection<InventoryUnitReqDto>? unitsDto)
+        {
+            if (unitsDto == null || !unitsDto.Any())
+                return;
+
+            inventory.Units ??= new List<InventoryUnit>();
+
+            // Build key sets for comparison
+            var newUnitKeys = unitsDto
+                .Select(u => new { u.UnitType, u.ParentUnitType, u.QuantityPerParent,u.QuantityInBaseUnits})
+                .ToHashSet();
+
+            var existingUnitKeys = inventory.Units
+                .Select(u => new { u.UnitType, u.ParentUnitType, u.QuantityPerParent,u.QuantityInBaseUnits })
+                .ToHashSet();
+
+            if (existingUnitKeys.SetEquals(newUnitKeys))
+                return;
+
+            // Replace units since there is a change
+            inventory.Units.Clear();
+
+            foreach (var unitDto in unitsDto.OrderBy(u => u.UnitType))
+            {
+                inventory.Units.Add(new InventoryUnit
+                {
+                    UnitType            = unitDto.UnitType,
+                    ParentUnitType      = unitDto.ParentUnitType,
+                    QuantityPerParent   = unitDto.QuantityPerParent,
+                    QuantityInBaseUnits = unitDto.QuantityInBaseUnits,
+                    InventoryId         = inventory.Id,
+                    Uuid                = Guid.NewGuid().ToString()
+                });
+            }
+        }
+
+        private void InvalidateCache()
+        {
+            _cache.RemovePrimary(ServiceCacheKey.Items);
         }
     }
 }

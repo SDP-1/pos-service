@@ -1,5 +1,13 @@
 namespace pos_service.Models.Enums
 {
+
+    public enum UserRole  //This set automaticaly -> AddPermissionToRoleAsync
+    {
+        DEFAULT = 0,
+
+        SYSTEM_ADMIN = 1,
+    }
+
     // PermissionCatagory enum values start from 1
     public enum PermissionCatagory  //This set automaticaly -> AddPermissionToRoleAsync
     {
@@ -11,7 +19,10 @@ namespace pos_service.Models.Enums
         SUPPLIER   = 4,
         CONTACT    = 5,
         PERMISSION = 6,
-        ROLE       = 7
+        ROLE       = 7,
+        SETTING    = 8,
+        SHOP       = 9,
+        CUSTOMER   = 10,
     }
 
     // PermissionType enum values MUST match Permission.Id values in the database.
@@ -27,6 +38,7 @@ namespace pos_service.Models.Enums
         ORDER_DELETE                        = 103,
         ORDER_DELETE_PERMANENTLY            = 104,
         ORDER_UPDATE_STATUS                 = 105,
+        ORDER_SETTLEMENT                    = 106,
 
         // Items (start at 200)
         ITEM_VIEW                           = 200,
@@ -56,8 +68,14 @@ namespace pos_service.Models.Enums
         CONTACT_UPDATE                      = 502,
         CONTACT_DELETE                      = 503,
 
+        //Customer (start at 550)
+        CUSTOMER_VIEW                       = 550,
+        CUSTOMER_CREATE                     = 551,
+        CUSTOMER_UPDATE                     = 552,
+        CUSTOMER_DELETE                     = 553,
+
         // Permissions (start at 600)
-        PERMISSION_VIEW                     = 600,
+        PERMISSION_VIEW = 600,
         PERMISSION_ASSIGN                   = 601,
 
         //Roles (start at 650)
@@ -65,6 +83,12 @@ namespace pos_service.Models.Enums
         ROLE_CREATE                         = 651,
         ROLE_UPDATE                         = 652,
         ROLE_DELETE                         = 653,
+
+        // Settings (start at 700)
+        SETTING_MANAGE                      = 700,
+
+        // Shop details (start at 750)
+        SHOP_DETAILS_UPDATE                 = 750,
 
         // Only for SYS Admin (start at 1000 - 1050)
         // Special permission to allow viewing existence/details of the SystemAdmin role (id=1)

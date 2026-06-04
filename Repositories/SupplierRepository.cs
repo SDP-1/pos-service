@@ -1,6 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using pos_service.Data;
 using pos_service.Models;
+using pos_service.Models.DTO.Contacts;
+using pos_service.Models.DTO.Items;
+using pos_service.Models.DTO.Suppliers;
 
 namespace pos_service.Repositories
 {
@@ -9,52 +12,69 @@ namespace pos_service.Repositories
         private readonly AppDbContext _context;
         public SupplierRepository(AppDbContext context) { _context = context; }
 
-        public async Task<Supplier?> GetByIdAsync(int id) => await _context.Suppliers.FindAsync(id);
-        public async Task<IEnumerable<Supplier>> GetAllAsync()
-            { 
-               //return await _context.Suppliers.ToListAsync();
-                return await _context.Suppliers
-                    .Include(s => s.Contacts)
-                    .Include(s => s.ItemSuppliers)
-                        .ThenInclude(isu => isu.Item)
+        public async Task<SupplierResDto?> GetByIdAsync(int id)
+        {
+            var query = _context.Suppliers
+                .AsNoTracking()
+                .Where(s => s.Id == id);
+
+            return await makeSupplierResponceDto(query, includeRelated: false)
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<IEnumerable<SupplierResDto>> GetAllAsync()
+            {
+                var query = _context.Suppliers
+                    .AsNoTracking();
+
+                return await makeSupplierResponceDto(query, includeRelated: true)
                     .ToListAsync();
         }
 
-        public async Task<IEnumerable<Supplier>> GetAllBasicAsync()
+        public async Task<IEnumerable<SupplierResDto>> GetAllBasicAsync()
         {
-            // Do not include related navigation properties to keep payload small
-            return await _context.Suppliers
-                .AsNoTracking()
+            var query = _context.Suppliers
+                .AsNoTracking();
+
+            return await makeSupplierResponceDto(query, includeRelated: false)
                 .ToListAsync();
         }
 
-        public async Task<Supplier?> GetByIdWithDetailsAsync(int id)
+        public async Task<SupplierResDto?> GetByIdWithDetailsAsync(int id)
         {
-            // Return as NoTracking to avoid attaching related entities to the context
-            // This prevents "already being tracked" conflicts when callers later
-            // perform set-based deletes and re-inserts in the same DbContext.
-            return await _context.Suppliers
+            var query = _context.Suppliers
                 .AsNoTracking()
-                .Include(s => s.ItemSuppliers)
-                    .ThenInclude(isu => isu.Item)
-                .Include(s => s.Contacts)
-                .FirstOrDefaultAsync(s => s.Id == id);
+                .Where(s => s.Id == id);
+
+            return await makeSupplierResponceDto(query, includeRelated: true)
+                .FirstOrDefaultAsync();
         }
-        public async Task<Supplier?> GetSupplierWithItemsAsync(int id)
+
+        public async Task<Supplier?> GetSupplierByIdAsync(int id)
         {
             return await _context.Suppliers
-                .AsNoTracking()
-                .Include(s => s.ItemSuppliers)
-                    .ThenInclude(isu => isu.Item)
                 .FirstOrDefaultAsync(s => s.Id == id);
         }
 
-        public async Task<Supplier?> GetByNameAsync(string name)
+        public async Task<SupplierResDto?> GetSupplierWithItemsAsync(int id)
+        {
+            var query = _context.Suppliers
+                .AsNoTracking()
+                .Where(s => s.Id == id);
+
+            return await makeSupplierResponceDto(query, includeRelated: true)
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<SupplierResDto?> GetByNameAsync(string name)
         {
             if (string.IsNullOrWhiteSpace(name)) return null;
-            return await _context.Suppliers
+            var query = _context.Suppliers
                 .AsNoTracking()
-                .FirstOrDefaultAsync(s => s.Name == name);
+                .Where(s => s.Name == name);
+
+            return await makeSupplierResponceDto(query, includeRelated: false)
+                .FirstOrDefaultAsync();
         }
         public async Task<Supplier> AddAsync(Supplier supplier)
         {
@@ -87,6 +107,55 @@ namespace pos_service.Repositories
         {
             _context.Suppliers.Remove(supplier);
             await _context.SaveChangesAsync();
+        }
+
+        private IQueryable<SupplierResDto> makeSupplierResponceDto(IQueryable<Supplier> query, bool includeRelated)
+        {
+            return query.Select(s => new SupplierResDto
+            {
+                Id = s.Id,
+                Name = s.Name,
+                Address = s.Address,
+                contacts = includeRelated
+                    ? s.Contacts.Select(c => new ContactResDto
+                    {
+                        Id = c.Id,
+                        Name = c.Name,
+                        Designation = c.Designation,
+                        PhoneNumber = c.PhoneNumber,
+                        Email = c.Email,
+                        UserId = c.UserId,
+                        SupplierId = c.SupplierId,
+                        Uuid = c.Uuid,
+                        CreatedAt = c.CreatedAt,
+                        UpdatedAt = c.UpdatedAt,
+                        CreatedBy = c.CreatedBy,
+                        UpdatedBy = c.UpdatedBy,
+                        IsActive = c.IsActive,
+                    }).ToList()
+                    : null,
+                Items = includeRelated
+                    ? s.ItemSuppliers.Select(isu => new ItemMiniResDto
+                    {
+                        Id = isu.Item.Id,
+                        SubId = isu.Item.SubId,
+                        Uuid = isu.Item.Uuid,
+                        Name = isu.Item.Name,
+                        PrintName = isu.Item.PrintName,
+                        BarCode = isu.Item.BarCode,
+                        AllowsDecimalQuantities = isu.Item.Inventory != null && isu.Item.Inventory.AllowsDecimalQuantities,
+                        UnitType = isu.Item.Inventory != null ? isu.Item.Inventory.UnitType : Models.Enums.UnitType.Each,
+                        Price = new ItemPriceResDto(),
+                        ExpDates = new List<ItemExpiryResDto>(),
+                    }).ToList()
+                    : null,
+                Uuid = s.Uuid,
+                CreatedAt = s.CreatedAt,
+                UpdatedAt = s.UpdatedAt,
+                CreatedBy = s.CreatedBy,
+                UpdatedBy = s.UpdatedBy,
+                IsActive = s.IsActive,
+            });
         }
     }
 }

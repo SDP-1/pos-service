@@ -12,8 +12,8 @@ namespace pos_service.Models
         public int ItemsSubId { get; set; }
 
         // Navigation properties
-        public virtual Supplier Supplier { get; set; }
-        public virtual Item Item { get; set; }
+        public virtual Supplier? Supplier { get; set; }
+        public virtual Item? Item { get; set; }
 
         // IAuditable implementation
         public string Uuid { get; set; }

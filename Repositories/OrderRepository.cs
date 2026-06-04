@@ -45,7 +45,8 @@ namespace pos_service.Repositories
                 IQueryable<Order> query = _context.Orders
                                                     .Include(o => o.OrderItems)
                                                     .Include(o => o.Cashier)
-                                                    .Include(o => o.Customer);
+                                                    .Include(o => o.Customer)
+                                                    .Include(o => o.LoanSettlementLogs);
 
                 // Apply active filter only when requested
                 if (isActiveOnly)
@@ -67,6 +68,7 @@ namespace pos_service.Repositories
                 .Include(o => o.OrderItems)
                 .Include(o => o.Cashier)
                 .Include(o => o.Customer)
+                .Include(o => o.LoanSettlementLogs)
                 .FirstOrDefaultAsync(o => o.OrderNumber == orderNumber);
         }
 
@@ -76,6 +78,7 @@ namespace pos_service.Repositories
                 .Include(o => o.OrderItems)
                 .Include(o => o.Cashier)
                 .Include(o => o.Customer)
+                .Include(o => o.LoanSettlementLogs)
                 .FirstOrDefaultAsync(o => o.Uuid == uuid && o.IsActive);
         }
 
@@ -96,7 +99,10 @@ namespace pos_service.Repositories
                 ordersQuery = ordersQuery.Where(o => o.CreatedAt <= query.EndDate.Value);
 
             if (query.Status.HasValue)
-                ordersQuery = ordersQuery.Where(o => o.Status == query.Status.Value);
+                ordersQuery = ordersQuery.Where(o => o.MainStatus == query.Status.Value);
+
+            if (query.SubStatus.HasValue)
+                ordersQuery = ordersQuery.Where(o => o.SubStatus == query.SubStatus.Value);
 
             if (query.PaymentMethod.HasValue)
                 ordersQuery = ordersQuery.Where(o => o.PaymentMethod == query.PaymentMethod.Value);
@@ -169,7 +175,10 @@ namespace pos_service.Repositories
                 ordersQuery = ordersQuery.Where(o => o.CreatedAt <= query.EndDate.Value);
 
             if (query.Status.HasValue)
-                ordersQuery = ordersQuery.Where(o => o.Status == query.Status.Value);
+                ordersQuery = ordersQuery.Where(o => o.MainStatus == query.Status.Value);
+
+            if (query.SubStatus.HasValue)
+                ordersQuery = ordersQuery.Where(o => o.SubStatus == query.SubStatus.Value);
 
             if (query.PaymentMethod.HasValue)
                 ordersQuery = ordersQuery.Where(o => o.PaymentMethod == query.PaymentMethod.Value);
@@ -196,12 +205,12 @@ namespace pos_service.Repositories
 
         public async Task<string> GenerateOrderNumberAsync()
         {
-            var today = DateTime.UtcNow;
+            var today = DateTime.Now;
             var yearMonth = today.ToString("yyyyMM"); // e.g., 202602
 
             // Get the last order number for this month
             var lastOrder = await _context.Orders
-                .Where(o => o.OrderNumber.StartsWith($"ORD{yearMonth}"))
+                .Where(o => o.OrderNumber.StartsWith(yearMonth))
                 .OrderByDescending(o => o.OrderNumber)
                 .FirstOrDefaultAsync();
 
@@ -209,13 +218,13 @@ namespace pos_service.Repositories
 
             if (lastOrder != null)
             {
-                // Extract last 5 digits as number
-                var lastNumberPart = lastOrder.OrderNumber.Substring(lastOrder.OrderNumber.Length - 5);
+                // Extract last 7 digits
+                var lastNumberPart = lastOrder.OrderNumber.Substring(6, 7);
                 nextNumber = int.Parse(lastNumberPart) + 1;
             }
 
-            // Format as ORDYYYYMM00001
-            return $"ORD{yearMonth}{nextNumber:D5}";
+            // Format: YYYYMM + 7-digit sequence = 13 digits total
+            return $"{yearMonth}{nextNumber:D7}";
         }
 
         /// <summary>
@@ -232,7 +241,7 @@ namespace pos_service.Repositories
         /// <param name="endDate">End date for the date range filter. If null, includes all dates from startDate onwards.</param>
         /// <param name="status">Order status filter. If null, returns all statuses.</param>
         /// <returns>List of active orders matching the criteria, ordered by CreatedAt descending.</returns>
-        public async Task<List<Order>> GetOrdersByDateAndStatusAsync(DateTime? startDate, DateTime? endDate, OrderStatus? status)
+        public async Task<List<Order>> GetOrdersByDateAndStatusAsync(DateTime? startDate, DateTime? endDate, pos_service.Models.Enums.MainOrderStatus? status, pos_service.Models.Enums.OrderSubStatus? subStatus)
         {
             try
             {
@@ -263,7 +272,10 @@ namespace pos_service.Repositories
 
                 // Apply status filter if provided
                 if (status.HasValue)
-                    query = query.Where(o => o.Status == status.Value);
+                    query = query.Where(o => o.MainStatus == status.Value);
+
+                if (subStatus.HasValue)
+                    query = query.Where(o => o.SubStatus == subStatus.Value);
 
                 // Order by creation date descending for reporting
                 query = query.OrderByDescending(o => o.CreatedAt);
@@ -276,6 +288,40 @@ namespace pos_service.Repositories
                     "Error getting orders by date and status: StartDate={StartDate}, EndDate={EndDate}, Status={Status}", 
                     startDate, endDate, status);
                 throw;
+            }
+        }
+
+        public async Task<List<ReturnedItemsSummary>> GetReturnedItemsSummaryByOrderNumberAsync(string orderNumber)
+        {
+            try
+            {
+                return await _context.Set<ReturnedItemsSummary>()
+                    .Where(r => r.OrderNumber == orderNumber)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching returned items summary for order {OrderNumber}", orderNumber);
+                return new List<ReturnedItemsSummary>();
+            }
+        }
+
+        public async Task<List<Order>> GetInactiveOrdersAsync()
+        {
+            try
+            {
+                return await _context.Orders
+                    .Include(o => o.OrderItems)
+                    .Include(o => o.Cashier)
+                    .Include(o => o.Customer)
+                    .Where(o => !o.IsActive)
+                    .OrderByDescending(o => o.CreatedAt)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching inactive orders");
+                return new List<Order>();
             }
         }
     }

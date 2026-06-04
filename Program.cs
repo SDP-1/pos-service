@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using pos_service.Data;
+using pos_service.Data.Utilities;
 using pos_service.Exceptions;
 using pos_service.Middlewares;
 using pos_service.Repositories;
@@ -13,11 +14,7 @@ using pos_service.Services.Common.Cache;
 using pos_service.Services.Permissions;
 using System.Text;
 
-var options = new WebApplicationOptions
-{
-    WebRootPath = "wwwroot" // desired path
-};
-var builder = WebApplication.CreateBuilder(options);
+var builder = WebApplication.CreateBuilder();
 var jwtKey = builder.Configuration["JwtSettings:SecretKey"];
 
 // 1. Get the connection string from appsettings.json
@@ -54,6 +51,7 @@ builder.Services.AddSingleton<ICacheService, CacheService>();
 
 // Add services to the container.
 builder.Services.AddScoped<IItemService, ItemService>();
+builder.Services.AddScoped<IInventoryService, InventoryService>();
 builder.Services.AddScoped<IContactService, ContactService>();
 builder.Services.AddScoped<ISupplierService, SupplierService>();
 builder.Services.AddScoped<IUserService, UserService>();
@@ -61,9 +59,14 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<pos_service.Services.Roles.IRoleService, pos_service.Services.Roles.RoleService>();
 
+// Customer services and repositories
+builder.Services.AddScoped<ICustomerService, CustomerService>();
+builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
+
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 builder.Services.AddScoped<IItemRepository, ItemRepository>();
+builder.Services.AddScoped<IInventoryRepository, InventoryRepository>();
 builder.Services.AddScoped<IContactRepository, ContactRepository>();
 builder.Services.AddScoped<ISupplierRepository, SupplierRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -72,6 +75,8 @@ builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();
 builder.Services.AddScoped<pos_service.Repositories.Roles.IRoleRepository, pos_service.Repositories.Roles.RoleRepository>();
 builder.Services.AddScoped<ISettingRepository, SettingRepository>();
 builder.Services.AddScoped<ISettingService, SettingService>();
+builder.Services.AddScoped<IShopRepository, ShopRepository>();
+builder.Services.AddScoped<IShopService, ShopService>();
 // Backup repositories - only location and history needed for manual backups
 builder.Services.AddScoped<IBackupLocationRepository, BackupLocationRepository>();
 builder.Services.AddScoped<IBackupHistoryRepository, BackupHistoryRepository>();
@@ -127,10 +132,6 @@ using (var scope = app.Services.CreateScope())
 
 // Use global exception handler middleware
 app.UseGlobalExceptionHandler();
-
-// Enable Static File Serving 
-// This middleware is essential for serving files from the designated WebRootPath.
-app.UseStaticFiles();
 
 // Enable CORS using the defined policy
 app.UseCors("AllowFrontend");

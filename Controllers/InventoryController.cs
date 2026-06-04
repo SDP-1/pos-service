@@ -1,0 +1,87 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using pos_service.Controllers.Base;
+using pos_service.Models.DTO.Inventory;
+using pos_service.Services;
+
+namespace pos_service.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    [Authorize]
+    public class InventoryController : SystemBaseController
+    {
+        private readonly IInventoryService _inventoryService;
+
+        public InventoryController(IInventoryService inventoryService, ICurrentUserService currentUserService) : base(currentUserService)
+        {
+            _inventoryService = inventoryService;
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<InventoryResDto>>> GetAll()
+        {
+            var result = await _inventoryService.GetAllAsync(_currentUser);
+            return Ok(result);
+        }
+
+        [HttpGet("{itemUuid:guid}")]
+        public async Task<ActionResult<InventoryResDto>> GetByItemUuid(string itemUuid)
+        {
+            var inventory = await _inventoryService.GetByItemUuidAsync(itemUuid, _currentUser);
+            if (inventory == null)
+                return NotFound();
+
+            return Ok(inventory);
+        }
+
+        [HttpPut("{itemUuid:guid}")]
+        public async Task<ActionResult<InventoryResDto>> Upsert(string itemUuid, [FromBody] InventoryReqDto dto)
+        {
+            var inventory = await _inventoryService.UpsertAsync(itemUuid, dto, _currentUser);
+            return Ok(inventory);
+        }
+
+        [HttpPost("{itemUuid:guid}/adjust")]
+        public async Task<ActionResult<InventoryResDto>> AdjustStock(string itemUuid, [FromBody] InventoryAdjustReqDto dto)
+        {
+            var inventory = await _inventoryService.AdjustStockAsync(itemUuid, dto, _currentUser);
+            if (inventory == null)
+                return NotFound();
+
+            return Ok(inventory);
+        }
+
+        /// <summary>
+        /// Get inventory adjustment audit history for an item.
+        /// </summary>
+        /// <param name="itemUuid">Item UUID to query (required)</param>
+        /// <param name="startDate">Start date for filtering adjustments (optional)</param>
+        /// <param name="endDate">End date for filtering adjustments (optional)</param>
+        /// <param name="maxRecords">Maximum number of records to return (optional, default 100)</param>
+        /// <returns>List of inventory audit history records</returns>
+        [HttpGet("{itemUuid:guid}/audit-history")]
+        public async Task<ActionResult<IEnumerable<InventoryAdjustAuditResDto>>> GetAuditHistory(
+            string itemUuid,
+            [FromQuery] DateTime? startDate = null,
+            [FromQuery] DateTime? endDate = null,
+            [FromQuery] int? maxRecords = null)
+        {
+            try
+            {
+                var auditHistory = await _inventoryService.GetAuditHistoryAsync(
+                    itemUuid,
+                    startDate,
+                    endDate,
+                    maxRecords,
+                    _currentUser);
+
+                return Ok(auditHistory);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+    }
+}

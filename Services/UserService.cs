@@ -5,6 +5,7 @@ using pos_service.Models.Enums;
 using pos_service.Repositories;
 using pos_service.Security;
 using pos_service.Services.Common.Cache;
+using pos_service.Helpers;
 
 namespace pos_service.Services
 {
@@ -25,7 +26,7 @@ namespace pos_service.Services
             IMapper mapper, 
             IPasswordHasher hasher, 
             IJwtGenerator jwt, 
-            Services.Common.Cache.ICacheService cacheService)
+            ICacheService cacheService)
         {
             _userRepository     = repo;
             _contactService     = contactService;
@@ -34,29 +35,6 @@ namespace pos_service.Services
             _passwordHasher     = hasher;
             _jwtGenerator       = jwt;
             _cacheService       = cacheService;
-        }
-
-        /// <summary>
-        /// Converts an IFormFile to base64 encoded string.
-        /// </summary>
-        private async Task<string?> ConvertFileToBase64Async(IFormFile? file)
-        {
-            if (file == null || file.Length == 0)
-                return null;
-
-            try
-            {
-                using (var memoryStream = new MemoryStream())
-                {
-                    await file.CopyToAsync(memoryStream);
-                    byte[] fileBytes = memoryStream.ToArray();
-                    return Convert.ToBase64String(fileBytes);
-                }
-            }
-            catch (Exception)
-            {
-                throw;
-            }
         }
 
         public async Task<IEnumerable<UserResDto>> GetAllUsersAsync(CurrentUser currentUser)
@@ -79,17 +57,12 @@ namespace pos_service.Services
                 return null; // Conflict: User already exists
             }
 
-            // 2. Convert profile image to base64 if provided
-            string? profileImageBase64 = null;
-            if (userDto.ProfileImage != null)
-            {
-                profileImageBase64 = await ConvertFileToBase64Async(userDto.ProfileImage);
-            }
-
-            // 3. Map DTO to Entity and Hash Password
+            // 2. Map DTO to Entity and Hash Password
             var user = _mapper.Map<User>(userDto);
             user.PasswordHash = _passwordHasher.HashPassword(userDto.Password);
-            user.ProfileImage = profileImageBase64;
+
+            // 2. Convert profile image to bytes if provided
+            user.ProfileImage = await FileHelper.ConvertFileToBytesAsync(userDto.ProfileImage);
 
             var newUser = await _userRepository.AddAsync(user);
 
@@ -239,22 +212,21 @@ namespace pos_service.Services
                 }
             }
 
-            // 2. Handle profile image update (convert to base64 if provided)
-            if (userDto.ProfileImage != null)
-            {
-                var profileImageBase64 = await ConvertFileToBase64Async(userDto.ProfileImage);
-                if (!string.IsNullOrEmpty(profileImageBase64))
-                {
-                    userToUpdate.ProfileImage = profileImageBase64;
-                }
-            }
+            // 2. Handle profile image according to DTO flags:
+            // - If RemoveImage == true => remove existing image (set null)
+            // - Else if a new file is provided => replace existing image with uploaded bytes
+            // - Else => keep existing image unchanged
+            if (userDto.RemoveImage)
+                userToUpdate.ProfileImage = null;
+            else if (userDto.ProfileImage != null)
+                    userToUpdate.ProfileImage = await FileHelper.ConvertFileToBytesAsync(userDto.ProfileImage);
 
             // 3. Map incoming DTO properties into existing entity
             if (userDto.FirstName != null      ) userToUpdate.FirstName         = userDto.FirstName;
             if (userDto.LastName != null       ) userToUpdate.LastName          = userDto.LastName;
-            userToUpdate.NIC = userDto.NIC;
             if (userDto.RoleId != null         ) userToUpdate.RoleId            = userDto.RoleId.Value;
             if (userDto.UserName != null       ) userToUpdate.UserName          = userDto.UserName;
+            userToUpdate.NIC = userDto.NIC;
 
             // 4. Handle password change
             if (!string.IsNullOrEmpty(userDto.Password))

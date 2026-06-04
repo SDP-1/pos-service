@@ -27,20 +27,17 @@ namespace pos_service.Services
 
         public async Task<IEnumerable<SupplierResDto>> GetAllSuppliersAsync(CurrentUser currentUser)
         {
-            var suppliers = await _supplierRepo.GetAllAsync();
-            return _mapper.Map<IEnumerable<SupplierResDto>>(suppliers);
+            return await _supplierRepo.GetAllAsync();
         }
 
         public async Task<SupplierResDto?> GetSupplierByIdAsync(int id, CurrentUser currentUser)
         {
-            var supplier = await _supplierRepo.GetByIdWithDetailsAsync(id);
-            return _mapper.Map<SupplierResDto?>(supplier);
+            return await _supplierRepo.GetByIdWithDetailsAsync(id);
         }
 
         public async Task<SupplierResDto?> GetSupplierWithItemsAsync(int id, CurrentUser currentUser)
         {
-            var supplier = await _supplierRepo.GetSupplierWithItemsAsync(id);
-            return _mapper.Map<SupplierResDto?>(supplier);
+            return await _supplierRepo.GetSupplierWithItemsAsync(id);
         }
 
         public async Task<SupplierResDto> CreateSupplierAsync(SupplierReqDto dto, CurrentUser currentUser)
@@ -59,8 +56,9 @@ namespace pos_service.Services
             {
                 foreach (var c in dto.Contacts)
                 {
-                    var contact = _mapper.Map<Contact>(c);
+                    var contact  = _mapper.Map<Contact>(c);
                     contact.Uuid = Guid.NewGuid().ToString();
+
                     supplier.Contacts.Add(contact);
                 }
             }
@@ -85,6 +83,7 @@ namespace pos_service.Services
                             Supplier    = newSupplier,
                             Item        = item
                         };
+
                         newSupplier.ItemSuppliers.Add(isu);
                     }
                 }
@@ -98,8 +97,8 @@ namespace pos_service.Services
 
         public async Task<bool> UpdateSupplierAsync(int id, SupplierReqDto dto, CurrentUser currentUser)
         {
-            // Ensure supplier exists with a lightweight check
-            var existing = await _supplierRepo.GetByIdAsync(id);
+            // Ensure supplier exists and load tracked entity with related data
+            var existing = await _supplierRepo.GetSupplierByIdAsync(id);
             if (existing == null)
                 throw new ArgumentException($"Supplier with ID {id} was not found.");
 
@@ -111,17 +110,14 @@ namespace pos_service.Services
                     throw new ArgumentException("This supplier name already exists.");
             }
 
-            // Update supplier scalar fields
-            existing.Name      = dto.Name;
-            existing.Address   = dto.Address;
-            existing.IsActive  = dto.IsActive;
-            existing.UpdatedBy = currentUser?.UserName ?? string.Empty;
+
+            _mapper.Map(dto, existing);
 
             await _supplierRepo.UpdateAsync(existing);
 
             // Merge contacts: update existing, add new, delete removed
-            if (dto.Contacts != null)
-                await _contactService.MergeContactsAsync(ContactOwnerType.Supplier, id, dto.Contacts);
+            // For PUT updates, a null/empty contacts payload should clear supplier contacts.
+            await _contactService.MergeContactsAsync(ContactOwnerType.Supplier, id, dto.Contacts);
 
             // Update item associations if provided
             if (dto.ItemUuids != null)
@@ -163,7 +159,7 @@ namespace pos_service.Services
             // Project directly into minimal DTO to avoid unnecessary mapping
             return suppliers.Select(s => new SupplierDropdownDto
             {
-                Id = s.Id,
+                Id   = s.Id,
                 Name = s.Name
             });
         }
@@ -173,7 +169,7 @@ namespace pos_service.Services
             var supplier = await _supplierRepo.GetByIdAsync(id);
             if (supplier == null) return false;
 
-            await _supplierRepo.DeleteAsync(supplier);
+            await _supplierRepo.DeleteAsync(new Supplier { Id = supplier.Id });
             return true;
         }
     }

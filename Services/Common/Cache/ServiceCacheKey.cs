@@ -8,6 +8,8 @@ namespace pos_service.Services.Common.Cache
         Users,
         Items,
         Suppliers,
+        Customers,
+        Shops,
         Orders,
         Settings,
         Reports,

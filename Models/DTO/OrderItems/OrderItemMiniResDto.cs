@@ -12,6 +12,9 @@
         public decimal CostAtSale { get; set; }
         public decimal LineTotal { get; set; }
         public bool AllowsDecimalQuantities { get; set; }
+        public bool IsReturnItem { get; set; }
+        public string? Description { get; set; }
+        public string? ReturnedOrderItemUuid { get; set; }
         public bool IsActive { get; set; }
     }
 }

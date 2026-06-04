@@ -16,18 +16,35 @@ namespace pos_service.Services
             _mapper     = mapper;
         }
 
+        /// <summary>
+        /// Retrieves all contacts in the system.
+        /// </summary>
+        /// <param name="currentUser">Current user context (for auditing/authorization).</param>
+        /// <returns>List of contact DTOs.</returns>
         public async Task<IEnumerable<ContactResDto>> GetAllContactsAsync(CurrentUser currentUser)
         {
             var contacts = await _repository.GetAllAsync();
             return _mapper.Map<IEnumerable<ContactResDto>>(contacts);
         }
 
+        /// <summary>
+        /// Retrieves a contact by id.
+        /// </summary>
+        /// <param name="id">Contact id.</param>
+        /// <param name="currentUser">Current user context.</param>
+        /// <returns>Contact DTO when found; otherwise null.</returns>
         public async Task<ContactResDto?> GetContactByIdAsync(int id, CurrentUser currentUser)
         {
             var contact = await _repository.GetByIdAsync(id);
             return _mapper.Map<ContactResDto?>(contact);
         }
 
+        /// <summary>
+        /// Creates a new contact record.
+        /// </summary>
+        /// <param name="dto">Contact creation DTO.</param>
+        /// <param name="currentUser">Current user context.</param>
+        /// <returns>Created contact DTO.</returns>
         public async Task<ContactResDto> CreateContactAsync(ContactReqDto dto, CurrentUser currentUser)
         {
             var contact = _mapper.Map<Contact>(dto);
@@ -35,6 +52,13 @@ namespace pos_service.Services
             return _mapper.Map<ContactResDto>(newContact);
         }
 
+        /// <summary>
+        /// Updates an existing contact by id.
+        /// </summary>
+        /// <param name="id">Contact id to update.</param>
+        /// <param name="dto">Updated contact values.</param>
+        /// <param name="currentUser">Current user context.</param>
+        /// <returns>True on success; false when not found.</returns>
         public async Task<bool> UpdateContactAsync(int id, ContactReqDto dto, CurrentUser currentUser)
         {
             var contactToUpdate = await _repository.GetByIdAsync(id);
@@ -45,6 +69,12 @@ namespace pos_service.Services
             return true;
         }
 
+        /// <summary>
+        /// Deletes a contact by id.
+        /// </summary>
+        /// <param name="id">Contact id to delete.</param>
+        /// <param name="currentUser">Current user context.</param>
+        /// <returns>True when deleted; false when not found.</returns>
         public async Task<bool> DeleteContactAsync(int id, CurrentUser currentUser)
         {
             var contact = await _repository.GetByIdAsync(id);

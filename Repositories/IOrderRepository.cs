@@ -86,7 +86,11 @@ namespace pos_service.Repositories
         /// <returns>List of active orders matching the criteria, ordered by CreatedAt descending.</returns>
         Task<List<Order>> GetOrdersByDateAndStatusAsync(DateTime? startDate, DateTime? endDate, MainOrderStatus? status, OrderSubStatus? subStatus);
 
-        // Returns returned-items summary rows (backed by view) for given order number
+        /// <summary>
+        /// Returns returned-items summary rows (backed by a database view) for the specified order number.
+        /// </summary>
+        /// <param name="orderNumber">Order number to query returned items for.</param>
+        /// <returns>List of ReturnedItemsSummary rows associated with the order.</returns>
         Task<List<pos_service.Models.ReturnedItemsSummary>> GetReturnedItemsSummaryByOrderNumberAsync(string orderNumber);
 
         /// <summary>

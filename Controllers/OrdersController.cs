@@ -105,6 +105,11 @@ namespace pos_service.Controllers
         /// <summary>
         /// Returns the order and enriches each order item with returned quantity and remaining quantity.
         /// </summary>
+        /// <param name="number">The order number to fetch along with return summaries.</param>
+        /// <returns>
+        /// Ok(OrderResDto) when the order is found. Each OrderItem will include return summary information when applicable.
+        /// NotFound when the order does not exist.
+        /// </returns>
         [HttpGet("number/{number}/with-returns")]
         [Permission(PermissionType.ORDER_VIEW)]
         public async Task<ActionResult<OrderResDto>> GetOrderByOrderNumberWithReturns(string number)

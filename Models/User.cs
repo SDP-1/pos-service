@@ -9,21 +9,21 @@ namespace pos_service.Models
         /// <summary>
         /// Primary key for the user.
         /// </summary>
-        public int Id { get; set; }
+        public int Id                                { get; set; }
 
         /// <summary>
         /// User's first name.
         /// </summary>
         [Required]
         [MaxLength(50)]
-        public string FirstName { get; set; }
+        public string FirstName                      { get; set; }
 
         /// <summary>
         /// User's last name.
         /// </summary>
         [Required]
         [MaxLength(50)]
-        public string LastName { get; set; }
+        public string LastName                       { get; set; }
 
         /// <summary>
         /// User's full name.
@@ -38,21 +38,21 @@ namespace pos_service.Models
         /// </summary>
         [Required]
         [EmailAddress]
-        public string UserName         { get; set; }
+        public string UserName                       { get; set; }
 
         /// <summary>
         /// The hashed version of the user's password.
         /// </summary>
         [Required]
-        public string PasswordHash     { get; set; }
+        public string PasswordHash                   { get; set; }
 
         /// <summary>
         /// The user's role, which determines their permissions.
         /// RoleId is required. Role navigation may be null until loaded.
         /// </summary>
-        public int RoleId              { get; set; }
+        public int RoleId                            { get; set; }
 
-        public virtual Role? Role      { get; set; }
+        public virtual Role? Role                    { get; set; }
 
         /// <summary>
         /// The user's profile picture stored as binary bytes.
@@ -60,13 +60,13 @@ namespace pos_service.Models
         /// Use byte[] so EF Core maps this to a binary column.
         /// </summary>
         [Column(TypeName = "mediumblob")]
-        public byte[]? ProfileImage    { get; set; }
+        public byte[]? ProfileImage                  { get; set; }
 
         /// <summary>
         // The user's Sri Lankan National Identity Card number.
         /// </summary>
         [MaxLength(12)]
-        public string? NIC              { get; set; }
+        public string? NIC                           { get; set; }
 
         /// <summary>
         /// A collection of contacts associated with this user.
@@ -74,11 +74,11 @@ namespace pos_service.Models
         public virtual ICollection<Contact> Contacts { get; set; } = new List<Contact>();
 
         // --- Implementation of IAuditable ---
-        public string Uuid             { get; set; }
-        public DateTime CreatedAt      { get; set; }
-        public DateTime? UpdatedAt     { get; set; }
-        public string CreatedBy        { get; set; }
-        public string? UpdatedBy       { get; set; }
-        public bool IsActive           { get; set; } = true;
+        public string Uuid                           { get; set; }
+        public DateTime CreatedAt                    { get; set; }
+        public DateTime? UpdatedAt                   { get; set; }
+        public string CreatedBy                      { get; set; }
+        public string? UpdatedBy                     { get; set; }
+        public bool IsActive                         { get; set; } = true;
     }
 }

@@ -16,6 +16,11 @@ namespace pos_service.Controllers
             _repo = repo;
         }
 
+        /// <summary>
+        /// Returns recent backup history entries up to the specified maximum count.
+        /// </summary>
+        /// <param name="max">Maximum number of entries to return (defaults to 50).</param>
+        /// <returns>List of backup history records.</returns>
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] int max = 50)
         {

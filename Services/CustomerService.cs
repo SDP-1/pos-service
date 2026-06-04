@@ -19,22 +19,45 @@ namespace pos_service.Services
             _cache      = cache;
         }
 
+        /// <summary>
+        /// Retrieves all customers, using cache when available.
+        /// </summary>
+        /// <param name="currentUser">Current user context for potential authorization/auditing.</param>
+        /// <returns>List of customer DTOs.</returns>
         public async Task<IEnumerable<CustomerResDto>> GetAllCustomersAsync(CurrentUser currentUser)
         {
             return await _cache.GetOrCreateAsync<IEnumerable<CustomerResDto>>(ServiceCacheKey.Customers, null,
                 () => _repository.GetAllAsync());
         }
 
+        /// <summary>
+        /// Retrieves a customer by id.
+        /// </summary>
+        /// <param name="id">Customer id.</param>
+        /// <param name="currentUser">Current user context.</param>
+        /// <returns>Customer DTO when found; otherwise null.</returns>
         public async Task<CustomerResDto?> GetCustomerByIdAsync(int id, CurrentUser currentUser)
         {
             return await _repository.GetByIdAsync(id);
         }
 
+        /// <summary>
+        /// Searches customers by a free-text term.
+        /// </summary>
+        /// <param name="searchTerm">Search term to match customers.</param>
+        /// <param name="currentUser">Current user context.</param>
+        /// <returns>Matching customer DTOs.</returns>
         public async Task<IEnumerable<CustomerResDto>> GetCustomersBySearchAsync(string searchTerm, CurrentUser currentUser)
         {
             return await _repository.GetBySearchAsync(searchTerm);
         }
 
+        /// <summary>
+        /// Creates a new customer after validating uniqueness constraints.
+        /// </summary>
+        /// <param name="dto">Customer creation DTO.</param>
+        /// <param name="currentUser">Current user context.</param>
+        /// <returns>Created customer DTO.</returns>
         public async Task<CustomerResDto> CreateCustomerAsync(CustomerReqDto dto, CurrentUser currentUser)
         {
             // Ensure unique phone number
@@ -58,6 +81,13 @@ namespace pos_service.Services
             return _mapper.Map<CustomerResDto>(newCust);
         }
 
+        /// <summary>
+        /// Updates an existing customer after validating uniqueness constraints.
+        /// </summary>
+        /// <param name="id">Customer id to update.</param>
+        /// <param name="dto">Updated customer DTO.</param>
+        /// <param name="currentUser">Current user context.</param>
+        /// <returns>True when updated; false when not found.</returns>
         public async Task<bool> UpdateCustomerAsync(int id, CustomerReqDto dto, CurrentUser currentUser)
         {
             var existing = await _repository.GetByIdAsync(id);
@@ -89,6 +119,12 @@ namespace pos_service.Services
             return updated != null;
         }
 
+        /// <summary>
+        /// Deletes a customer by id.
+        /// </summary>
+        /// <param name="id">Customer id to delete.</param>
+        /// <param name="currentUser">Current user context.</param>
+        /// <returns>True when deleted; false otherwise.</returns>
         public async Task<bool> DeleteCustomerAsync(int id, CurrentUser currentUser)
         {
             var deleted = await _repository.DeleteAsync(id);

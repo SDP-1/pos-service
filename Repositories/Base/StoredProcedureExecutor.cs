@@ -65,7 +65,7 @@ namespace pos_service.Repositories.Base
             using var connection = _context.Database.GetDbConnection();
             await connection.OpenAsync();
 
-            using var command = connection.CreateCommand();
+            using var command   = connection.CreateCommand();
             command.CommandText = procedureName;
             command.CommandType = CommandType.StoredProcedure;
 

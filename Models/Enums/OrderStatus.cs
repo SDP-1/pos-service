@@ -1,30 +1,73 @@
 ﻿namespace pos_service.Models.Enums
 {
-    // Main status for an order. Represents the high-level lifecycle state.
+    /// <summary>
+    /// Main status for an order. Represents the high-level lifecycle state.
+    /// </summary>
     public enum MainOrderStatus
     {
-        Default   = 0,
+        /// <summary>
+        /// Default unspecified status.
+        /// </summary>
+        Default     = 0,
 
-        Pending   = 1,   // The order is in progress or not yet paid
-        Paid      = 2,   // The order has been fully paid
-        Loan      = 3,   // The order is sold on credit
-        LoanSettled = 4, // The loan associated with the order has been fully settled
-        Cancelled = 5,
+        /// <summary>
+        /// The order is in progress or not yet paid.
+        /// </summary>
+        Pending     = 1,
+
+        /// <summary>
+        /// The order has been fully paid.
+        /// </summary>
+        Paid        = 2,
+
+        /// <summary>
+        /// The order is sold on credit (loan).
+        /// </summary>
+        Loan        = 3,
+
+        /// <summary>
+        /// The loan associated with the order has been fully settled.
+        /// </summary>
+        LoanSettled = 4,
+
+        /// <summary>
+        /// The order was cancelled.
+        /// </summary>
+        Cancelled   = 5,
     }
 
-    // Sub-status for an order. Optional details about the order state.
-    // Designed to be nullable on the Order entity.
+    /// <summary>
+    /// Sub-status for an order. Optional details about the order state. Designed to be nullable on the Order entity.
+    /// </summary>
     public enum OrderSubStatus
     {
+        /// <summary>
+        /// No sub-status specified.
+        /// </summary>
         None   = 0,
 
-        Return = 1, // The order contains return/refund items
+        /// <summary>
+        /// The order contains return/refund items.
+        /// </summary>
+        Return = 1,
     }
 
+    /// <summary>
+    /// Status of a loan settlement process for credit/loan orders.
+    /// </summary>
     public enum LoanSettlementStatus
     {
+        /// <summary>
+        /// Settlement record created but not yet processed.
+        /// </summary>
         Created          = 0,
+        /// <summary>
+        /// Part of the loan has been settled.
+        /// </summary>
         PartiallySettled = 1,
+        /// <summary>
+        /// The loan has been fully settled.
+        /// </summary>
         Completed        = 2
     }
 }

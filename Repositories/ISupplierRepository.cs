@@ -20,7 +20,7 @@ namespace pos_service.Repositories
         Task<Supplier?> GetSupplierByIdAsync(int id);
 
         /// <summary>
-        /// Retrieves a supplier by its unique identifier including related data.
+        /// Retrieves a supplier by its unique identifier including related data such as contacts and items.
         /// </summary>
         /// <param name="id">The unique identifier of the supplier.</param>
         /// <returns>The supplier response DTO with related data if found, otherwise null.</returns>

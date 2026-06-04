@@ -8,25 +8,25 @@ namespace pos_service.Models.DTO.Settings
     {
         [Required]
         [MaxLength(255)]
-        public string Name { get; set; }
+        public string Name         { get; set; }
 
         [MaxLength(1000)]
-        public string? Address { get; set; }
+        public string? Address     { get; set; }
 
         [MaxLength(50)]
         public string? PhoneNumber { get; set; }
 
         [MaxLength(255)]
-        public string? Email { get; set; }
+        public string? Email       { get; set; }
 
         // Optional logo file uploaded as multipart/form-data
-        public IFormFile? Logo { get; set; }
+        public IFormFile? Logo     { get; set; }
 
         /// <summary>
         /// When true on update, instructs the server to remove the existing logo (set to null).
         /// Default false. If a new Logo file is provided it will replace the existing image;
         /// if RemoveLogo is true the logo will be removed regardless of file upload.
         /// </summary>
-        public bool RemoveLogo { get; set; } = false;
+        public bool RemoveLogo     { get; set; } = false;
     }
 }

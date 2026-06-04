@@ -76,6 +76,11 @@ namespace pos_service.Repositories
             return await makeSupplierResponceDto(query, includeRelated: false)
                 .FirstOrDefaultAsync();
         }
+        /// <summary>
+        /// Adds a new supplier to the data store and assigns a UUID.
+        /// </summary>
+        /// <param name="supplier">Supplier entity to add.</param>
+        /// <returns>The added Supplier entity.</returns>
         public async Task<Supplier> AddAsync(Supplier supplier)
         {
             supplier.Uuid = Guid.NewGuid().ToString();
@@ -83,6 +88,11 @@ namespace pos_service.Repositories
             await _context.SaveChangesAsync();
             return supplier;
         }
+        /// <summary>
+        /// Updates an existing supplier in the database.
+        /// </summary>
+        /// <param name="supplier">Supplier entity with updated values.</param>
+        /// <returns>The updated Supplier entity.</returns>
         public async Task<Supplier> UpdateAsync(Supplier supplier)
         {
             _context.Entry(supplier).State = EntityState.Modified;

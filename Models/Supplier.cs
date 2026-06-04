@@ -8,19 +8,19 @@ namespace pos_service.Models
         /// <summary>
         /// The integer primary key for the database.
         /// </summary>
-        public int Id                                { get; set; }
+        public int Id                                          { get; set; }
 
         /// <summary>
         /// The official name of the supplier company.
         /// </summary>
         [Required]
         [MaxLength(150)]
-        public string Name                           { get; set; }
+        public string Name                                     { get; set; }
 
         /// <summary>
         /// The physical or mailing address of the supplier.
         /// </summary>
-        public string? Address                       { get; set; }
+        public string? Address                                 { get; set; }
 
         /// <summary>
         /// A collection of ItemSupplier join entities for this supplier.
@@ -31,14 +31,14 @@ namespace pos_service.Models
         /// <summary>
         /// A collection of contacts associated with this supplier.
         /// </summary>
-        public virtual ICollection<Contact> Contacts { get; set; } = new List<Contact>();
+        public virtual ICollection<Contact> Contacts           { get; set; } = new List<Contact>();
 
         // --- Implementation of IAuditable ---
-        public string Uuid                           { get; set; }
-        public DateTime CreatedAt                    { get; set; }
-        public DateTime? UpdatedAt                   { get; set; }
-        public string CreatedBy                      { get; set; }
-        public string? UpdatedBy                     { get; set; }
-        public bool IsActive                         { get; set; } = true;
+        public string Uuid                                     { get; set; }
+        public DateTime CreatedAt                              { get; set; }
+        public DateTime? UpdatedAt                             { get; set; }
+        public string CreatedBy                                { get; set; }
+        public string? UpdatedBy                               { get; set; }
+        public bool IsActive                                   { get; set; } = true;
     }
 }

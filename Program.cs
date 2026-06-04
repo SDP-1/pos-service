@@ -22,9 +22,9 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 //----Security Registration----//
 // Register the Hashing Service
-builder.Services.AddScoped<IPasswordHasher, PasswordHasherService>();
+builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
 // Register the JWT Generation Service
-builder.Services.AddScoped<IJwtGenerator, JwtGeneratorService>();
+builder.Services.AddScoped<IJwtGeneratorService, JwtGeneratorService>();
 // Token validator service used during JWT validation   *Currently this not using REF - 000123*
 //builder.Services.AddScoped<ITokenValidator, TokenValidatorService>();
 
@@ -124,7 +124,7 @@ if (app.Environment.IsDevelopment())
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+    var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasherService>();
 
     // Apply migrations and seed initial data
     await DbInitializer.SeedAsync(context, passwordHasher);

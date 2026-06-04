@@ -45,6 +45,11 @@ namespace pos_service.Services.Backup
         }
 
         // Manual trigger without parameters - uses saved default or last-used location
+        /// <summary>
+        /// Creates a backup using the saved default or last-used location.
+        /// </summary>
+        /// <param name="cancellationToken">Optional cancellation token to cancel the backup.</param>
+        /// <returns>BackupResponseDto containing the result and file path when successful.</returns>
         public async Task<BackupResponseDto> CreateBackupAsync(CancellationToken cancellationToken = default)
         {
             var defaultLoc = (await _locationRepository.GetAllAsync()).FirstOrDefault(l => l.IsDefault && l.IsActive);
@@ -57,6 +62,15 @@ namespace pos_service.Services.Backup
         }
 
         // Main implementation - locationUuid optional
+        /// <summary>
+        /// Creates a backup to the specified location or path. Validates configuration and executes mysqldump for MySQL provider.
+        /// Records backup history and returns a response DTO describing success or failure.
+        /// </summary>
+        /// <param name="scheduleUuid">Optional schedule identifier for automated backups.</param>
+        /// <param name="locationUuid">Optional UUID of the backup location to use.</param>
+        /// <param name="targetPath">Optional explicit file system path to write the backup file.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>BackupResponseDto with result details including file path when successful.</returns>
         public async Task<BackupResponseDto> CreateBackupAsync(string? scheduleUuid, string? locationUuid, string? targetPath = null, CancellationToken cancellationToken = default)
         {
             var executedAt = DateTime.Now;

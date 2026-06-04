@@ -15,8 +15,8 @@ namespace pos_service.Services
         private readonly IContactService _contactService;
         private readonly IContactRepository _contactRepository;
         private readonly IMapper _mapper;
-        private readonly IPasswordHasher _passwordHasher;
-        private readonly IJwtGenerator _jwtGenerator;
+        private readonly IPasswordHasherService _passwordHasher;
+        private readonly IJwtGeneratorService _jwtGenerator;
         private readonly ICacheService _cacheService;
 
         public UserService(
@@ -24,8 +24,8 @@ namespace pos_service.Services
             IContactService contactService,
             IContactRepository contactRepository,
             IMapper mapper, 
-            IPasswordHasher hasher, 
-            IJwtGenerator jwt, 
+            IPasswordHasherService hasher, 
+            IJwtGeneratorService jwt, 
             ICacheService cacheService)
         {
             _userRepository     = repo;
@@ -37,12 +37,23 @@ namespace pos_service.Services
             _cacheService       = cacheService;
         }
 
+        /// <summary>
+        /// Retrieves all users from the system.
+        /// </summary>
+        /// <param name="currentUser">The current user requesting the user list.</param>
+        /// <returns>A list of all user details.</returns>
         public async Task<IEnumerable<UserResDto>> GetAllUsersAsync(CurrentUser currentUser)
         {
             var users = await _userRepository.GetAllAsync();
             return _mapper.Map<IEnumerable<UserResDto>>(users);
         }
 
+        /// <summary>
+        /// Retrieves a specific user by their unique identifier.
+        /// </summary>
+        /// <param name="id">The unique identifier of the user.</param>
+        /// <param name="currentUser">The current user requesting the user details.</param>
+        /// <returns>The user details if found, otherwise null.</returns>
         public async Task<UserResDto?> GetUserByIdAsync(int id, CurrentUser currentUser)
         {
             var user = await _userRepository.GetByIdWithContactsAsync(id);

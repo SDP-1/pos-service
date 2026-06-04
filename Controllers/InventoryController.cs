@@ -18,6 +18,10 @@ namespace pos_service.Controllers
             _inventoryService = inventoryService;
         }
 
+        /// <summary>
+        /// Retrieves all inventories accessible to the current user.
+        /// </summary>
+        /// <returns>200 OK with the list of inventory records.</returns>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<InventoryResDto>>> GetAll()
         {
@@ -25,6 +29,11 @@ namespace pos_service.Controllers
             return Ok(result);
         }
 
+        /// <summary>
+        /// Retrieves inventory by the associated item UUID.
+        /// </summary>
+        /// <param name="itemUuid">UUID of the item to fetch inventory for.</param>
+        /// <returns>200 OK with the inventory or 404 NotFound when missing.</returns>
         [HttpGet("{itemUuid:guid}")]
         public async Task<ActionResult<InventoryResDto>> GetByItemUuid(string itemUuid)
         {
@@ -35,6 +44,9 @@ namespace pos_service.Controllers
             return Ok(inventory);
         }
 
+        /// <summary>
+        /// Creates or updates inventory record for the specified item UUID.
+        /// </summary>
         [HttpPut("{itemUuid:guid}")]
         public async Task<ActionResult<InventoryResDto>> Upsert(string itemUuid, [FromBody] InventoryReqDto dto)
         {
@@ -42,9 +54,16 @@ namespace pos_service.Controllers
             return Ok(inventory);
         }
 
+        /// <summary>
+        /// Adjusts stock quantity for the specified item.
+        /// </summary>
+        /// <param name="itemUuid">UUID of the item to adjust.</param>
+        /// <param name="dto">Adjustment details including increase/decrease and reason.</param>
+        /// <returns>200 OK with the updated inventory or 404 NotFound when item is missing.</returns>
         [HttpPost("{itemUuid:guid}/adjust")]
         public async Task<ActionResult<InventoryResDto>> AdjustStock(string itemUuid, [FromBody] InventoryAdjustReqDto dto)
         {
+            // Delegate stock adjustment to service which performs validation and audit logging
             var inventory = await _inventoryService.AdjustStockAsync(itemUuid, dto, _currentUser);
             if (inventory == null)
                 return NotFound();

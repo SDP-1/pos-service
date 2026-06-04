@@ -18,6 +18,10 @@ namespace pos_service.Controllers
             _repo = repo;
         }
 
+        /// <summary>
+        /// Retrieves all configured backup locations.
+        /// </summary>
+        /// <returns>200 OK with a list of BackupLocation records.</returns>
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -25,6 +29,11 @@ namespace pos_service.Controllers
             return Ok(list);
         }
 
+        /// <summary>
+        /// Creates a new backup location configuration.
+        /// </summary>
+        /// <param name="dto">Backup location data transfer object.</param>
+        /// <returns>201 Created with the created BackupLocation.</returns>
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] BackupLocationDto dto)
         {
@@ -42,6 +51,11 @@ namespace pos_service.Controllers
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
+        /// <summary>
+        /// Retrieves a backup location by id.
+        /// </summary>
+        /// <param name="id">Identifier of the backup location.</param>
+        /// <returns>200 OK with the location or 404 NotFound if missing.</returns>
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -49,6 +63,12 @@ namespace pos_service.Controllers
             return item == null ? NotFound() : Ok(item);
         }
 
+        /// <summary>
+        /// Updates an existing backup location.
+        /// </summary>
+        /// <param name="id">Identifier of the backup location to update.</param>
+        /// <param name="dto">Updated backup location data.</param>
+        /// <returns>200 OK with the updated entity or 404 NotFound.</returns>
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] BackupLocationDto dto)
         {
@@ -63,6 +83,11 @@ namespace pos_service.Controllers
             return Ok(updated);
         }
 
+        /// <summary>
+        /// Deletes a backup location by id.
+        /// </summary>
+        /// <param name="id">Identifier of the backup location to delete.</param>
+        /// <returns>204 NoContent on success or 404 NotFound if missing.</returns>
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

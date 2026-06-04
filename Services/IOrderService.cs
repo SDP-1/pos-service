@@ -12,16 +12,17 @@ namespace pos_service.Services
     {
         /// <summary>
         /// Creates a new order in the system.
+        /// Validates stock, customer and settings, persists order and adjusts inventory and loyalty points.
         /// </summary>
-        /// <param name="orderDto">The order data transfer object containing order details.</param>
+        /// <param name="orderDto">The order request DTO containing items and totals.</param>
         /// <param name="currentUser">The current user creating the order.</param>
         /// <returns>The created order details.</returns>
         Task<OrderResDto> CreateOrderAsync(OrderReqDto orderDto, CurrentUser currentUser);
 
         /// <summary>
-        /// Retrieves a specific order by its unique identifier.
+        /// Retrieves a specific order by its database id.
         /// </summary>
-        /// <param name="id">The unique identifier of the order.</param>
+        /// <param name="id">The database identifier of the order.</param>
         /// <param name="currentUser">The current user requesting the order.</param>
         /// <returns>The order details if found, otherwise null.</returns>
         Task<OrderResDto?> GetOrderAsync(int id, CurrentUser currentUser);
@@ -37,12 +38,20 @@ namespace pos_service.Services
         /// <summary>
         /// Retrieves an order by its order number.
         /// </summary>
-        /// <param name="uuid">The order number to search for.</param>
+        /// <param name="orderNumber">The order number to search for.</param>
         /// <param name="currentUser">The current user requesting the order.</param>
         /// <returns>The order details if found, otherwise null.</returns>
         Task<OrderResDto?> GetOrderByOrderNumberAsync(string uuid, CurrentUser currentUser);
 
-        // Returns order header with order items enriched with returned quantities
+        /// <summary>
+        /// Returns order header with order items enriched with returned quantities from the returned-items summary view.
+        /// </summary>
+        /// <param name="orderNumber">Order number to fetch.</param>
+        /// <param name="currentUser">Current user context.</param>
+        /// /// <returns>
+        /// An <see cref="OrderResDto"/> when found, with each <c>OrderItems.ReturnSummary</c> populated when applicable; otherwise null.
+        /// Returns null when no order exists for the specified order number.
+        /// </returns>
         Task<OrderResDto?> GetOrderWithReturnedItemsAsync(string orderNumber, CurrentUser currentUser);
 
         /// <summary>
@@ -64,6 +73,7 @@ namespace pos_service.Services
 
         /// <summary>
         /// Deletes an order with the specified identifier.
+        /// Performs soft-delete by default, which restores stock when appropriate. Use isPermanent=true to remove permanently.
         /// </summary>
         /// <param name="id">The unique identifier of the order to delete.</param>
         /// <param name="currentUser">The current user deleting the order.</param>
@@ -82,6 +92,7 @@ namespace pos_service.Services
 
         /// <summary>
         /// Record a settlement payment for a loan order.
+        /// Creates a LoanSettlementLog and updates the order's AmountPaid, Balance and status when fully settled.
         /// </summary>
         Task<OrderResDto> RecordSettlementAsync(int orderId, decimal amountPaid, string? description, CurrentUser currentUser);
 
@@ -102,7 +113,11 @@ namespace pos_service.Services
         /// <returns>List of active orders matching the criteria, ordered by CreatedAt descending.</returns>
         Task<List<OrderResDto>> GetOrdersByDateAndStatusAsync(DateTime? startDate, DateTime? endDate, pos_service.Models.Enums.MainOrderStatus? status, pos_service.Models.Enums.OrderSubStatus? subStatus, CurrentUser currentUser);
 
-        // Returns returned-items summary rows (from view) for given order number
+        /// <summary>
+        /// Returns returned-items summary rows (from view) for given order number.
+        /// </summary>
+        /// <param name="orderNumber">The order number to query returned items for.</param>
+        /// <param name="currentUser">Current user context.</param>
         Task<List<pos_service.Models.DTO.ReturnedItems.ReturnedItemsSummaryResDto>> GetReturnedItemsSummaryByOrderNumberAsync(string orderNumber, CurrentUser currentUser);
 
         /// <summary>

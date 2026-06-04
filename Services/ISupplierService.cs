@@ -58,6 +58,8 @@ namespace pos_service.Services
         /// Retrieves lightweight supplier data for dropdowns (Id and Name only).
         /// Returns minimal DTO to avoid mapping large SupplierResDto objects.
         /// </summary>
+        /// <param name="currentUser">The current user requesting the dropdown data.</param>
+        /// <returns>A collection of SupplierDropdownDto containing Id and Name.</returns>
         Task<IEnumerable<SupplierDropdownDto>> GetSuppliersDropdownAsync(CurrentUser currentUser);
     }
 }

@@ -5,6 +5,10 @@ using pos_service.Services.Backup;
 
 namespace pos_service.Controllers
 {
+    /// <summary>
+    /// API controller to trigger and manage backups.
+    /// Provides endpoints to create backups immediately and manage backup locations via services.
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     public class BackupController : ControllerBase
@@ -17,18 +21,24 @@ namespace pos_service.Controllers
         }
 
         [HttpPost("now")]
+        /// <summary>
+        /// Creates a backup immediately. If a location DTO is provided it will be saved
+        /// or updated and used for this backup; otherwise the last default location is used.
+        /// </summary>
+        /// <param name="location">Optional backup location information to use for this backup.</param>
+        /// <returns>HTTP 200 with result on success or 500 on failure.</returns>
         public async Task<IActionResult> CreateNow([FromBody] BackupLocationDto? location)
         {
             // if location provided, ensure it's saved and used; otherwise use last default
             string? locUuid = null;
-            string? path = null;
+            string? path    = null;
             if (location != null)
             {
                 // create or update location
                 // we will rely on backup service to handle saving/updating location by uuid
                 var resSave = await _backupService.SaveOrGetLocationAsync(location);
-                locUuid = resSave?.Uuid;
-                path = resSave?.Path;
+                locUuid     = resSave?.Uuid;
+                path        = resSave?.Path;
             }
 
             var res = await _backupService.CreateBackupAsync(null, locUuid, path);

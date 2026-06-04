@@ -18,16 +18,32 @@ namespace pos_service.Repositories
 
         // Creation and deletion of settings are not supported via repository for now.
 
+        // Creation and deletion of settings are not supported via repository for now.
+
+        /// <summary>
+        /// Retrieves all setting entries currently available.
+        /// </summary>
+        /// <returns>Collection of Setting entities.</returns>
         public async Task<IEnumerable<Setting>> GetAllAsync()
         {
             return await _context.Settings.AsNoTracking().ToListAsync();
         }
 
+        /// <summary>
+        /// Finds an active setting by its key.
+        /// </summary>
+        /// <param name="key">The SettingKey enum value to lookup.</param>
+        /// <returns>The Setting when found and active; otherwise null.</returns>
         public async Task<Setting?> GetByKeyAsync(SettingKey key)
         {
             return await _context.Settings.FirstOrDefaultAsync(s => s.SettingKey == key && s.IsActive);
         }
 
+        /// <summary>
+        /// Updates a setting value.
+        /// </summary>
+        /// <param name="setting">The Setting entity with updated values.</param>
+        /// <returns>The updated Setting entity.</returns>
         public async Task<Setting> UpdateAsync(Setting setting)
         {
             _context.Entry(setting).State = EntityState.Modified;

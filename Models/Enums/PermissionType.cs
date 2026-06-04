@@ -1,32 +1,78 @@
 namespace pos_service.Models.Enums
 {
 
-    public enum UserRole  //This set automaticaly -> AddPermissionToRoleAsync
+    /// <summary>
+    /// Represents built-in user roles. Note: roles may be populated/managed via initialization code.
+    /// </summary>
+    public enum UserRole
     {
+        /// <summary>
+        /// Default role / unspecified.
+        /// </summary>
         DEFAULT = 0,
 
+        /// <summary>
+        /// System administrator role with full privileges.
+        /// </summary>
         SYSTEM_ADMIN = 1,
     }
 
-    // PermissionCatagory enum values start from 1
-    public enum PermissionCatagory  //This set automaticaly -> AddPermissionToRoleAsync
+    /// <summary>
+    /// Categories for grouping permissions. Values start from 1.
+    /// </summary>
+    public enum PermissionCatagory
     {
+        /// <summary>
+        /// Default / unspecified category.
+        /// </summary>
         DEFAULT    = 0,
 
+        /// <summary>
+        /// Order related permissions.
+        /// </summary>
         ORDER      = 1,
+        /// <summary>
+        /// Item related permissions.
+        /// </summary>
         ITEM       = 2,
+        /// <summary>
+        /// User related permissions.
+        /// </summary>
         USER       = 3,
+        /// <summary>
+        /// Supplier related permissions.
+        /// </summary>
         SUPPLIER   = 4,
+        /// <summary>
+        /// Contact related permissions.
+        /// </summary>
         CONTACT    = 5,
+        /// <summary>
+        /// Permission management related permissions.
+        /// </summary>
         PERMISSION = 6,
+        /// <summary>
+        /// Role management related permissions.
+        /// </summary>
         ROLE       = 7,
+        /// <summary>
+        /// Setting management permissions.
+        /// </summary>
         SETTING    = 8,
+        /// <summary>
+        /// Shop management permissions.
+        /// </summary>
         SHOP       = 9,
+        /// <summary>
+        /// Customer related permissions.
+        /// </summary>
         CUSTOMER   = 10,
     }
 
-    // PermissionType enum values MUST match Permission.Id values in the database.
-    // Start values at 100 as requested.
+    /// <summary>
+    /// Concrete permission ids used in the application. These values MUST match Permission.Id values in the database.
+    /// Grouped by category with starting offsets (100, 200, ...).
+    /// </summary>
     public enum PermissionType
     {
         DEFAULT                             = 0,
@@ -68,7 +114,7 @@ namespace pos_service.Models.Enums
         CONTACT_UPDATE                      = 502,
         CONTACT_DELETE                      = 503,
 
-        //Customer (start at 550)
+        // Customer (start at 550)
         CUSTOMER_VIEW                       = 550,
         CUSTOMER_CREATE                     = 551,
         CUSTOMER_UPDATE                     = 552,
@@ -78,7 +124,7 @@ namespace pos_service.Models.Enums
         PERMISSION_VIEW = 600,
         PERMISSION_ASSIGN                   = 601,
 
-        //Roles (start at 650)
+        // Roles (start at 650)
         ROLE_VIEW                           = 650,
         ROLE_CREATE                         = 651,
         ROLE_UPDATE                         = 652,

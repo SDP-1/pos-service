@@ -17,7 +17,7 @@ namespace pos_service.Data
         /// </summary>
         /// <param name="context">The application database context.</param>
         /// <param name="passwordHasher">The password hasher service for securing user passwords.</param>
-        public static async Task SeedAsync(AppDbContext context, IPasswordHasher passwordHasher)
+        public static async Task SeedAsync(AppDbContext context, IPasswordHasherService passwordHasher)
         {
             // Apply pending migrations
             //await context.Database.MigrateAsync();
@@ -100,7 +100,7 @@ namespace pos_service.Data
         /// </summary>
         /// <param name="context">The application database context.</param>
         /// <param name="passwordHasher">The password hasher service for securing the admin password.</param>
-        private static async Task SeedAdminUserAsync(AppDbContext context, IPasswordHasher passwordHasher)
+        private static async Task SeedAdminUserAsync(AppDbContext context, IPasswordHasherService passwordHasher)
         {
             if (!await context.Users.AnyAsync(u => u.UserName == "sehandevinda1@gmail.com"))
             {

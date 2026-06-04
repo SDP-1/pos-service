@@ -25,21 +25,37 @@ namespace pos_service.Services
             _mapper         = mapper;
         }
 
+        /// <summary>
+        /// Retrieves all suppliers from the system.
+        /// </summary>
         public async Task<IEnumerable<SupplierResDto>> GetAllSuppliersAsync(CurrentUser currentUser)
         {
             return await _supplierRepo.GetAllAsync();
         }
 
+        /// <summary>
+        /// Retrieves a specific supplier by its unique identifier.
+        /// </summary>
         public async Task<SupplierResDto?> GetSupplierByIdAsync(int id, CurrentUser currentUser)
         {
             return await _supplierRepo.GetByIdWithDetailsAsync(id);
         }
 
+        /// <summary>
+        /// Retrieves a specific supplier along with its associated items by supplier id.
+        /// </summary>
         public async Task<SupplierResDto?> GetSupplierWithItemsAsync(int id, CurrentUser currentUser)
         {
             return await _supplierRepo.GetSupplierWithItemsAsync(id);
         }
 
+        /// <summary>
+        /// Creates a new supplier including optional contacts and item associations.
+        /// Validates uniqueness of the supplier name and persists contacts and item links.
+        /// </summary>
+        /// <param name="dto">Supplier creation DTO containing name, contacts and item UUIDs.</param>
+        /// <param name="currentUser">The current user performing the operation.</param>
+        /// <returns>The created supplier represented as SupplierResDto.</returns>
         public async Task<SupplierResDto> CreateSupplierAsync(SupplierReqDto dto, CurrentUser currentUser)
         {
             // Enforce unique supplier name
@@ -95,6 +111,14 @@ namespace pos_service.Services
             return _mapper.Map<SupplierResDto>(newSupplier);
         }
 
+        /// <summary>
+        /// Updates an existing supplier's details, contacts and item associations.
+        /// Performs uniqueness check for the supplier name and merges contact list.
+        /// </summary>
+        /// <param name="id">The identifier of the supplier to update.</param>
+        /// <param name="dto">Supplier update DTO containing new values.</param>
+        /// <param name="currentUser">The current user performing the update.</param>
+        /// <returns>True if the update succeeded.</returns>
         public async Task<bool> UpdateSupplierAsync(int id, SupplierReqDto dto, CurrentUser currentUser)
         {
             // Ensure supplier exists and load tracked entity with related data
@@ -152,6 +176,12 @@ namespace pos_service.Services
 
         // Removed GetSuppliersForDropdownAsync - use GetSuppliersDropdownAsync which returns a minimal DTO.
 
+        /// <summary>
+        /// Retrieves lightweight supplier data (Id and Name) for dropdown lists.
+        /// Uses a minimal DTO projection to avoid loading full supplier details.
+        /// </summary>
+        /// <param name="currentUser">The current user requesting the dropdown data.</param>
+        /// <returns>A collection of SupplierDropdownDto containing Id and Name.</returns>
         public async Task<IEnumerable<SupplierDropdownDto>> GetSuppliersDropdownAsync(CurrentUser currentUser)
         {
             var suppliers = await _supplierRepo.GetAllBasicAsync();
@@ -164,6 +194,12 @@ namespace pos_service.Services
             });
         }
 
+        /// <summary>
+        /// Deletes a supplier by id. Returns false if the supplier was not found.
+        /// </summary>
+        /// <param name="id">The identifier of the supplier to delete.</param>
+        /// <param name="currentUser">The current user performing the deletion.</param>
+        /// <returns>True if deletion was successful; otherwise false.</returns>
         public async Task<bool> DeleteSupplierAsync(int id, CurrentUser currentUser)
         {
             var supplier = await _supplierRepo.GetByIdAsync(id);

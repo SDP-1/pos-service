@@ -23,6 +23,11 @@ namespace pos_service.Repositories
             _spExecutor = spExecutor;
         }
 
+        /// <summary>
+        /// Creates a new order in the data store, assigning a UUID.
+        /// </summary>
+        /// <param name="order">The order entity to create.</param>
+        /// <returns>The created order entity with updated identifiers, or null on unexpected error.</returns>
         public async Task<Order> CreateAsync(Order order)
         {
             try { 
@@ -38,6 +43,12 @@ namespace pos_service.Repositories
             }
         }
 
+        /// <summary>
+        /// Retrieves a specific order by its database id.
+        /// </summary>
+        /// <param name="id">Order database id.</param>
+        /// <param name="isActiveOnly">When true only active orders are considered.</param>
+        /// <returns>The Order when found; otherwise null.</returns>
         public async Task<Order?> GetByIdAsync(int id, bool isActiveOnly = true)
         {
             try
@@ -62,6 +73,11 @@ namespace pos_service.Repositories
                 return null;
             }
         }
+        /// <summary>
+        /// Retrieves an order by its order number.
+        /// </summary>
+        /// <param name="orderNumber">Order number to search for.</param>
+        /// <returns>The Order when found; otherwise null.</returns>
         public async Task<Order?> GetByOrderNumberAsync(string orderNumber)
         {
             return await _context.Orders
@@ -72,6 +88,11 @@ namespace pos_service.Repositories
                 .FirstOrDefaultAsync(o => o.OrderNumber == orderNumber);
         }
 
+        /// <summary>
+        /// Retrieves an active order by its UUID.
+        /// </summary>
+        /// <param name="uuid">Order UUID.</param>
+        /// <returns>The Order when found and active; otherwise null.</returns>
         public async Task<Order?> GetByUuidAsync(string uuid)
         {
             return await _context.Orders
@@ -82,6 +103,11 @@ namespace pos_service.Repositories
                 .FirstOrDefaultAsync(o => o.Uuid == uuid && o.IsActive);
         }
 
+        /// <summary>
+        /// Retrieves a list of orders based on the specified query parameters with filtering, sorting and pagination applied.
+        /// </summary>
+        /// <param name="query">Filtering, sorting and pagination parameters.</param>
+        /// <returns>List of Order entities matching the query.</returns>
         public async Task<List<Order>> GetAllAsync(OrderQueryDto query)
         {
             var ordersQuery = _context.Orders
@@ -149,6 +175,11 @@ namespace pos_service.Repositories
             return await ordersQuery.ToListAsync();
         }
 
+        /// <summary>
+        /// Updates an existing order in the database.
+        /// </summary>
+        /// <param name="order">Order entity with updated values.</param>
+        /// <returns>The updated Order entity.</returns>
         public async Task<Order> UpdateAsync(Order order)
         {
             _context.Orders.Update(order);
@@ -156,6 +187,11 @@ namespace pos_service.Repositories
             return order;
         }
 
+        /// <summary>
+        /// Deletes the specified order from the database.
+        /// </summary>
+        /// <param name="order">Order entity to delete.</param>
+        /// <returns>True when deletion completed.</returns>
         public async Task<bool> DeleteAsync(Order order)
         {
             _context.Orders.Remove(order);
@@ -163,6 +199,11 @@ namespace pos_service.Repositories
             return true;
         }
 
+        /// <summary>
+        /// Gets the count of orders matching the specified query parameters.
+        /// </summary>
+        /// <param name="query">Filtering parameters to count against.</param>
+        /// <returns>The number of orders matching the query.</returns>
         public async Task<int> GetCountAsync(OrderQueryDto query)
         {
             var ordersQuery = _context.Orders.Where(o => o.IsActive);
@@ -203,6 +244,10 @@ namespace pos_service.Repositories
             return await ordersQuery.CountAsync();
         }
 
+        /// <summary>
+        /// Generates a unique sequential order number for the current month in format YYYYMM + 7-digit sequence.
+        /// </summary>
+        /// <returns>A unique order number string.</returns>
         public async Task<string> GenerateOrderNumberAsync()
         {
             var today = DateTime.Now;
@@ -227,6 +272,20 @@ namespace pos_service.Repositories
             return $"{yearMonth}{nextNumber:D7}";
         }
 
+        /// <summary>
+        /// Retrieves orders filtered by date range and status.
+        /// Key behaviors:
+        /// - If StartDate is null, defaults to today's date
+        /// - If StartDate > EndDate, automatically swaps the dates
+        /// - Returns all active orders in the given date range
+        /// - Status filter is optional; if null, returns all statuses
+        /// - Results are ordered by CreatedAt in descending order
+        /// - Includes related data: OrderItems, Cashier, and Customer
+        /// </summary>
+        /// <param name="startDate">Start date for the date range filter. Defaults to today if not provided.</param>
+        /// <param name="endDate">End date for the date range filter. If null, includes all dates from startDate onwards.</param>
+        /// <param name="status">Order status filter. If null, returns all statuses.</param>
+        /// <returns>List of active orders matching the criteria, ordered by CreatedAt descending.</returns>
         /// <summary>
         /// Retrieves orders filtered by date range and status.
         /// Key behaviors:
@@ -291,6 +350,11 @@ namespace pos_service.Repositories
             }
         }
 
+        /// <summary>
+        /// Returns returned-items summary rows (backed by view) for given order number.
+        /// </summary>
+        /// <param name="orderNumber">Order number to query returned items for.</param>
+        /// <returns>List of ReturnedItemsSummary rows associated with the order.</returns>
         public async Task<List<ReturnedItemsSummary>> GetReturnedItemsSummaryByOrderNumberAsync(string orderNumber)
         {
             try
@@ -306,6 +370,10 @@ namespace pos_service.Repositories
             }
         }
 
+        /// <summary>
+        /// Retrieves all orders that are inactive (IsActive == false).
+        /// </summary>
+        /// <returns>List of inactive orders.</returns>
         public async Task<List<Order>> GetInactiveOrdersAsync()
         {
             try

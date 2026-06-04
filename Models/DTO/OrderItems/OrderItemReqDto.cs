@@ -9,14 +9,14 @@ namespace pos_service.Models.DTO.OrderItems
         /// Printable name for the item. This value will be used on receipts
         /// </summary>
         [Required]
-        public string PrintName { get; set; } = string.Empty;
+        public string PrintName              { get; set; } = string.Empty;
 
         [Required]
-        public string ItemUuid { get; set; }
+        public string ItemUuid               { get; set; }
 
         [Required]
         [Range(0.001, double.MaxValue, ErrorMessage = "Quantity must be greater than 0")]
-        public decimal Quantity { get; set; }
+        public decimal Quantity              { get; set; }
 
         /// <summary>
         /// Marked price provided by frontend. Service will store this value
@@ -24,7 +24,7 @@ namespace pos_service.Models.DTO.OrderItems
         /// </summary>
         [Required]
         [Range(0, double.MaxValue)]
-        public decimal MarkedPrice { get; set; }
+        public decimal MarkedPrice           { get; set; }
 
         /// <summary>
         /// Sale price (unit price after discount) provided by frontend.
@@ -32,7 +32,7 @@ namespace pos_service.Models.DTO.OrderItems
         /// </summary>
         [Required]
         [Range(0, double.MaxValue)]
-        public decimal SalePrice { get; set; }
+        public decimal SalePrice             { get; set; }
 
         /// <summary>
         /// Line total provided by frontend. Service will accept this value
@@ -40,20 +40,20 @@ namespace pos_service.Models.DTO.OrderItems
         /// </summary>
         [Required]
         [Range(double.MinValue, double.MaxValue)]
-        public decimal LineTotal { get; set; }
+        public decimal LineTotal             { get; set; }
 
         /// <summary>
         /// Indicates if this item is a return/refund.
         /// When true, the quantity will be added back to the original item instead of being deducted.
         /// </summary>
-        public bool IsReturnItem { get; set; } = false;
+        public bool IsReturnItem             { get; set; } = false;
 
         /// <summary>
         /// Optional description for this item line.
         /// Can be used for any item to provide additional context or notes.
         /// </summary>
         [MaxLength(500)]
-        public string? Description { get; set; }
+        public string? Description           { get; set; }
 
         /// <summary>
         /// The UUID of the returned OrderItem (reference to the original line being returned).

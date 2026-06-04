@@ -39,10 +39,15 @@ namespace pos_service.Services
         }
 
         /// <summary>
-        /// Retrieves the current authenticated user's information.
-        /// This method does not cache results across requests to avoid leaking data between requests.
+        /// Retrieves the current authenticated user from the active HTTP context and builds an enriched user model.
         /// </summary>
-        /// <returns>The current user details including identity and role information.</returns>
+        /// <remarks>
+        /// This method reads claims from the current principal, attempts to resolve a cached user by UUID,
+        /// reloads role metadata, validates the user against the database, loads permissions, and caches the
+        /// final <see cref="CurrentUser"/> when possible. If the request is unauthenticated or user resolution fails,
+        /// an unauthenticated <see cref="CurrentUser"/> is returned.
+        /// </remarks>
+        /// <returns>The resolved current user including authentication state, role, and permissions.</returns>
         public CurrentUser GetCurrentUser()
         {
             if (_httpContextAccessor?.HttpContext == null)

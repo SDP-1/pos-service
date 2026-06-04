@@ -6,9 +6,37 @@ namespace pos_service.Services
 {
     public interface IInventoryService
     {
+        /// <summary>
+        /// Retrieves all inventory records projected as DTOs.
+        /// </summary>
+        /// <param name="currentUser">Current user context for potential authorization/audit.</param>
+        /// <returns>Collection of InventoryResDto.</returns>
         Task<IEnumerable<InventoryResDto>> GetAllAsync(CurrentUser currentUser);
+
+        /// <summary>
+        /// Retrieves inventory details for the specified item UUID.
+        /// </summary>
+        /// <param name="itemUuid">UUID of the item.</param>
+        /// <param name="currentUser">Current user context.</param>
+        /// <returns>InventoryResDto when found; otherwise null.</returns>
         Task<InventoryResDto?> GetByItemUuidAsync(string itemUuid, CurrentUser currentUser);
+
+        /// <summary>
+        /// Creates or updates the inventory record for the given item UUID.
+        /// </summary>
+        /// <param name="itemUuid">UUID of the associated item.</param>
+        /// <param name="dto">Inventory upsert DTO containing stock and packaging info.</param>
+        /// <param name="currentUser">Current user performing the upsert.</param>
+        /// <returns>The created or updated InventoryResDto.</returns>
         Task<InventoryResDto> UpsertAsync(string itemUuid, InventoryReqDto dto, CurrentUser currentUser);
+
+        /// <summary>
+        /// Adjusts the stock quantity for the specified item.
+        /// </summary>
+        /// <param name="itemUuid">UUID of the item to adjust.</param>
+        /// <param name="dto">Adjustment DTO (increase/decrease, unit, reason, expiries, price).</param>
+        /// <param name="currentUser">Current user performing the adjustment.</param>
+        /// <returns>Updated InventoryResDto when successful; otherwise null if inventory not found.</returns>
         Task<InventoryResDto?> AdjustStockAsync(string itemUuid, InventoryAdjustReqDto dto, CurrentUser currentUser);
 
         /// <summary>

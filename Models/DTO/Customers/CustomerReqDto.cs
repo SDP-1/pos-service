@@ -7,10 +7,10 @@ namespace pos_service.Models.DTO.Customers
     {
         [Required]
         [MaxLength(50)]
-        public string FirstName { get; set; }
+        public string FirstName   { get; set; }
 
         [MaxLength(50)]
-        public string? LastName { get; set; }
+        public string? LastName   { get; set; }
 
         [Required]
         [Phone]
@@ -19,12 +19,12 @@ namespace pos_service.Models.DTO.Customers
 
         [EmailAddress]
         [MaxLength(100)]
-        public string? Email { get; set; }
+        public string? Email      { get; set; }
 
-        public string? Address { get; set; }
+        public string? Address    { get; set; }
 
-        public int LoyaltyPoints { get; set; } = 0;
+        public int LoyaltyPoints  { get; set; } = 0;
 
-        public bool IsActive { get; set; } = true;
+        public bool IsActive      { get; set; } = true;
     }
 }

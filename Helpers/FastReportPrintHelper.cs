@@ -7,6 +7,7 @@ using System.Drawing.Printing;
 using System.Drawing;
 using System.Runtime.Versioning;
 using pos_service.Models.DTO.Settings;
+using pos_service.Models.DTO.Inventory;
 
 namespace pos_service.Helpers
 {
@@ -56,6 +57,29 @@ namespace pos_service.Helpers
                 report.SetParameterValue("GrosAmount", order.GrossAmount.ToString("F2"));
                 report.SetParameterValue("Barcode", order.OrderNumber.ToString());
 
+            });
+        }
+
+        public static async Task<bool> PrintRequiredItemListAsync(
+            List<RequiredItemDto> items,
+            string supplierName,
+            string printerName,
+            string reportTemplatePath,
+            ShopResDto? shop)
+        {
+            return await PrintReportAsync(reportTemplatePath, printerName, async report =>
+            {
+                // Register items
+                report.RegisterData(items, "Items");
+
+                // Shop details
+                report.SetParameterValue("StoreName", shop?.Name?.ToUpper() ?? "-");
+                report.SetParameterValue("StoreAddress", shop?.Address ?? "-");
+                report.SetParameterValue("StorePhoneNumber", shop?.PhoneNumber ?? "-");
+
+                report.SetParameterValue("SupplierName", supplierName ?? "-");
+                report.SetParameterValue("PrintDate", DateTime.Now.ToString("yyyy/MM/dd"));
+                report.SetParameterValue("PrintTime", DateTime.Now.ToString("h:mm:ss tt"));
             });
         }
 

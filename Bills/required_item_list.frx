@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="06/05/2026 09:00:00" ReportInfo.Modified="06/06/2026 09:50:56" ReportInfo.CreatorVersion="2026.2.0.0">
+  <Dictionary>
+    <BusinessObjectDataSource Name="Items" ReferenceName="Items" DataType="System.Int32" Enabled="true">
+      <Column Name="ItemUuid" DataType="System.String"/>
+      <Column Name="ItemName" DataType="System.String"/>
+      <Column Name="SupplierName" DataType="System.String"/>
+      <Column Name="CurrentStock" DataType="System.String"/>
+      <Column Name="RequiredStock" DataType="System.String"/>
+      <Column Name="LastPurchaseInfo" DataType="System.String"/>
+    </BusinessObjectDataSource>
+    <Parameter Name="StoreName" DataType="System.String" AsString=""/>
+    <Parameter Name="StoreAddress" DataType="System.String" AsString=""/>
+    <Parameter Name="StorePhoneNumber" DataType="System.String" AsString=""/>
+    <Parameter Name="PrintDate" DataType="System.String" AsString=""/>
+    <Parameter Name="PrintTime" DataType="System.String" AsString=""/>
+    <Parameter Name="SupplierName" DataType="System.String" AsString=""/>
+  </Dictionary>
+  <ReportPage Name="Page1" PaperWidth="80" PaperHeight="250" LeftMargin="0" TopMargin="0" RightMargin="7" BottomMargin="5" Watermark.Font="Arial, 60pt" UnlimitedHeight="true">
+    <ReportTitleBand Name="ReportTitle1" Width="275.94" Height="66.15">
+      <TextObject Name="txtStore" Width="270.27" Height="18.9" Text="[StoreName]" HorzAlign="Center" Font="Arial, 11pt, style=Bold"/>
+      <TextObject Name="txtAddr" Top="18.9" Width="270.27" Height="18.9" Text="[StoreAddress]" HorzAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="txtPhone" Top="37.8" Width="270.27" Height="18.9" Text="Tel: [StorePhoneNumber]" HorzAlign="Center" Font="Arial, 9pt"/>
+      <LineObject Name="Line1" Top="60" Width="270.27" Border.Style="DashDot"/>
+    </ReportTitleBand>
+    <PageHeaderBand Name="PageHeader1" Top="67.75" Width="275.94" Height="66.15">
+      <TextObject Name="txtTitle" Width="270.27" Height="18.9" Text="Required item list from [SupplierName]" HorzAlign="Center" Font="Arial, 9pt, style=Bold"/>
+      <TextObject Name="txtDate" Top="18.9" Width="272.3" Height="18.9" Text="Date : [PrintDate] [PrintTime]" Font="Arial, 8pt"/>
+      <LineObject Name="Line2" Top="40" Width="270.27"/>
+      <TextObject Name="h1" Left="12.2" Top="45" Width="120" Height="18.9" Text="Item" Font="Arial, 7pt"/>
+      <TextObject Name="h2" Left="132" Top="45" Width="60" Height="18.9" Text="Current" HorzAlign="Right" Font="Arial, 7pt"/>
+      <TextObject Name="h3" Left="192" Top="45" Width="80" Height="18.9" Text="Required" HorzAlign="Right" Font="Arial, 7pt"/>
+      <LineObject Name="Line3" Top="66.15" Width="270.27"/>
+    </PageHeaderBand>
+    <DataBand Name="Data1" Top="135.5" Width="275.94" Height="20" DataSource="Items">
+      <TextObject Name="t1" Width="150" Height="18.9" Text="[Items.ItemName]" Font="Arial, 8pt"/>
+      <TextObject Name="t2" Left="132" Width="60" Height="18.9" Text="[Items.CurrentStock]" HorzAlign="Right" Font="Arial, 8pt"/>
+      <TextObject Name="t3" Left="192" Width="80" Height="18.9" Text="[Items.RequiredStock]" HorzAlign="Right" Font="Arial, 8pt"/>
+    </DataBand>
+    <ReportSummaryBand Name="Summary1" Top="157.1" Width="275.94" Height="32.75">
+      <LineObject Name="Line4" Top="5" Width="270.27" Border.Style="Dash"/>
+      <TextObject Name="thank" Top="11.1" Width="270" Height="18.9" Text="Supplier Purchase Reference" HorzAlign="Center" Font="Arial, 9pt, style=Bold"/>
+    </ReportSummaryBand>
+  </ReportPage>
+</Report>

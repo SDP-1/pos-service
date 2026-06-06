@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using pos_service.Helpers;
 using pos_service.Models.DTO.Bills;
 using pos_service.Services;
+using pos_service.Models.DTO.Inventory;
 using System.Drawing;
 using System.Runtime.Versioning;
 
@@ -13,10 +14,10 @@ namespace pos_service.Controllers
     [Authorize]
     public class PrintController : ControllerBase
     {
-        private readonly IOrderService _orderService;
-        private readonly IItemService _itemService;
+        private readonly IOrderService       _orderService;
+        private readonly IItemService        _itemService;
         private readonly ICurrentUserService _currentUserService;
-        private readonly IShopService _shopService;
+        private readonly IShopService        _shopService;
         private readonly IWebHostEnvironment _env;
 
         public PrintController(
@@ -26,11 +27,75 @@ namespace pos_service.Controllers
             IShopService shopService,
             IWebHostEnvironment env)
         {
-            _orderService = orderService;
-            _itemService = itemService;
+            _orderService       = orderService;
+            _itemService        = itemService;
             _currentUserService = currentUserService;
-            _shopService = shopService;
-            _env = env;
+            _shopService        = shopService;
+            _env                = env;
+        }
+
+        /// <summary>
+        /// Prints a Required Item List for the supplier with selected items.
+        /// </summary>
+        [HttpPost("required-items")]
+        [SupportedOSPlatform("windows")]
+        public async Task<IActionResult> PrintRequiredItemList([FromBody] RequiredItemPrintReqDto req)
+        {
+            if (req == null || req.SupplierId <= 0)
+                return BadRequest("SupplierId is required");
+
+            try
+            {
+                var currentUser = _currentUserService.GetCurrentUser();
+                var shop        = await _shopService.GetAsync();
+
+                var items = new List<RequiredItemDto>();
+                if (req.Items != null)
+                {
+                    foreach (var itemInfo in req.Items)
+                    {
+                        var it = await _itemService.GetItemByUuidAsync(itemInfo.ItemUuid, currentUser);
+                        if (it != null)
+                        {
+                            bool allowsDecimals    = it.Inventory?.AllowsDecimalQuantities ?? false;
+                            decimal currentStock   = it.Inventory?.StockQuantity ?? 0m;
+                            
+                            string currentStockStr = currentStock.ToString(allowsDecimals ? "F2" : "F0");
+                            string reqStockStr     = itemInfo.RequiredStock.HasValue 
+                                ? itemInfo.RequiredStock.Value.ToString(allowsDecimals ? "F2" : "F0") 
+                                : ""; // Empty when required item count is empty (no "-")
+
+                            items.Add(new RequiredItemDto
+                            {
+                                ItemUuid      = it.Uuid,
+                                ItemName      = it.Name,
+                                SupplierName  = it.Suppliers?.FirstOrDefault(s => s.Id == req.SupplierId)?.Name ?? "",
+                                CurrentStock  = currentStockStr,
+                                RequiredStock = reqStockStr
+                            });
+                        }
+                    }
+                }
+
+                var printer = FastReportPrintHelper.GetDefaultPrinter();
+                if (string.IsNullOrWhiteSpace(printer))
+                    return StatusCode(500, "No installed printer found. Set a default printer.");
+
+                var supplierName = items.FirstOrDefault(i => !string.IsNullOrEmpty(i.SupplierName))?.SupplierName ?? "";
+                var reportPath   = Path.Combine(_env.ContentRootPath, "Bills/required_item_list.frx");
+                var success      = await FastReportPrintHelper.PrintRequiredItemListAsync(items, supplierName, printer, reportPath, shop);
+
+                if (!success)
+                {
+                    return StatusCode(500, new PrintResponseDto { Printed = false, Error = $"Failed to send to printer '{printer}'" });
+                }
+
+                return Ok(new PrintResponseDto { Printed = true });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new PrintResponseDto { Printed = false, Error = ex.Message });
+            }
         }
 
         /// <summary>
@@ -48,7 +113,7 @@ namespace pos_service.Controllers
             try
             {
                 var currentUser = _currentUserService.GetCurrentUser();
-                var shop = await _shopService.GetAsync();
+                var shop        = await _shopService.GetAsync();
 
                 var orderToPrint = await _orderService.GetOrderByOrderNumberAsync(orderNumber, currentUser);
                 if (orderToPrint == null)
@@ -61,14 +126,14 @@ namespace pos_service.Controllers
                 }
 
                 var reportPath = Path.Combine(_env.ContentRootPath, "Bills/posbill.frx");
-                var success = await FastReportPrintHelper.PrintReceiptAsync(orderToPrint, printer, reportPath, shop);
+                var success    = await FastReportPrintHelper.PrintReceiptAsync(orderToPrint, printer, reportPath, shop);
 
                 if (!success)
                 {
                     return StatusCode(500, new PrintResponseDto
                     {
                         Printed = false,
-                        Error = $"Failed to send to printer '{printer}'"
+                        Error   = $"Failed to send to printer '{printer}'"
                     });
                 }
 
@@ -111,7 +176,7 @@ namespace pos_service.Controllers
                     return BadRequest(new PrintResponseDto
                     {
                         Printed = false,
-                        Error = "This item does not have a barcode assigned"
+                        Error   = "This item does not have a barcode assigned"
                     });
                 }
 
@@ -122,14 +187,14 @@ namespace pos_service.Controllers
                 }
 
                 var reportPath = Path.Combine(_env.ContentRootPath, "Bills/item_barcode.frx");
-                var success = await FastReportPrintHelper.PrintBarcodeAsync(item, printer, reportPath);
+                var success    = await FastReportPrintHelper.PrintBarcodeAsync(item, printer, reportPath);
 
                 if (!success)
                 {
                     return StatusCode(500, new PrintResponseDto
                     {
                         Printed = false,
-                        Error = $"Failed to send to printer '{printer}'"
+                        Error   = $"Failed to send to printer '{printer}'"
                     });
                 }
 
@@ -143,7 +208,7 @@ namespace pos_service.Controllers
                 return StatusCode(500, new PrintResponseDto
                 {
                     Printed = false,
-                    Error = ex.Message
+                    Error   = ex.Message
                 });
             }
         }

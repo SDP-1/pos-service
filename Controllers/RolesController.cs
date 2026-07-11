@@ -27,9 +27,9 @@ namespace pos_service.Controllers
         /// </summary>
         /// <returns>200 OK with the list of roles.</returns>
         [HttpGet]
+        [Permission(PermissionType.ROLE_VIEW)]
         public async Task<IActionResult> GetAll()
         {
-            EnsurePermission(PermissionType.ROLE_VIEW);
             var roles = await _roleService.GetAllAsync();
 
             // hide SystemAdmin from users who do not have PERMISSION_SYSADMIN_VIEW
@@ -47,9 +47,9 @@ namespace pos_service.Controllers
         /// </summary>
         /// <returns>200 OK with the list of active roles.</returns>
         [HttpGet("active")]
+        [Permission(PermissionType.ROLE_VIEW)]
         public async Task<IActionResult> GetActiveRoles()
         {
-            EnsurePermission(PermissionType.ROLE_VIEW);
             var roles = await _roleService.GetActiveAsync();
 
             // hide SystemAdmin from users who do not have PERMISSION_SYSADMIN_VIEW

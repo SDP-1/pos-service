@@ -1,5 +1,11 @@
 -- need to apply in prod
 
+
+
+
+/*
+-- appilied
+
 ALTER TABLE `pos-system`.`items` 
 ADD INDEX `IN_Main_Id` (`Id` ASC) VISIBLE,
 ADD INDEX `IN_Barcode` (`BarCode` ASC) INVISIBLE;
@@ -36,9 +42,78 @@ VIEW `view_returned_items_summary` AS
     -- file
     InventoryAudit_SQL.sql
 
+    -- SQL template table
 
-/*
--- appilied
+    CREATE TABLE `sqltemplates` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `TemplateName` varchar(255) NOT NULL,
+  `Description` varchar(1000) DEFAULT NULL,
+  `SqlQuery` longtext NOT NULL,
+  `PlaceholdersJson` longtext,
+  `SelectValuesJson` longtext,
+  `Uuid` varchar(36) NOT NULL,
+  `CreatedAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `CreatedBy` varchar(36) DEFAULT NULL,
+  `UpdatedAt` datetime(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  `UpdatedBy` varchar(36) DEFAULT NULL,
+  `IsActive` tinyint(1) NOT NULL DEFAULT '1',
+  PRIMARY KEY (`Id`),
+  UNIQUE KEY `Uuid` (`Uuid`),
+  UNIQUE KEY `TemplateName` (`TemplateName`),
+  KEY `CreatedBy` (`CreatedBy`),
+  KEY `UpdatedBy` (`UpdatedBy`),
+  CONSTRAINT `sqltemplates_ibfk_1` FOREIGN KEY (`CreatedBy`) REFERENCES `users` (`Uuid`) ON DELETE SET NULL,
+  CONSTRAINT `sqltemplates_ibfk_2` FOREIGN KEY (`UpdatedBy`) REFERENCES `users` (`Uuid`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+
+-- reporttemplates
+
+CREATE TABLE `reporttemplates` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `ReportName` varchar(255) NOT NULL,
+  `Description` varchar(1000) DEFAULT NULL,
+  `HtmlContent` longtext NOT NULL,
+  `ParametersJson` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci,
+  `SqlPlaceholderMappingsJson` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci,
+  `Uuid` varchar(36) NOT NULL,
+  `CreatedAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `UpdatedAt` datetime(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  `CreatedBy` varchar(36) DEFAULT NULL,
+  `UpdatedBy` varchar(36) DEFAULT NULL,
+  `IsActive` tinyint(1) NOT NULL DEFAULT '1',
+  PRIMARY KEY (`Id`),
+  UNIQUE KEY `Uuid` (`Uuid`),
+  UNIQUE KEY `ReportName` (`ReportName`),
+  KEY `reporttemplates_ibfk_1` (`CreatedBy`),
+  KEY `reporttemplates_ibfk_2` (`UpdatedBy`),
+  CONSTRAINT `reporttemplates_ibfk_1` FOREIGN KEY (`CreatedBy`) REFERENCES `users` (`Uuid`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `reporttemplates_ibfk_2` FOREIGN KEY (`UpdatedBy`) REFERENCES `users` (`Uuid`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+
+-- reporttemplatesqltemplates
+
+CREATE TABLE `reporttemplatesqltemplates` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `ReportTemplateId` int NOT NULL,
+  `SqlTemplateId` int NOT NULL,
+  `Uuid` varchar(36) NOT NULL,
+  `CreatedAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `UpdatedAt` datetime(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  `CreatedBy` varchar(36) DEFAULT NULL,
+  `UpdatedBy` varchar(36) DEFAULT NULL,
+  `IsActive` tinyint(1) NOT NULL DEFAULT '1',
+  PRIMARY KEY (`Id`),
+  UNIQUE KEY `AK_ReportTemplateSqlTemplates_Uuid` (`Uuid`),
+  KEY `IX_ReportTemplateSqlTemplates_ReportTemplateId` (`ReportTemplateId`),
+  KEY `IX_ReportTemplateSqlTemplates_SqlTemplateId` (`SqlTemplateId`),
+  KEY `IX_ReportTemplateSqlTemplates_CreatedBy` (`CreatedBy`),
+  KEY `IX_ReportTemplateSqlTemplates_UpdatedBy` (`UpdatedBy`),
+  CONSTRAINT `FK_ReportTemplateSqlTemplates_ReportTemplates_ReportTemplateId` FOREIGN KEY (`ReportTemplateId`) REFERENCES `reporttemplates` (`Id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `FK_ReportTemplateSqlTemplates_Users_CreatedBy` FOREIGN KEY (`CreatedBy`) REFERENCES `users` (`Uuid`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `FK_ReportTemplateSqlTemplates_Users_UpdatedBy` FOREIGN KEY (`UpdatedBy`) REFERENCES `users` (`Uuid`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `FK_SqlTemplate_Id` FOREIGN KEY (`SqlTemplateId`) REFERENCES `sqltemplates` (`Id`) ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=127 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+
 
 CREATE TABLE `inventories` (
   `Id` int NOT NULL AUTO_INCREMENT,
@@ -98,7 +173,7 @@ INSERT INTO inventories (
 SELECT 
     i.Uuid,                      
     0.000,                       
-    i.AllowsDecimalQuantities,   -- 👈 FIX HERE
+    i.AllowsDecimalQuantities,   -- FIX HERE
     'Packet',                    
     UUID(),                      
     NULL,                        

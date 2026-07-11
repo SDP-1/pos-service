@@ -38,7 +38,7 @@ namespace pos_service.Authorization
                 if (!_currentUserService.HasPermission(_permission))
                 {
                     // throw PermissionDeniedException so callers can handle it explicitly
-                    throw new pos_service.Exceptions.PermissionDeniedException($"User does not have required permission: {_permission}");
+                    throw new pos_service.Exceptions.PermissionDeniedException($"You does not have required permission: {_permission}");
                 }
             }
             catch (PermissionDeniedException) {

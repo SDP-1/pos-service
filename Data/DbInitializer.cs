@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using pos_service.Models;
 using pos_service.Models.Enums;
 using pos_service.Security;
@@ -17,6 +17,7 @@ namespace pos_service.Data
         /// </summary>
         /// <param name="context">The application database context.</param>
         /// <param name="passwordHasher">The password hasher service for securing user passwords.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         public static async Task SeedAsync(AppDbContext context, IPasswordHasherService passwordHasher)
         {
             // Apply pending migrations
@@ -100,6 +101,7 @@ namespace pos_service.Data
         /// </summary>
         /// <param name="context">The application database context.</param>
         /// <param name="passwordHasher">The password hasher service for securing the admin password.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         private static async Task SeedAdminUserAsync(AppDbContext context, IPasswordHasherService passwordHasher)
         {
             if (!await context.Users.AnyAsync(u => u.UserName == "sehandevinda1@gmail.com"))
@@ -123,6 +125,8 @@ namespace pos_service.Data
         /// <summary>
         /// Seed default permissions and role mappings
         /// </summary>
+        /// <param name="context">The application database context.</param>
+        /// <return>A task representing the asynchronous operation.</return>
         private static async Task SeedPermissionsAsync(AppDbContext context)
         {
             var perms = new List<Permission>
@@ -146,11 +150,10 @@ namespace pos_service.Data
                 // Users
                 new Permission { Id = (int)PermissionType.USER_VIEW, PermissionType = PermissionType.USER_VIEW, PermissionCatagory = PermissionCatagory.USER, Description = "Can view users" },
                 new Permission { Id = (int)PermissionType.USER_CREATE, PermissionType = PermissionType.USER_CREATE, PermissionCatagory = PermissionCatagory.USER, Description = "Can create users" },
-                new Permission { Id = (int)PermissionType.USER_UPDATE, PermissionType = PermissionType.USER_UPDATE, PermissionCatagory = PermissionCatagory.USER, Description = "Can update users" },
+                new Permission { Id = (int)PermissionType.USER_UPDATE, PermissionType = PermissionType.USER_UPDATE, PermissionCatagory = PermissionCatagory.USER, Description = "Can update other system users details" },
                 new Permission { Id = (int)PermissionType.USER_ACTIVE_STATUS_CHANGE, PermissionType = PermissionType.USER_ACTIVE_STATUS_CHANGE, PermissionCatagory = PermissionCatagory.USER, Description = "Can change user active status users" },
                 new Permission { Id = (int)PermissionType.USER_DELETE, PermissionType = PermissionType.USER_DELETE, PermissionCatagory = PermissionCatagory.USER, Description = "Can delete users" },
-                new Permission { Id = (int)PermissionType.USER_CHANGE_PASSWORD, PermissionType = PermissionType.USER_CHANGE_PASSWORD, PermissionCatagory = PermissionCatagory.USER, Description = "Can change password" },
-                new Permission { Id = (int)PermissionType.USER_MANAGE, PermissionType = PermissionType.USER_MANAGE, PermissionCatagory = PermissionCatagory.USER, Description = "Can manage user accounts and roles" },
+                new Permission { Id = (int)PermissionType.USER_CHANGE_PASSWORD, PermissionType = PermissionType.USER_CHANGE_PASSWORD, PermissionCatagory = PermissionCatagory.USER, Description = "Can change other users password (like reset)" },
 
                 // Suppliers
                 new Permission { Id = (int)PermissionType.SUPPLIER_VIEW, PermissionType = PermissionType.SUPPLIER_VIEW, PermissionCatagory = PermissionCatagory.SUPPLIER, Description = "Can view suppliers" },
@@ -184,8 +187,42 @@ namespace pos_service.Data
                 //Shop details
                 new Permission { Id = (int)PermissionType.SHOP_DETAILS_UPDATE, PermissionType = PermissionType.SHOP_DETAILS_UPDATE, PermissionCatagory = PermissionCatagory.SHOP, Description = "Can change shop related details" },
 
+                // Report Templates
+                new Permission { Id = (int)PermissionType.REPORT_TEMPLATE_CREATE, PermissionType = PermissionType.REPORT_TEMPLATE_CREATE, PermissionCatagory = PermissionCatagory.REPORT_TEMPLATE, Description = "Can create report templates" },
+                new Permission { Id = (int)PermissionType.REPORT_TEMPLATE_VIEW, PermissionType = PermissionType.REPORT_TEMPLATE_VIEW, PermissionCatagory = PermissionCatagory.REPORT_TEMPLATE, Description = "Can view report templates" },
+                new Permission { Id = (int)PermissionType.REPORT_TEMPLATE_EDIT, PermissionType = PermissionType.REPORT_TEMPLATE_EDIT, PermissionCatagory = PermissionCatagory.REPORT_TEMPLATE, Description = "Can edit report templates" },
+                new Permission { Id = (int)PermissionType.REPORT_TEMPLATE_DELETE, PermissionType = PermissionType.REPORT_TEMPLATE_DELETE, PermissionCatagory = PermissionCatagory.REPORT_TEMPLATE, Description = "Can delete report templates" },
+                new Permission { Id = (int)PermissionType.REPORT_TEMPLATE_DOWNLOAD, PermissionType = PermissionType.REPORT_TEMPLATE_DOWNLOAD, PermissionCatagory = PermissionCatagory.REPORT_TEMPLATE, Description = "Can download report templates" },
+                new Permission { Id = (int)PermissionType.REPORT_TEMPLATE_ASSIGN, PermissionType = PermissionType.REPORT_TEMPLATE_ASSIGN, PermissionCatagory = PermissionCatagory.REPORT_TEMPLATE, Description = "Can assign report templates to processes" },
+
+                // SQL Templates
+                new Permission { Id = (int)PermissionType.SQL_TEMPLATE_VIEW,   PermissionType = PermissionType.SQL_TEMPLATE_VIEW,   PermissionCatagory = PermissionCatagory.SQL_TEMPLATE, Description = "Can view SQL templates" },
+                new Permission { Id = (int)PermissionType.SQL_TEMPLATE_CREATE, PermissionType = PermissionType.SQL_TEMPLATE_CREATE, PermissionCatagory = PermissionCatagory.SQL_TEMPLATE, Description = "Can create SQL templates" },
+                new Permission { Id = (int)PermissionType.SQL_TEMPLATE_EDIT,   PermissionType = PermissionType.SQL_TEMPLATE_EDIT,   PermissionCatagory = PermissionCatagory.SQL_TEMPLATE, Description = "Can edit SQL templates" },
+                new Permission { Id = (int)PermissionType.SQL_TEMPLATE_DELETE, PermissionType = PermissionType.SQL_TEMPLATE_DELETE, PermissionCatagory = PermissionCatagory.SQL_TEMPLATE, Description = "Can delete SQL templates" },
+
                 // Only for Admin
                 new Permission { Id = (int)PermissionType.PERMISSION_SYSADMIN_VIEW, PermissionType = PermissionType.PERMISSION_SYSADMIN_VIEW, PermissionCatagory = PermissionCatagory.ROLE, Description = "Can view the SystemAdmin role existence/details" },
+
+                // Setting Options
+                new Permission { Id = (int)PermissionType.SETTING_OPTIONS_BACKUP_VIEW, PermissionType = PermissionType.SETTING_OPTIONS_BACKUP_VIEW, PermissionCatagory = PermissionCatagory.SETTING_OPTIONS, Description = "Can view backup settings" },
+                new Permission { Id = (int)PermissionType.SETTING_OPTIONS_SHOP_VIEW, PermissionType = PermissionType.SETTING_OPTIONS_SHOP_VIEW, PermissionCatagory = PermissionCatagory.SETTING_OPTIONS, Description = "Can view shop details settings" },
+                new Permission { Id = (int)PermissionType.SETTING_OPTIONS_ROLES_VIEW, PermissionType = PermissionType.SETTING_OPTIONS_ROLES_VIEW, PermissionCatagory = PermissionCatagory.SETTING_OPTIONS, Description = "Can view roles and permissions settings" },
+                new Permission { Id = (int)PermissionType.SETTING_OPTIONS_REPORTS_VIEW, PermissionType = PermissionType.SETTING_OPTIONS_REPORTS_VIEW, PermissionCatagory = PermissionCatagory.SETTING_OPTIONS, Description = "Can view reports settings" },
+                new Permission { Id = (int)PermissionType.SETTING_OPTIONS_SQL_TEMPLATES_VIEW, PermissionType = PermissionType.SETTING_OPTIONS_SQL_TEMPLATES_VIEW, PermissionCatagory = PermissionCatagory.SETTING_OPTIONS, Description = "Can view SQL templates settings" },
+                new Permission { Id = (int)PermissionType.SETTING_OPTIONS_SYSTEM_VIEW, PermissionType = PermissionType.SETTING_OPTIONS_SYSTEM_VIEW, PermissionCatagory = PermissionCatagory.SETTING_OPTIONS, Description = "Can view system settings" },
+                new Permission { Id = (int)PermissionType.SETTING_OPTIONS_USERS_VIEW, PermissionType = PermissionType.SETTING_OPTIONS_USERS_VIEW, PermissionCatagory = PermissionCatagory.SETTING_OPTIONS, Description = "Can view user management settings" },
+
+                // Navigation Bar Options
+                new Permission { Id = (int)PermissionType.NAV_BAR_HOME_VIEW, PermissionType = PermissionType.NAV_BAR_HOME_VIEW, PermissionCatagory = PermissionCatagory.NAV_BAR, Description = "Can view Home / Order page in navigation bar" },
+                new Permission { Id = (int)PermissionType.NAV_BAR_ORDERS_VIEW, PermissionType = PermissionType.NAV_BAR_ORDERS_VIEW, PermissionCatagory = PermissionCatagory.NAV_BAR, Description = "Can view Orders list page in navigation bar" },
+                new Permission { Id = (int)PermissionType.NAV_BAR_ITEMS_VIEW, PermissionType = PermissionType.NAV_BAR_ITEMS_VIEW, PermissionCatagory = PermissionCatagory.NAV_BAR, Description = "Can view Items page in navigation bar" },
+                new Permission { Id = (int)PermissionType.NAV_BAR_SUPPLIERS_VIEW, PermissionType = PermissionType.NAV_BAR_SUPPLIERS_VIEW, PermissionCatagory = PermissionCatagory.NAV_BAR, Description = "Can view Suppliers page in navigation bar" },
+                new Permission { Id = (int)PermissionType.NAV_BAR_CUSTOMERS_VIEW, PermissionType = PermissionType.NAV_BAR_CUSTOMERS_VIEW, PermissionCatagory = PermissionCatagory.NAV_BAR, Description = "Can view Customers page in navigation bar" },
+                new Permission { Id = (int)PermissionType.NAV_BAR_INVENTORY_VIEW, PermissionType = PermissionType.NAV_BAR_INVENTORY_VIEW, PermissionCatagory = PermissionCatagory.NAV_BAR, Description = "Can view Inventory page in navigation bar" },
+                new Permission { Id = (int)PermissionType.NAV_BAR_REPORTS_VIEW, PermissionType = PermissionType.NAV_BAR_REPORTS_VIEW, PermissionCatagory = PermissionCatagory.NAV_BAR, Description = "Can view Reports page in navigation bar" },
+                new Permission { Id = (int)PermissionType.NAV_BAR_SETTINGS_VIEW, PermissionType = PermissionType.NAV_BAR_SETTINGS_VIEW, PermissionCatagory = PermissionCatagory.NAV_BAR, Description = "Can view Settings page in navigation bar" },
+                new Permission { Id = (int)PermissionType.NAV_BAR_HELP_VIEW, PermissionType = PermissionType.NAV_BAR_HELP_VIEW, PermissionCatagory = PermissionCatagory.NAV_BAR, Description = "Can view Help page in navigation bar" },
             };
 
             foreach (var p in perms)
@@ -200,23 +237,95 @@ namespace pos_service.Data
             await context.SaveChangesAsync();
         }
 
+        /// <summary>
+        /// Seeds the role-permission mappings for default roles.
+        /// </summary>
+        /// <param name="context">The application database context.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         private static async Task SeedRolePermissionsAsync(AppDbContext context)
         {
-            if (!await context.RolePermissions.AnyAsync())
+            // Always ensure SystemAdmin (roleId 1) has mappings for all permissions.
+            var allPerms = await context.Permissions.ToListAsync();
+
+            // Get existing permission IDs for SystemAdmin role
+            var existingSysAdminPermIds = await context.RolePermissions
+                .Where(rp => rp.RoleId == 1)
+                .Select(rp => rp.PermissionId)
+                .ToListAsync();
+
+            // Add missing mappings for SystemAdmin (roleId 1)
+            var sysAdminMappingsToAdd = allPerms
+                .Where(p => !existingSysAdminPermIds.Contains(p.Id))
+                .Select(p => new RolePermission { RoleId = 1, PermissionId = p.Id, Uuid = Guid.NewGuid().ToString() })
+                .ToList();
+
+            var mappingsToAdd = new List<RolePermission>();
+            if (sysAdminMappingsToAdd.Any()) mappingsToAdd.AddRange(sysAdminMappingsToAdd);
+
+            // Add sensible defaults for Manager and Cashier but only add missing mappings (idempotent)
+            var shopAdminPermIds = new[] 
+            { 
+                (int)PermissionType.ORDER_VIEW, 
+                (int)PermissionType.ORDER_ADD, 
+                (int)PermissionType.ORDER_UPDATE, 
+                (int)PermissionType.ORDER_DELETE,
+                (int)PermissionType.NAV_BAR_HOME_VIEW,
+                (int)PermissionType.NAV_BAR_ORDERS_VIEW,
+                (int)PermissionType.NAV_BAR_ITEMS_VIEW,
+                (int)PermissionType.NAV_BAR_SUPPLIERS_VIEW,
+                (int)PermissionType.NAV_BAR_CUSTOMERS_VIEW,
+                (int)PermissionType.NAV_BAR_INVENTORY_VIEW,
+                (int)PermissionType.NAV_BAR_REPORTS_VIEW
+            };
+
+            // Add sensible defaults for Manager but only add missing mappings (idempotent)
+            var managerPermIds = new[]
             {
-                // SystemAdmin (roleId 1) gets all permissions
-                var allPerms = await context.Permissions.ToListAsync();
-                var mappings = allPerms.Select(p => new RolePermission { RoleId = 1, PermissionId = p.Id, Uuid = Guid.NewGuid().ToString() }).ToList(); //SystemAdmin
+                (int)PermissionType.ORDER_VIEW,
+                (int)PermissionType.ORDER_ADD,
+                (int)PermissionType.ORDER_UPDATE,
+                (int)PermissionType.ORDER_DELETE,
+                (int)PermissionType.NAV_BAR_HOME_VIEW,
+                (int)PermissionType.NAV_BAR_ORDERS_VIEW,
+                (int)PermissionType.NAV_BAR_ITEMS_VIEW,
+                (int)PermissionType.NAV_BAR_SUPPLIERS_VIEW,
+                (int)PermissionType.NAV_BAR_CUSTOMERS_VIEW,
+                (int)PermissionType.NAV_BAR_INVENTORY_VIEW,
+                (int)PermissionType.NAV_BAR_REPORTS_VIEW
+            };
 
-                // Manager gets a subset
-                var managerPermIds = new[] { (int)PermissionType.ORDER_VIEW, (int)PermissionType.ORDER_ADD, (int)PermissionType.ORDER_UPDATE, (int)PermissionType.ORDER_DELETE };
-                mappings.AddRange(managerPermIds.Select(id => new RolePermission { RoleId = 3, PermissionId = id, Uuid = Guid.NewGuid().ToString() })); //Manager
+            // Add sensible defaults for Cashier but only add missing mappings (idempotent)
+            var cashierPermIds = new[] 
+            { 
+                (int)PermissionType.ORDER_VIEW, 
+                (int)PermissionType.ORDER_ADD,
+                (int)PermissionType.NAV_BAR_HOME_VIEW
+            };
 
-                // Cashier gets view & add
-                var cashierPermIds = new[] { (int)PermissionType.ORDER_VIEW, (int)PermissionType.ORDER_ADD };
-                mappings.AddRange(cashierPermIds.Select(id => new RolePermission { RoleId = 4, PermissionId = id, Uuid = Guid.NewGuid().ToString() })); //Cashier
+            // existing mappings lookup to avoid duplicates
+            var existingRolePermPairs = await context.RolePermissions
+                .Select(rp => new { rp.RoleId, rp.PermissionId })
+                .ToListAsync();
 
-                context.RolePermissions.AddRange(mappings);
+            // Shop Admin (roleId 2)
+            mappingsToAdd.AddRange(shopAdminPermIds
+                .Where(id => !existingRolePermPairs.Any(e => e.RoleId == 2 && e.PermissionId == id))
+                .Select(id => new RolePermission { RoleId = 2, PermissionId = id, Uuid = Guid.NewGuid().ToString() }));
+
+            // manager (roleId 3)
+            mappingsToAdd.AddRange(managerPermIds
+                .Where(id => !existingRolePermPairs.Any(e => e.RoleId == 3 && e.PermissionId == id))
+                .Select(id => new RolePermission { RoleId = 3, PermissionId = id, Uuid = Guid.NewGuid().ToString() }));
+
+            // Cashier (roleId 4)
+            mappingsToAdd.AddRange(cashierPermIds
+                .Where(id => !existingRolePermPairs.Any(e => e.RoleId == 4 && e.PermissionId == id))
+                .Select(id => new RolePermission { RoleId = 4, PermissionId = id, Uuid = Guid.NewGuid().ToString() }));
+
+            if (mappingsToAdd.Any())
+            {
+                // Add all new role-permission mappings to the database
+                context.RolePermissions.AddRange(mappingsToAdd);
                 await context.SaveChangesAsync();
             }
         }

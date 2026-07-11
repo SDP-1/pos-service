@@ -26,26 +26,39 @@ namespace pos_service.Repositories.Base
         {
             var results = new List<T>();
 
-            using var connection = _context.Database.GetDbConnection();
-            await connection.OpenAsync();
-
-            using var command = connection.CreateCommand();
-            command.CommandText = procedureName;
-            command.CommandType = CommandType.StoredProcedure;
-
-            // Add parameters
-            AddParameters(command, parameters);
-
-            using var reader = await command.ExecuteReaderAsync();
-            
-            // Map results to entities
-            while (await reader.ReadAsync())
+            var connection = _context.Database.GetDbConnection();
+            if (connection.State != ConnectionState.Open)
             {
-                var entity = MapToEntity<T>(reader);
-                results.Add(entity);
+                await connection.OpenAsync();
             }
 
-            return results;
+            try
+            {
+                using var command = connection.CreateCommand();
+                command.CommandText = procedureName;
+                command.CommandType = CommandType.StoredProcedure;
+
+                // Add parameters
+                AddParameters(command, parameters);
+
+                using var reader = await command.ExecuteReaderAsync();
+                
+                // Map results to entities
+                while (await reader.ReadAsync())
+                {
+                    var entity = MapToEntity<T>(reader);
+                    results.Add(entity);
+                }
+
+                return results;
+            }
+            finally
+            {
+                if (connection.State == ConnectionState.Open)
+                {
+                    await connection.CloseAsync();
+                }
+            }
         }
 
         /// <summary>
@@ -62,17 +75,30 @@ namespace pos_service.Repositories.Base
         /// </summary>
         public async Task<int> ExecuteStoredProcedureNonQueryAsync(string procedureName, Dictionary<string, object?> parameters)
         {
-            using var connection = _context.Database.GetDbConnection();
-            await connection.OpenAsync();
+            var connection = _context.Database.GetDbConnection();
+            if (connection.State != ConnectionState.Open)
+            {
+                await connection.OpenAsync();
+            }
 
-            using var command   = connection.CreateCommand();
-            command.CommandText = procedureName;
-            command.CommandType = CommandType.StoredProcedure;
+            try
+            {
+                using var command   = connection.CreateCommand();
+                command.CommandText = procedureName;
+                command.CommandType = CommandType.StoredProcedure;
 
-            // Add parameters
-            AddParameters(command, parameters);
+                // Add parameters
+                AddParameters(command, parameters);
 
-            return await command.ExecuteNonQueryAsync();
+                return await command.ExecuteNonQueryAsync();
+            }
+            finally
+            {
+                if (connection.State == ConnectionState.Open)
+                {
+                    await connection.CloseAsync();
+                }
+            }
         }
 
         /// <summary>

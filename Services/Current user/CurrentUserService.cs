@@ -271,7 +271,7 @@ namespace pos_service.Services
         {
             EnsureAuthenticated();
             if (!HasPermission(permission))
-                throw new PermissionDeniedException($"User does not have required permission: {permission}");
+                throw new PermissionDeniedException($"You does not have required permission: {permission}");
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using System;
 using System.Linq;
 using pos_service.Models;
@@ -126,6 +126,42 @@ namespace pos_service.Profiles
             CreateMap<Setting, SettingResDto>();
             CreateMap<Shop, Models.DTO.Settings.ShopResDto>()
                 .ForMember(dest => dest.Logo, opt => opt.MapFrom(src => src.Logo));
+
+            // Report Template Mappings
+            CreateMap<SqlTemplate, pos_service.Models.DTO.Reports.SqlTemplateResDto>()
+                .ForMember(dest => dest.Placeholders,   opt => opt.MapFrom((src, _, __, ___) => SafeDeserializeList<pos_service.Models.DTO.Reports.SqlPlaceholderDto>(src.PlaceholdersJson)))
+                .ForMember(dest => dest.SelectValues,   opt => opt.MapFrom((src, _, __, ___) => SafeDeserializeList<pos_service.Models.DTO.Reports.SqlSelectValueDto>(src.SelectValuesJson)));
+
+            CreateMap<ReportTemplate, pos_service.Models.DTO.Reports.ReportTemplateResDto>()
+                .ForMember(dest => dest.Parameters,            opt => opt.MapFrom((src, _, __, ___) => SafeDeserialize<pos_service.Models.DTO.Reports.ReportParametersDto>(src.ParametersJson) ?? new pos_service.Models.DTO.Reports.ReportParametersDto()))
+                .ForMember(dest => dest.SqlPlaceholderMappings, opt => opt.MapFrom((src, _, __, ___) => SafeDeserializeList<pos_service.Models.DTO.Reports.SqlPlaceholderMappingDto>(src.SqlPlaceholderMappingsJson)))
+                .ForMember(dest => dest.SqlTemplates,          opt => opt.MapFrom((src, dest, destMember, ctx) =>
+                    src.ReportTemplateSqlTemplates != null
+                        ? src.ReportTemplateSqlTemplates.Where(rt => rt.SqlTemplate != null).Select(rt => ctx.Mapper.Map<pos_service.Models.DTO.Reports.SqlTemplateResDto>(rt.SqlTemplate)).ToList()
+                        : new List<pos_service.Models.DTO.Reports.SqlTemplateResDto>()));
+
+            CreateMap<pos_service.Models.DTO.Reports.ReportTemplateReqDto, ReportTemplate>()
+                .ForMember(dest => dest.ParametersJson, opt => opt.MapFrom(src =>
+                    System.Text.Json.JsonSerializer.Serialize(src.Parameters, (System.Text.Json.JsonSerializerOptions?)null)))
+                .ForMember(dest => dest.SqlPlaceholderMappingsJson, opt => opt.MapFrom(src =>
+                    System.Text.Json.JsonSerializer.Serialize(src.SqlPlaceholderMappings, (System.Text.Json.JsonSerializerOptions?)null)))
+                .ForMember(dest => dest.ReportTemplateSqlTemplates, opt => opt.Ignore());
+        }
+
+        /// <summary>Safely deserializes JSON to T, returning null on any error.</summary>
+        private static T? SafeDeserialize<T>(string? json) where T : class
+        {
+            if (string.IsNullOrEmpty(json)) return null;
+            try { return System.Text.Json.JsonSerializer.Deserialize<T>(json); }
+            catch { return null; }
+        }
+
+        /// <summary>Safely deserializes JSON to List&lt;T&gt;, returning an empty list on any error.</summary>
+        private static List<T> SafeDeserializeList<T>(string? json)
+        {
+            if (string.IsNullOrEmpty(json)) return new List<T>();
+            try { return System.Text.Json.JsonSerializer.Deserialize<List<T>>(json) ?? new List<T>(); }
+            catch { return new List<T>(); }
         }
     }
 }

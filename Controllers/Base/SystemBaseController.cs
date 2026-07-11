@@ -41,7 +41,7 @@ namespace pos_service.Controllers.Base
             // Verify user is authenticated and belongs to one of the required roles
             EnsureAuthenticated();
             if (!_currentUser.IsInRole(roles))
-                throw new UnauthorizedAccessException($"User does not have required role. Required: {string.Join(", ", roles)}");
+                throw new UnauthorizedAccessException($"You does not have required role. Required: {string.Join(", ", roles)}");
         }
 
         /// <summary>
@@ -54,7 +54,7 @@ namespace pos_service.Controllers.Base
             // Ensure user is authenticated and has a specific permission
             EnsureAuthenticated();
             if (!_currentUser.HasPermission(permission))
-                throw new PermissionDeniedException($"User does not have required permission: {permission}");
+                throw new PermissionDeniedException($"You does not have required permission: {permission}");
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using pos_service.Models;
 using pos_service.Models.Audit;
 using System.Security.Claims;
@@ -19,27 +19,30 @@ namespace pos_service.Data
 
         // Define a DbSet for each of your models.
         // This tells EF Core to create a table for each one.
-        public DbSet<User> Users                                 { get; set; }
-        public DbSet<Contact> Contacts                           { get; set; }
-        public DbSet<Customer> Customers                         { get; set; }
-        public DbSet<Supplier> Suppliers                         { get; set; }
-        public DbSet<Item> Items                                 { get; set; }
-        public DbSet<ItemPrice> ItemPrices                       { get; set; }
-        public DbSet<ItemExpiry> ItemExpiries                    { get; set; }
-        public DbSet<ItemSupplier> ItemSuppliers                 { get; set; }
-        public DbSet<Order> Orders                               { get; set; }
-        public DbSet<OrderItem> OrderItems                       { get; set; }
-        public DbSet<Permission> Permissions                     { get; set; }
-        public DbSet<RolePermission> RolePermissions             { get; set; }
-        public DbSet<Role> Roles                                 { get; set; }
-        public DbSet<Setting> Settings                           { get; set; }
-        public DbSet<BackupLocation> BackupLocations             { get; set; }
-        public DbSet<BackupHistory> BackupHistories              { get; set; }
-        public DbSet<Shop> Shops                                 { get; set; }
-        public DbSet<LoanSettlementLog> LoanSettlementLogs       { get; set; }
-        public DbSet<Inventory> Inventories                      { get; set; }
-        public DbSet<InventoryUnit> InventoryUnits               { get; set; }
-        public DbSet<InventoryAdjustAudit> InventoryAdjustAudits { get; set; }
+        public DbSet<User> Users                                           { get; set; }
+        public DbSet<Contact> Contacts                                     { get; set; }
+        public DbSet<Customer> Customers                                   { get; set; }
+        public DbSet<Supplier> Suppliers                                   { get; set; }
+        public DbSet<Item> Items                                           { get; set; }
+        public DbSet<ItemPrice> ItemPrices                                 { get; set; }
+        public DbSet<ItemExpiry> ItemExpiries                              { get; set; }
+        public DbSet<ItemSupplier> ItemSuppliers                           { get; set; }
+        public DbSet<Order> Orders                                         { get; set; }
+        public DbSet<OrderItem> OrderItems                                 { get; set; }
+        public DbSet<Permission> Permissions                               { get; set; }
+        public DbSet<RolePermission> RolePermissions                       { get; set; }
+        public DbSet<Role> Roles                                           { get; set; }
+        public DbSet<Setting> Settings                                     { get; set; }
+        public DbSet<BackupLocation> BackupLocations                       { get; set; }
+        public DbSet<BackupHistory> BackupHistories                        { get; set; }
+        public DbSet<Shop> Shops                                           { get; set; }
+        public DbSet<LoanSettlementLog> LoanSettlementLogs                 { get; set; }
+        public DbSet<Inventory> Inventories                                { get; set; }
+        public DbSet<InventoryUnit> InventoryUnits                         { get; set; }
+        public DbSet<InventoryAdjustAudit> InventoryAdjustAudits           { get; set; }
+        public DbSet<ReportTemplate> ReportTemplates                       { get; set; }
+        public DbSet<SqlTemplate> SqlTemplates                             { get; set; }
+        public DbSet<ReportTemplateSqlTemplate> ReportTemplateSqlTemplates { get; set; }
 
         /// <summary>
         /// This method is used to configure the database model using the Fluent API.
@@ -435,6 +438,36 @@ namespace pos_service.Data
                       .OnDelete(DeleteBehavior.SetNull); // do not delete set as null
 
                 entity.HasAlternateKey(i => i.Uuid);   // creates unique constraint
+            });
+
+            // --- ReportTemplate Configuration ---
+            modelBuilder.Entity<ReportTemplate>(entity =>
+            {
+                entity.HasIndex(r => r.ReportName).IsUnique();
+                entity.HasAlternateKey(r => r.Uuid);
+            });
+
+            // --- SqlTemplate Configuration ---
+            modelBuilder.Entity<SqlTemplate>(entity =>
+            {
+                entity.HasIndex(s => s.TemplateName).IsUnique();
+                entity.HasAlternateKey(s => s.Uuid);
+            });
+
+            // --- ReportTemplateSqlTemplate Join Configuration ---
+            modelBuilder.Entity<ReportTemplateSqlTemplate>(entity =>
+            {
+                entity.HasAlternateKey(j => j.Uuid);
+
+                entity.HasOne(j => j.ReportTemplate)
+                      .WithMany(t => t.ReportTemplateSqlTemplates)
+                      .HasForeignKey(j => j.ReportTemplateId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(j => j.SqlTemplate)
+                      .WithMany(s => s.ReportTemplateSqlTemplates)
+                      .HasForeignKey(j => j.SqlTemplateId)
+                      .OnDelete(DeleteBehavior.Restrict);
             });
 
             // --- ReturnedItemsSummary DB view mapping (keyless) ---

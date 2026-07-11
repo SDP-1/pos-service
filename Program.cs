@@ -77,6 +77,11 @@ builder.Services.AddScoped<ISettingRepository, SettingRepository>();
 builder.Services.AddScoped<ISettingService, SettingService>();
 builder.Services.AddScoped<IShopRepository, ShopRepository>();
 builder.Services.AddScoped<IShopService, ShopService>();
+builder.Services.AddScoped<IReportTemplateRepository, ReportTemplateRepository>();
+builder.Services.AddScoped<IReportTemplateService, ReportTemplateService>();
+builder.Services.AddScoped<ISqlTemplateRepository, SqlTemplateRepository>();
+builder.Services.AddScoped<ISqlTemplateService, SqlTemplateService>();
+builder.Services.AddScoped<IPdfService, PdfService>();
 // Backup repositories - only location and history needed for manual backups
 builder.Services.AddScoped<IBackupLocationRepository, BackupLocationRepository>();
 builder.Services.AddScoped<IBackupHistoryRepository, BackupHistoryRepository>();
@@ -91,12 +96,13 @@ builder.Services.AddDbContext<AppDbContext>((provider, options) =>
 
 // This scans your project for classes that inherit from AutoMapper.Profile
 // and registers their mapping configurations.
-builder.Services.AddAutoMapper(typeof(Program));
+builder.Services.AddAutoMapper(cfg => { }, typeof(Program));
 
 // Register backup services
 builder.Services.AddScoped<pos_service.Services.Backup.IBackupService, pos_service.Services.Backup.BackupService>();
 
 builder.Services.AddControllers();
+builder.Services.AddHealthChecks();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
@@ -108,7 +114,8 @@ builder.Services.AddCors(options =>
         policy.WithOrigins("http://localhost:3000", "http://localhost", "http://172.20.10.5", "http://192.168.1.5")
               .AllowAnyHeader()
               .AllowAnyMethod()
-              .AllowCredentials();
+              .AllowCredentials()
+              .WithExposedHeaders("Content-Disposition", "X-Report-Filename");
     });
 });
 
@@ -142,5 +149,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHealthChecks("/api/health");
 
 app.Run();

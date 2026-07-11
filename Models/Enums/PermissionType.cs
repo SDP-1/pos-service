@@ -67,6 +67,22 @@ namespace pos_service.Models.Enums
         /// Customer related permissions.
         /// </summary>
         CUSTOMER   = 10,
+        /// <summary>
+        /// Report template related permissions.
+        /// </summary>
+        REPORT_TEMPLATE = 11,
+        /// <summary>
+        /// SQL template related permissions.
+        /// </summary>
+        SQL_TEMPLATE    = 12,
+        /// <summary>
+        /// Settings option related permissions.
+        /// </summary>
+        SETTING_OPTIONS = 13,
+        /// <summary>
+        /// Nav bar options related permissions.
+        /// </summary>
+        NAV_BAR         = 14,
     }
 
     /// <summary>
@@ -100,7 +116,6 @@ namespace pos_service.Models.Enums
         USER_ACTIVE_STATUS_CHANGE           = 303,
         USER_DELETE                         = 304,
         USER_CHANGE_PASSWORD                = 305,
-        USER_MANAGE                         = 306,
 
         // Suppliers (start at 400)
         SUPPLIER_VIEW                       = 400,
@@ -136,8 +151,42 @@ namespace pos_service.Models.Enums
         // Shop details (start at 750)
         SHOP_DETAILS_UPDATE                 = 750,
 
+        // Report Templates (start at 800)
+        REPORT_TEMPLATE_CREATE              = 800,
+        REPORT_TEMPLATE_VIEW                = 801,
+        REPORT_TEMPLATE_EDIT                = 802,
+        REPORT_TEMPLATE_DELETE              = 803,
+        REPORT_TEMPLATE_DOWNLOAD            = 804,
+        REPORT_TEMPLATE_ASSIGN              = 805,
+
+        // SQL Templates (start at 850)
+        SQL_TEMPLATE_VIEW                   = 850,
+        SQL_TEMPLATE_CREATE                 = 851,
+        SQL_TEMPLATE_EDIT                   = 852,
+        SQL_TEMPLATE_DELETE                 = 853,
+
+        // Setting Options (start at 900)
+        SETTING_OPTIONS_BACKUP_VIEW         = 900,
+        SETTING_OPTIONS_SHOP_VIEW           = 901,
+        SETTING_OPTIONS_ROLES_VIEW          = 902,
+        SETTING_OPTIONS_REPORTS_VIEW        = 903,
+        SETTING_OPTIONS_SQL_TEMPLATES_VIEW  = 904,
+        SETTING_OPTIONS_SYSTEM_VIEW         = 905,
+        SETTING_OPTIONS_USERS_VIEW          = 906,
+
         // Only for SYS Admin (start at 1000 - 1050)
         // Special permission to allow viewing existence/details of the SystemAdmin role (id=1)
         PERMISSION_SYSADMIN_VIEW            = 1000,
+
+        // Navigation Bar Options (start at 1100)
+        NAV_BAR_HOME_VIEW                   = 1100,
+        NAV_BAR_ORDERS_VIEW                 = 1101,
+        NAV_BAR_ITEMS_VIEW                  = 1102,
+        NAV_BAR_SUPPLIERS_VIEW              = 1103,
+        NAV_BAR_CUSTOMERS_VIEW              = 1104,
+        NAV_BAR_INVENTORY_VIEW              = 1105,
+        NAV_BAR_REPORTS_VIEW                = 1106,
+        NAV_BAR_SETTINGS_VIEW               = 1107,
+        NAV_BAR_HELP_VIEW                   = 1108,
     }
 }

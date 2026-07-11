@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using pos_service.Data;
 
@@ -11,9 +12,11 @@ using pos_service.Data;
 namespace pos_service.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260608042045_RemoveReportTemplateStatus")]
+    partial class RemoveReportTemplateStatus
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1126,6 +1129,9 @@ namespace pos_service.Migrations
                     b.Property<string>("ParametersJson")
                         .HasColumnType("longtext");
 
+                    b.Property<bool>("PreviewEnabled")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<string>("ReportName")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -1556,6 +1562,11 @@ namespace pos_service.Migrations
                     b.Property<string>("SqlQuery")
                         .IsRequired()
                         .HasColumnType("longtext");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<string>("TemplateName")
                         .IsRequired()

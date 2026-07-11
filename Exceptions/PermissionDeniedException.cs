@@ -8,9 +8,9 @@ namespace pos_service.Exceptions
     /// </summary>
     public class PermissionDeniedException : UnauthorizedAccessException
     {
-        public PermissionDeniedException() { }
+        //public PermissionDeniedException() { }
 
-        public PermissionDeniedException(string message) : base(message) { }
+        public PermissionDeniedException(string message = "Permission denied.") : base(message) { }
 
         public PermissionDeniedException(string message, Exception inner) : base(message, inner) { }
     }

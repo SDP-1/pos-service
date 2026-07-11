@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using pos_service.Authorization;
 using pos_service.Controllers.Base;
+using pos_service.Exceptions;
 using pos_service.Models.DTO.Users;
 using pos_service.Models.Enums;
 using pos_service.Services;
@@ -65,7 +66,7 @@ namespace pos_service.Controllers
         /// <returns>A list of all user details.</returns>
         [HttpGet]
         [Permission(PermissionType.USER_VIEW)]
-        [Permission(PermissionType.USER_MANAGE)]
+        //[Permission(PermissionType.USER_UPDATE)]
         public async Task<ActionResult<IEnumerable<UserResDto>>> GetAllUsers()
         {
             var users = await _userService.GetAllUsersAsync(_currentUser);
@@ -134,9 +135,13 @@ namespace pos_service.Controllers
         /// <param name="userDto">The user data transfer object containing updated information and optional profile image file.</param>
         /// <returns>The updated user details if successful, otherwise returns NotFound.</returns>
         [HttpPatch("{id:int}")]
-        [Permission(PermissionType.USER_UPDATE)]
         public async Task<IActionResult> UpdateUser(int id, [FromForm] UserReqDto userDto)
         {
+            if (id != _currentUser.Id && !_currentUser.HasPermission(PermissionType.USER_UPDATE))
+            {
+                throw new PermissionDeniedException();
+            }
+
             var user = await _userService.UpdateUserAsync(id, userDto, _currentUser);
             if (user == null)
             {
@@ -204,7 +209,6 @@ namespace pos_service.Controllers
         /// <returns>NoContent if successful, otherwise returns BadRequest.</returns>
         [HttpPatch("{id:int}/change-password")]
         [Authorize] // Any logged-in user
-        [Permission(PermissionType.USER_CHANGE_PASSWORD)]
         public async Task<IActionResult> ChangePassword(int id, [FromBody] ChangePasswordDto passwordDto)
         {
             var success = await _userService.ChangePasswordAsync(id, passwordDto.OldPassword, passwordDto.NewPassword, _currentUser);

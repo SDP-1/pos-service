@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using pos_service.Controllers.Base;
 using pos_service.Models.DTO.Inventory;
+using pos_service.Models.DTO.Items;
 using pos_service.Services;
 
 namespace pos_service.Controllers
@@ -12,10 +13,26 @@ namespace pos_service.Controllers
     public class InventoryController : SystemBaseController
     {
         private readonly IInventoryService _inventoryService;
+        private readonly IItemService      _itemService;
 
-        public InventoryController(IInventoryService inventoryService, ICurrentUserService currentUserService) : base(currentUserService)
+        public InventoryController(
+            IInventoryService inventoryService, 
+            IItemService itemService, 
+            ICurrentUserService currentUserService
+            ) : base(currentUserService)
         {
             _inventoryService = inventoryService;
+            _itemService      = itemService;
+        }
+
+        /// <summary>
+        /// Retrieves all items supplied by the specified supplier including inventory details.
+        /// </summary>
+        [HttpGet("supplier/{supplierId}/items")]
+        public async Task<ActionResult<IEnumerable<ItemResDto>>> GetItemsBySupplier(int supplierId)
+        {
+            var items = await _itemService.GetItemsBySupplierIdAsync(supplierId, _currentUser);
+            return Ok(items);
         }
 
         /// <summary>

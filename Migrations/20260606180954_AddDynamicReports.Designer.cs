@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using pos_service.Data;
 
@@ -11,9 +12,11 @@ using pos_service.Data;
 namespace pos_service.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260606180954_AddDynamicReports")]
+    partial class AddDynamicReports
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1126,6 +1129,9 @@ namespace pos_service.Migrations
                     b.Property<string>("ParametersJson")
                         .HasColumnType("longtext");
 
+                    b.Property<bool>("PreviewEnabled")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<string>("ReportName")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -1133,6 +1139,11 @@ namespace pos_service.Migrations
 
                     b.Property<string>("SqlPlaceholderMappingsJson")
                         .HasColumnType("longtext");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .ValueGeneratedOnAddOrUpdate()
@@ -1162,6 +1173,68 @@ namespace pos_service.Migrations
                     b.HasIndex("UpdatedBy");
 
                     b.ToTable("ReportTemplates");
+                });
+
+            modelBuilder.Entity("pos_service.Models.ReportTemplateAssignment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(36)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("ReportProcessCode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<int>("ReportTemplateId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlComputedColumn(b.Property<DateTime?>("UpdatedAt"));
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(36)");
+
+                    b.Property<string>("Uuid")
+                        .IsRequired()
+                        .HasMaxLength(36)
+                        .HasColumnType("varchar(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasAlternateKey("Uuid");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("ReportProcessCode")
+                        .IsUnique();
+
+                    b.HasIndex("ReportTemplateId");
+
+                    b.HasIndex("UpdatedBy");
+
+                    b.ToTable("ReportTemplateAssignments");
                 });
 
             modelBuilder.Entity("pos_service.Models.ReportTemplateSqlTemplate", b =>
@@ -1556,6 +1629,11 @@ namespace pos_service.Migrations
                     b.Property<string>("SqlQuery")
                         .IsRequired()
                         .HasColumnType("longtext");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<string>("TemplateName")
                         .IsRequired()
@@ -2066,6 +2144,29 @@ namespace pos_service.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
                 });
 
+            modelBuilder.Entity("pos_service.Models.ReportTemplateAssignment", b =>
+                {
+                    b.HasOne("pos_service.Models.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .HasPrincipalKey("Uuid")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("pos_service.Models.ReportTemplate", "ReportTemplate")
+                        .WithMany("Assignments")
+                        .HasForeignKey("ReportTemplateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("pos_service.Models.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedBy")
+                        .HasPrincipalKey("Uuid")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("ReportTemplate");
+                });
+
             modelBuilder.Entity("pos_service.Models.ReportTemplateSqlTemplate", b =>
                 {
                     b.HasOne("pos_service.Models.User", null)
@@ -2083,7 +2184,7 @@ namespace pos_service.Migrations
                     b.HasOne("pos_service.Models.SqlTemplate", "SqlTemplate")
                         .WithMany("ReportTemplateSqlTemplates")
                         .HasForeignKey("SqlTemplateId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("pos_service.Models.User", null)
@@ -2256,6 +2357,8 @@ namespace pos_service.Migrations
 
             modelBuilder.Entity("pos_service.Models.ReportTemplate", b =>
                 {
+                    b.Navigation("Assignments");
+
                     b.Navigation("ReportTemplateSqlTemplates");
                 });
 

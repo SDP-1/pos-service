@@ -1,4 +1,4 @@
--- need to apply in prod
+-- need to apply on prod
 
 -- SQL Code for Inventory Adjustment Audit Table and Triggers
 -- This file contains the database schema and triggers for tracking inventory adjustments
@@ -157,3 +157,7 @@ DELIMITER ;
 --    - p_end_date: OPTIONAL - filter by end date (NULL to ignore)
 --    - p_max_records: OPTIONAL - limit results (default 100)
 -- 8. All date/record filters are optional for maximum flexibility
+
+
+-- Apply on dev on 2026-07-30
+-- Need to apply on prod

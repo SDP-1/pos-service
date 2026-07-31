@@ -1,4 +1,4 @@
-CREATE TABLE `inventoryadjustaudits` (
+CREATE TABLE `tbl_inventory_adjust_audits` (
   `Id` int NOT NULL AUTO_INCREMENT,
   `InventoryUuid` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `ItemUuid` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
@@ -9,12 +9,14 @@ CREATE TABLE `inventoryadjustaudits` (
   `Increase` tinyint(1) NOT NULL,
   `Comment` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `Reason` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `Uuid` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `UpdatedAt` datetime(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   `UpdatedBy` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   PRIMARY KEY (`Id`),
-  KEY `IX_InventoryAdjustAudits_InventoryUuid` (`InventoryUuid`),
-  KEY `IX_InventoryAdjustAudits_ItemUuid` (`ItemUuid`),
-  KEY `IX_InventoryAdjustAudits_UpdatedBy` (`UpdatedBy`),
-  CONSTRAINT `FK_InventoryAdjustAudits_Inventories_InventoryUuid` FOREIGN KEY (`InventoryUuid`) REFERENCES `inventories` (`Uuid`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `FK_InventoryAdjustAudits_Users_UpdatedBy` FOREIGN KEY (`UpdatedBy`) REFERENCES `users` (`Uuid`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+  UNIQUE KEY `AK_tbl_inventory_adjust_audits_Uuid` (`Uuid`),
+  KEY `IX_tbl_inventory_adjust_audits_InventoryUuid` (`InventoryUuid`),
+  KEY `IX_tbl_inventory_adjust_audits_ItemUuid` (`ItemUuid`),
+  KEY `IX_tbl_inventory_adjust_audits_UpdatedBy` (`UpdatedBy`),
+  CONSTRAINT `FK_tbl_inventory_adjust_audits_tbl_inventories_InventoryUuid` FOREIGN KEY (`InventoryUuid`) REFERENCES `tbl_inventories` (`Uuid`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `FK_tbl_inventory_adjust_audits_tbl_users_UpdatedBy` FOREIGN KEY (`UpdatedBy`) REFERENCES `tbl_users` (`Uuid`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

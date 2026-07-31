@@ -1,8 +1,11 @@
-CREATE 
-    ALGORITHM = UNDEFINED 
-    DEFINER = `root`@`localhost` 
-    SQL SECURITY DEFINER
-VIEW `pos-system`.`view_returned_items_summary` AS
+-- View: view_returned_items_summary
+-- Description: Summarizes returned items against original order items.
+
+USE `pos-system`;
+
+DROP VIEW IF EXISTS `view_returned_items_summary`;
+
+CREATE OR REPLACE VIEW `view_returned_items_summary` AS
     SELECT 
         `o`.`Id` AS `OrderId`,
         `o`.`OrderNumber` AS `OrderNumber`,
@@ -16,9 +19,9 @@ VIEW `pos-system`.`view_returned_items_summary` AS
         CAST((SUM(`return_item`.`Quantity`) * `original_item`.`PriceAtSale`)
             AS DECIMAL (18 , 2 )) AS `TotalRefundAmountValue`
     FROM
-        ((`pos-system`.`orderitems` `return_item`
-        JOIN `pos-system`.`orderitems` `original_item` ON ((`return_item`.`ReturnedOrderItemUuid` = `original_item`.`Uuid`)))
-        JOIN `pos-system`.`orders` `o` ON ((`original_item`.`OrderId` = `o`.`Id`)))
+        ((`tbl_order_items` `return_item`
+        JOIN `tbl_order_items` `original_item` ON ((`return_item`.`ReturnedOrderItemUuid` = `original_item`.`Uuid`)))
+        JOIN `tbl_orders` `o` ON ((`original_item`.`OrderId` = `o`.`Id`)))
     WHERE
         (`return_item`.`IsReturnItem` = 1)
-    GROUP BY `o`.`Id` , `o`.`OrderNumber` , `o`.`Uuid` , `original_item`.`Uuid` , `original_item`.`PrintName` , `original_item`.`Quantity` , `original_item`.`PriceAtSale`
+    GROUP BY `o`.`Id` , `o`.`OrderNumber` , `o`.`Uuid` , `original_item`.`Uuid` , `original_item`.`PrintName` , `original_item`.`Quantity` , `original_item`.`PriceAtSale`;

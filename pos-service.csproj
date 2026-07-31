@@ -63,6 +63,7 @@
 
   <ItemGroup>
     <Folder Include="Data\Utilities\" />
+    <Folder Include="SQL\Views\" />
     <Folder Include="SQL\Tables\" />
   </ItemGroup>
 

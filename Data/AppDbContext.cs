@@ -52,6 +52,32 @@ namespace pos_service.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            // ─── Table Configurations (Industry Standard Explicit Mappings) ──────────
+            modelBuilder.Entity<User>().ToTable("tbl_users");
+            modelBuilder.Entity<Contact>().ToTable("tbl_contacts");
+            modelBuilder.Entity<Customer>().ToTable("tbl_customers");
+            modelBuilder.Entity<Supplier>().ToTable("tbl_suppliers");
+            modelBuilder.Entity<Item>().ToTable("tbl_items");
+            modelBuilder.Entity<ItemPrice>().ToTable("tbl_item_prices");
+            modelBuilder.Entity<ItemExpiry>().ToTable("tbl_item_expiries");
+            modelBuilder.Entity<ItemSupplier>().ToTable("tbl_item_suppliers");
+            modelBuilder.Entity<Order>().ToTable("tbl_orders");
+            modelBuilder.Entity<OrderItem>().ToTable("tbl_order_items");
+            modelBuilder.Entity<Permission>().ToTable("tbl_permissions");
+            modelBuilder.Entity<RolePermission>().ToTable("tbl_role_permissions");
+            modelBuilder.Entity<Role>().ToTable("tbl_roles");
+            modelBuilder.Entity<Setting>().ToTable("tbl_settings");
+            modelBuilder.Entity<BackupLocation>().ToTable("tbl_backup_locations");
+            modelBuilder.Entity<BackupHistory>().ToTable("tbl_backup_histories");
+            modelBuilder.Entity<Shop>().ToTable("tbl_shops");
+            modelBuilder.Entity<LoanSettlementLog>().ToTable("tbl_loan_settlement_logs");
+            modelBuilder.Entity<Inventory>().ToTable("tbl_inventories");
+            modelBuilder.Entity<InventoryUnit>().ToTable("tbl_inventory_units");
+            modelBuilder.Entity<InventoryAdjustAudit>().ToTable("tbl_inventory_adjust_audits");
+            modelBuilder.Entity<ReportTemplate>().ToTable("tbl_report_templates");
+            modelBuilder.Entity<SqlTemplate>().ToTable("tbl_sql_templates");
+            modelBuilder.Entity<ReportTemplateSqlTemplate>().ToTable("tbl_report_template_sql_templates");
+
             // Add database-side defaults for IAuditable timestamps so the database will populate
             // CreatedAt and UpdatedAt when not supplied by the application.
             foreach (var entityType in modelBuilder.Model.GetEntityTypes()

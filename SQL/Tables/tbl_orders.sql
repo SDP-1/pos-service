@@ -1,4 +1,4 @@
-CREATE TABLE `orders` (
+CREATE TABLE `tbl_orders` (
   `Id` int NOT NULL AUTO_INCREMENT,
   `OrderNumber` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `MainStatus` varchar(50) NOT NULL,
@@ -22,14 +22,14 @@ CREATE TABLE `orders` (
   `UpdatedBy` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `IsActive` tinyint(1) NOT NULL DEFAULT '1',
   PRIMARY KEY (`Id`),
-  UNIQUE KEY `AK_Orders_Uuid` (`Uuid`),
-  UNIQUE KEY `IX_Orders_OrderNumber` (`OrderNumber`),
-  KEY `IX_Orders_CashierId` (`CashierId`),
-  KEY `IX_Orders_CustomerId` (`CustomerId`),
-  KEY `FK_Orders_Users_CreatedBy` (`CreatedBy`),
-  KEY `FK_Orders_Users_UpdatedBy` (`UpdatedBy`),
-  CONSTRAINT `FK_Orders_Customers_CustomerId` FOREIGN KEY (`CustomerId`) REFERENCES `customers` (`Id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `FK_Orders_Users_CashierId` FOREIGN KEY (`CashierId`) REFERENCES `users` (`Id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `FK_Orders_Users_CreatedBy` FOREIGN KEY (`CreatedBy`) REFERENCES `users` (`Uuid`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `FK_Orders_Users_UpdatedBy` FOREIGN KEY (`UpdatedBy`) REFERENCES `users` (`Uuid`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=176 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+  UNIQUE KEY `AK_tbl_orders_Uuid` (`Uuid`),
+  UNIQUE KEY `IX_tbl_orders_OrderNumber` (`OrderNumber`),
+  KEY `IX_tbl_orders_CashierId` (`CashierId`),
+  KEY `IX_tbl_orders_CustomerId` (`CustomerId`),
+  KEY `FK_tbl_orders_tbl_users_CreatedBy` (`CreatedBy`),
+  KEY `FK_tbl_orders_tbl_users_UpdatedBy` (`UpdatedBy`),
+  CONSTRAINT `FK_tbl_orders_tbl_customers_CustomerId` FOREIGN KEY (`CustomerId`) REFERENCES `tbl_customers` (`Id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `FK_tbl_orders_tbl_users_CashierId` FOREIGN KEY (`CashierId`) REFERENCES `tbl_users` (`Id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `FK_tbl_orders_tbl_users_CreatedBy` FOREIGN KEY (`CreatedBy`) REFERENCES `tbl_users` (`Uuid`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `FK_tbl_orders_tbl_users_UpdatedBy` FOREIGN KEY (`UpdatedBy`) REFERENCES `tbl_users` (`Uuid`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

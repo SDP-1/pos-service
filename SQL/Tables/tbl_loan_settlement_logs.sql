@@ -1,0 +1,23 @@
+CREATE TABLE `tbl_loan_settlement_logs` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `OrderId` int NOT NULL,
+  `AmountPaid` decimal(18,2) NOT NULL,
+  `RemainingBalance` decimal(18,2) NOT NULL,
+  `PaymentDate` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `Status` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `Notes` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci,
+  `Uuid` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `CreatedAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `UpdatedAt` datetime(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  `CreatedBy` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `UpdatedBy` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `IsActive` tinyint(1) NOT NULL DEFAULT '1',
+  PRIMARY KEY (`Id`),
+  UNIQUE KEY `AK_tbl_loan_settlement_logs_Uuid` (`Uuid`),
+  KEY `IX_tbl_loan_settlement_logs_OrderId` (`OrderId`),
+  KEY `FK_tbl_loan_settlement_logs_tbl_users_CreatedBy` (`CreatedBy`),
+  KEY `FK_tbl_loan_settlement_logs_tbl_users_UpdatedBy` (`UpdatedBy`),
+  CONSTRAINT `FK_tbl_loan_settlement_logs_tbl_orders_OrderId` FOREIGN KEY (`OrderId`) REFERENCES `tbl_orders` (`Id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `FK_tbl_loan_settlement_logs_tbl_users_CreatedBy` FOREIGN KEY (`CreatedBy`) REFERENCES `tbl_users` (`Uuid`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `FK_tbl_loan_settlement_logs_tbl_users_UpdatedBy` FOREIGN KEY (`UpdatedBy`) REFERENCES `tbl_users` (`Uuid`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

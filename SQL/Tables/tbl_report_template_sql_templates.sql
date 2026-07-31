@@ -1,0 +1,21 @@
+CREATE TABLE `tbl_report_template_sql_templates` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `ReportTemplateId` int NOT NULL,
+  `SqlTemplateId` int NOT NULL,
+  `Uuid` varchar(36) NOT NULL,
+  `CreatedAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `CreatedBy` varchar(36) DEFAULT NULL,
+  `UpdatedAt` datetime(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  `UpdatedBy` varchar(36) DEFAULT NULL,
+  `IsActive` tinyint(1) NOT NULL DEFAULT '1',
+  PRIMARY KEY (`Id`),
+  UNIQUE KEY `AK_tbl_report_template_sql_templates_Uuid` (`Uuid`),
+  KEY `IX_tbl_report_template_sql_templates_ReportTemplateId` (`ReportTemplateId`),
+  KEY `IX_tbl_report_template_sql_templates_SqlTemplateId` (`SqlTemplateId`),
+  KEY `FK_tbl_report_template_sql_templates_tbl_users_CreatedBy` (`CreatedBy`),
+  KEY `FK_tbl_report_template_sql_templates_tbl_users_UpdatedBy` (`UpdatedBy`),
+  CONSTRAINT `FK_tbl_report_template_sql_templates_tbl_report_templates_ReportTemplateId` FOREIGN KEY (`ReportTemplateId`) REFERENCES `tbl_report_templates` (`Id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `FK_tbl_report_template_sql_templates_tbl_sql_templates_SqlTemplateId` FOREIGN KEY (`SqlTemplateId`) REFERENCES `tbl_sql_templates` (`Id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `FK_tbl_report_template_sql_templates_tbl_users_CreatedBy` FOREIGN KEY (`CreatedBy`) REFERENCES `tbl_users` (`Uuid`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `FK_tbl_report_template_sql_templates_tbl_users_UpdatedBy` FOREIGN KEY (`UpdatedBy`) REFERENCES `tbl_users` (`Uuid`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

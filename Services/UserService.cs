@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using pos_service.Models;
 using pos_service.Models.DTO.Users;
 using pos_service.Models.Enums;
@@ -195,6 +195,27 @@ namespace pos_service.Services
 
             // Update Auditable property
             user.UpdatedBy = user.UserName; // Assuming the user changes their own password
+
+            await _userRepository.UpdateAsync(user);
+            return true;
+        }
+
+        /// <summary>
+        /// Resets a user's password without needing the current password.
+        /// </summary>
+        public async Task<bool> ResetPasswordAsync(int id, string newPassword, CurrentUser currentUser)
+        {
+            var user = await _userRepository.GetByIdAsync(id);
+            if (user == null)
+            {
+                return false; // User not found
+            }
+
+            // 1. Hash and update the new password
+            user.PasswordHash = _passwordHasher.HashPassword(newPassword);
+
+            // Update Auditable property
+            user.UpdatedBy = currentUser.UserName;
 
             await _userRepository.UpdateAsync(user);
             return true;

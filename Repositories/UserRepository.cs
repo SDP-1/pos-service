@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using pos_service.Data;
 using pos_service.Models;
 
@@ -86,6 +86,9 @@ namespace pos_service.Repositories
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
 
+                // Explicitly load the Role reference
+                await _context.Entry(user).Reference(u => u.Role).LoadAsync();
+
                 return user;
             }
             catch (Exception e) 
@@ -107,6 +110,10 @@ namespace pos_service.Repositories
             {
                 _context.Entry(user).State = EntityState.Modified;
                 await _context.SaveChangesAsync();
+
+                // Force reload the Role reference in case RoleId has changed
+                _context.Entry(user).Reference(u => u.Role).IsLoaded = false;
+                await _context.Entry(user).Reference(u => u.Role).LoadAsync();
 
                 return user;
             }

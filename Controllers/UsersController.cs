@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using pos_service.Authorization;
 using pos_service.Controllers.Base;
@@ -66,7 +66,7 @@ namespace pos_service.Controllers
         /// <returns>A list of all user details.</returns>
         [HttpGet]
         [Permission(PermissionType.USER_VIEW)]
-        //[Permission(PermissionType.USER_UPDATE)]
+        [Permission(PermissionType.USER_UPDATE)]
         public async Task<ActionResult<IEnumerable<UserResDto>>> GetAllUsers()
         {
             var users = await _userService.GetAllUsersAsync(_currentUser);
@@ -217,6 +217,24 @@ namespace pos_service.Controllers
                 return BadRequest("Incorrect old password.");
             }
             return Ok("Change password successful");
+        }
+
+        /// <summary>
+        /// Allows an authorized user with USER_CHANGE_PASSWORD permission to reset another user's password.
+        /// </summary>
+        /// <param name="id">The unique identifier of the user whose password is being reset.</param>
+        /// <param name="resetDto">The reset password data containing the new password.</param>
+        /// <returns>Ok if successful, otherwise NotFound.</returns>
+        [HttpPatch("{id:int}/reset-password")]
+        [Permission(PermissionType.USER_CHANGE_PASSWORD)]
+        public async Task<IActionResult> ResetPassword(int id, [FromBody] ResetPasswordDto resetDto)
+        {
+            var success = await _userService.ResetPasswordAsync(id, resetDto.NewPassword, _currentUser);
+            if (!success)
+            {
+                return NotFound("User not found.");
+            }
+            return Ok("Password reset successful");
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using pos_service.Models;
+using pos_service.Models;
 using pos_service.Models.DTO.Users;
 
 namespace pos_service.Services
@@ -77,6 +77,15 @@ namespace pos_service.Services
         /// <param name="currentUser">The current user changing the password.</param>
         /// <returns>True if password change was successful, otherwise false.</returns>
         Task<bool> ChangePasswordAsync(int id, string oldPassword, string newPassword, CurrentUser currentUser);
+
+        /// <summary>
+        /// Resets a user's password without needing the current password.
+        /// </summary>
+        /// <param name="id">The unique identifier of the user whose password is being reset.</param>
+        /// <param name="newPassword">The new password to set.</param>
+        /// <param name="currentUser">The current user performing the reset.</param>
+        /// <returns>True if password reset was successful, otherwise false.</returns>
+        Task<bool> ResetPasswordAsync(int id, string newPassword, CurrentUser currentUser);
 
         /// <summary>
         /// Clears any server-side cached entries for a user (logout).

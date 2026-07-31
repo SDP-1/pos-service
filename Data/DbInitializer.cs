@@ -153,7 +153,7 @@ namespace pos_service.Data
                 new Permission { Id = (int)PermissionType.USER_UPDATE, PermissionType = PermissionType.USER_UPDATE, PermissionCatagory = PermissionCatagory.USER, Description = "Can update other system users details" },
                 new Permission { Id = (int)PermissionType.USER_ACTIVE_STATUS_CHANGE, PermissionType = PermissionType.USER_ACTIVE_STATUS_CHANGE, PermissionCatagory = PermissionCatagory.USER, Description = "Can change user active status users" },
                 new Permission { Id = (int)PermissionType.USER_DELETE, PermissionType = PermissionType.USER_DELETE, PermissionCatagory = PermissionCatagory.USER, Description = "Can delete users" },
-                new Permission { Id = (int)PermissionType.USER_CHANGE_PASSWORD, PermissionType = PermissionType.USER_CHANGE_PASSWORD, PermissionCatagory = PermissionCatagory.USER, Description = "Can change other users password (like reset)" },
+                new Permission { Id = (int)PermissionType.USER_CHANGE_PASSWORD, PermissionType = PermissionType.USER_CHANGE_PASSWORD, PermissionCatagory = PermissionCatagory.USER, Description = "Can change other users password (Reset other users passwords)" },
 
                 // Suppliers
                 new Permission { Id = (int)PermissionType.SUPPLIER_VIEW, PermissionType = PermissionType.SUPPLIER_VIEW, PermissionCatagory = PermissionCatagory.SUPPLIER, Description = "Can view suppliers" },

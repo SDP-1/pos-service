@@ -1,0 +1,20 @@
+CREATE TABLE `inventoryadjustaudits` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `InventoryUuid` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `ItemUuid` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `PreviousQuantity` decimal(18,3) NOT NULL,
+  `NewQuantity` decimal(18,3) NOT NULL,
+  `AdjustmentQuantity` decimal(18,3) NOT NULL,
+  `UnitType` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `Increase` tinyint(1) NOT NULL,
+  `Comment` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `Reason` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `UpdatedAt` datetime(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  `UpdatedBy` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  PRIMARY KEY (`Id`),
+  KEY `IX_InventoryAdjustAudits_InventoryUuid` (`InventoryUuid`),
+  KEY `IX_InventoryAdjustAudits_ItemUuid` (`ItemUuid`),
+  KEY `IX_InventoryAdjustAudits_UpdatedBy` (`UpdatedBy`),
+  CONSTRAINT `FK_InventoryAdjustAudits_Inventories_InventoryUuid` FOREIGN KEY (`InventoryUuid`) REFERENCES `inventories` (`Uuid`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `FK_InventoryAdjustAudits_Users_UpdatedBy` FOREIGN KEY (`UpdatedBy`) REFERENCES `users` (`Uuid`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci

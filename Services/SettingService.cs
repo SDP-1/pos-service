@@ -31,6 +31,12 @@ namespace pos_service.Services
                 () => _settingRepository.GetAllAsync(), DefaultExpiry);
         }
 
+        public async Task<IEnumerable<Setting>> GetByCategoryAsync(SettingCategory category, CurrentUser currentUser)
+        {
+            var all = await GetAllAsync(currentUser);
+            return all.Where(s => s.Category == category);
+        }
+
         public async Task<Setting?> GetByKeyAsync(SettingKey key, CurrentUser currentUser)
         {
             // Try cached list first

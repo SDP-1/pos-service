@@ -330,6 +330,7 @@ namespace pos_service.Data
             {
                 entity.HasIndex(s => s.SettingKey).IsUnique();
                 entity.Property(s => s.SettingKey).HasConversion<string>().HasMaxLength(50);
+                entity.Property(s => s.Category).HasConversion<string>().HasMaxLength(50);
                 entity.Property(s => s.Description).HasMaxLength(500);
                 entity.HasAlternateKey(s => s.Uuid);
             });

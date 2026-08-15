@@ -20,6 +20,8 @@ namespace pos_service.Models
         /// </summary>
         public bool SettingValue     { get; set; }
 
+        public SettingCategory Category { get; set; } = SettingCategory.SYSTEM;
+
         [MaxLength(500)]
         public string? Description   { get; set; }
 

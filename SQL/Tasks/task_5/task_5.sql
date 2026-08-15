@@ -80,3 +80,34 @@ DELETE FROM `tbl_permissions` WHERE `Id` IN (800, 801, 802, 803, 804, 805, 850, 
 -- ================================================
 UPDATE `tbl_permissions` SET `PermissionType` = 'PERMISSION_SUPER_ADMIN_VIEW', `Description` = 'Can view the SuperAdmin role existence/details' WHERE `Id` = 1000;
 
+
+-- 6. Add Category column to tbl_settings and populate categories
+-- =============================================================
+SET SQL_SAFE_UPDATES = 0;
+SET @dbname = DATABASE();
+SET @tablename = 'tbl_settings';
+SET @columnname = 'Category';
+SET @preparedStatement = (SELECT IF(
+  (
+    SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE
+      TABLE_SCHEMA = @dbname
+      AND TABLE_NAME = @tablename
+      AND COLUMN_NAME = @columnname
+  ) > 0,
+  'SELECT 1',
+  'ALTER TABLE `tbl_settings` ADD COLUMN `Category` VARCHAR(50) NULL AFTER `SettingValue`;'
+));
+PREPARE alterIfNotExists FROM @preparedStatement;
+EXECUTE alterIfNotExists;
+DEALLOCATE PREPARE alterIfNotExists;
+
+-- Update existing records to uppercase enum strings
+UPDATE `tbl_settings` SET `Category` = 'REPORT' WHERE `SettingKey` LIKE 'ShowReport%' OR `Id` >= 9;
+UPDATE `tbl_settings` SET `Category` = 'SYSTEM' WHERE `Category` IS NULL OR `Category` = '' OR `Category` = 'System' OR (`SettingKey` NOT LIKE 'ShowReport%' AND `Id` < 9);
+
+-- Enforce NOT NULL constraint on Category and position after SettingValue
+ALTER TABLE `tbl_settings` MODIFY COLUMN `Category` VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL AFTER `SettingValue`;
+SET SQL_SAFE_UPDATES = 1;
+
+

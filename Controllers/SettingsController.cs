@@ -38,13 +38,17 @@ namespace pos_service.Controllers
         }
 
         /// <summary>
-        /// Retrieves all system settings.
+        /// Retrieves settings by specific category.
         /// </summary>
-        /// <returns>A list of all settings in the system.</returns>
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<SettingResDto>>> GetAllSettings()
+        /// <param name="category">The category (SYSTEM or REPORT).</param>
+        /// <returns>A list of settings belonging to the specified category.</returns>
+        [HttpGet("category/{category}")]
+        public async Task<ActionResult<IEnumerable<SettingResDto>>> GetSettingsByCategory(SettingCategory category)
         {
-            var settings = await _settingService.GetAllAsync(_currentUser);
+            if (category == SettingCategory.DEFAULT)
+                return BadRequest("A valid SettingCategory is required.");
+
+            var settings = await _settingService.GetByCategoryAsync(category, _currentUser);
             var settingsDto = _mapper.Map<IEnumerable<SettingResDto>>(settings);
             return Ok(settingsDto);
         }

@@ -44,14 +44,31 @@ namespace pos_service.Data
             // Desired default settings. If a setting exists keep it, otherwise create it.
             var desired = new List<Setting>
             {
-                new Setting { Id = (int)SettingKey.AllowZeroStock, SettingKey = SettingKey.AllowZeroStock, SettingName = "Allow zero stock", SettingValue = true, Description = "This allow when item stock is zero, the order can still be created. When off, orders cannot be created if any item has zero stock." },
-                new Setting { Id = (int)SettingKey.AllowOrdesForLoan, SettingKey = SettingKey.AllowOrdesForLoan, SettingName = "Allow orders for credit", SettingValue = true, Description = "Allows creating orders credit / loan sales. When on orders with negative balance will be marked as Loan." },
-                new Setting { Id = (int)SettingKey.AllowCreditOrderWithoutCustomer, SettingKey = SettingKey.AllowCreditOrderWithoutCustomer, SettingName = "Allow credit orders without customer", SettingValue = false, Description = "Allows creating credit orders with out customer (Not recommend)." },
-                new Setting { Id = (int)SettingKey.CalculateLoyaltyPointsForCreditOrders, SettingKey = SettingKey.CalculateLoyaltyPointsForCreditOrders, SettingName = "Allow loyalty points for credit orders", SettingValue = false, Description = "Allow to calculate loyalty point for credit orders." },
-                new Setting { Id = (int)SettingKey.AlwaysFocusBarcodeField, SettingKey = SettingKey.AlwaysFocusBarcodeField, SettingName = "Keep Focus on Barcode", SettingValue = false, Description = "When this setting is enabled, the cursor always returns to the Barcode field after each scan, allowing continuous scanning without pressing Enter. If you need to change the quantity, you must manually navigate to the Qty field (forexample, using the arrow keys), enter the value, and confirm it.<br/><br/>When this setting is disabled, after scanning a barcode the cursor automatically moves to the Qty field. You can immediately enter the quantity and press Enter to add the item to the order, without manually navigating to the quantity field." },
-                new Setting { Id = (int)SettingKey.AllowDeleteOrder, SettingKey = SettingKey.AllowDeleteOrder, SettingName = "Allow delete order", SettingValue = false, Description = "When enabled, users are allowed to delete orders from the system. When disabled, order deletion is prevented by the application (Not recommend).<br/>If AllowZeroStock is enabled, This action increase stock when deleting orders." },
-                new Setting { Id = (int)SettingKey.RequireReasonOnDecreaseStock, SettingKey = SettingKey.RequireReasonOnDecreaseStock, SettingName = "Require reason on inventory decrease", SettingValue = true, Description = "When enabled, a reason is required when decreasing (Increase = false) inventory during adjustments. When disabled, the reason field is optional for all adjustments." },
-                new Setting { Id = (int)SettingKey.DisableInventoryUpdateInItemEdit, SettingKey = SettingKey.DisableInventoryUpdateInItemEdit, SettingName = "Disable inventory update in item edit", SettingValue = false, Description = "When enabled, inventory (stock quantity) cannot be updated when editing/updating items via the item edit section. When disabled, inventory can be freely updated during item edits." },
+                new Setting { Id = (int)SettingKey.AllowZeroStock, SettingKey = SettingKey.AllowZeroStock, SettingName = "Allow zero stock", SettingValue = true, Category = SettingCategory.SYSTEM, Description = "This allow when item stock is zero, the order can still be created. When off, orders cannot be created if any item has zero stock." },
+                new Setting { Id = (int)SettingKey.AllowOrdesForLoan, SettingKey = SettingKey.AllowOrdesForLoan, SettingName = "Allow orders for credit", SettingValue = true, Category = SettingCategory.SYSTEM, Description = "Allows creating orders credit / loan sales. When on orders with negative balance will be marked as Loan." },
+                new Setting { Id = (int)SettingKey.AllowCreditOrderWithoutCustomer, SettingKey = SettingKey.AllowCreditOrderWithoutCustomer, SettingName = "Allow credit orders without customer", SettingValue = false, Category = SettingCategory.SYSTEM, Description = "Allows creating credit orders with out customer (Not recommend)." },
+                new Setting { Id = (int)SettingKey.CalculateLoyaltyPointsForCreditOrders, SettingKey = SettingKey.CalculateLoyaltyPointsForCreditOrders, SettingName = "Allow loyalty points for credit orders", SettingValue = false, Category = SettingCategory.SYSTEM, Description = "Allow to calculate loyalty point for credit orders." },
+                new Setting { Id = (int)SettingKey.AlwaysFocusBarcodeField, SettingKey = SettingKey.AlwaysFocusBarcodeField, SettingName = "Keep Focus on Barcode", SettingValue = false, Category = SettingCategory.SYSTEM, Description = "When this setting is enabled, the cursor always returns to the Barcode field after each scan, allowing continuous scanning without pressing Enter. If you need to change the quantity, you must manually navigate to the Qty field (forexample, using the arrow keys), enter the value, and confirm it.<br/><br/>When this setting is disabled, after scanning a barcode the cursor automatically moves to the Qty field. You can immediately enter the quantity and press Enter to add the item to the order, without manually navigating to the quantity field." },
+                new Setting { Id = (int)SettingKey.AllowDeleteOrder, SettingKey = SettingKey.AllowDeleteOrder, SettingName = "Allow delete order", SettingValue = false, Category = SettingCategory.SYSTEM, Description = "When enabled, users are allowed to delete orders from the system. When disabled, order deletion is prevented by the application (Not recommend).<br/>If AllowZeroStock is enabled, This action increase stock when deleting orders." },
+                new Setting { Id = (int)SettingKey.RequireReasonOnDecreaseStock, SettingKey = SettingKey.RequireReasonOnDecreaseStock, SettingName = "Require reason on inventory decrease", SettingValue = true, Category = SettingCategory.SYSTEM, Description = "When enabled, a reason is required when decreasing (Increase = false) inventory during adjustments. When disabled, the reason field is optional for all adjustments." },
+                new Setting { Id = (int)SettingKey.DisableInventoryUpdateInItemEdit, SettingKey = SettingKey.DisableInventoryUpdateInItemEdit, SettingName = "Disable inventory update in item edit", SettingValue = false, Category = SettingCategory.SYSTEM, Description = "When enabled, inventory (stock quantity) cannot be updated when editing/updating items via the item edit section. When disabled, inventory can be freely updated during item edits." },
+
+                // --- System Report Visibility Settings ---
+                new Setting { Id = (int)SettingKey.ShowReportDailySales, SettingKey = SettingKey.ShowReportDailySales, SettingName = "Daily Sales Report Visibility", SettingValue = true, Category = SettingCategory.REPORT, Description = "Toggle visibility of Daily Sales Report card" },
+                new Setting { Id = (int)SettingKey.ShowReportSalesSummary, SettingKey = SettingKey.ShowReportSalesSummary, SettingName = "Sales Summary Report Visibility", SettingValue = true, Category = SettingCategory.REPORT, Description = "Toggle visibility of Sales Summary card" },
+                new Setting { Id = (int)SettingKey.ShowReportSalesDetails, SettingKey = SettingKey.ShowReportSalesDetails, SettingName = "Sales Details Report Visibility", SettingValue = true, Category = SettingCategory.REPORT, Description = "Toggle visibility of Sales Details card" },
+                new Setting { Id = (int)SettingKey.ShowReportProductSales, SettingKey = SettingKey.ShowReportProductSales, SettingName = "Product Sales Report Visibility", SettingValue = true, Category = SettingCategory.REPORT, Description = "Toggle visibility of Product Sales Report card" },
+                new Setting { Id = (int)SettingKey.ShowReportCategorySales, SettingKey = SettingKey.ShowReportCategorySales, SettingName = "Category Sales Report Visibility", SettingValue = true, Category = SettingCategory.REPORT, Description = "Toggle visibility of Category Sales Report card" },
+                new Setting { Id = (int)SettingKey.ShowReportCurrentStock, SettingKey = SettingKey.ShowReportCurrentStock, SettingName = "Current Stock Report Visibility", SettingValue = true, Category = SettingCategory.REPORT, Description = "Toggle visibility of Current Stock Report card" },
+                new Setting { Id = (int)SettingKey.ShowReportLowStock, SettingKey = SettingKey.ShowReportLowStock, SettingName = "Low Stock Report Visibility", SettingValue = true, Category = SettingCategory.REPORT, Description = "Toggle visibility of Low Stock Report card" },
+                new Setting { Id = (int)SettingKey.ShowReportPurchase, SettingKey = SettingKey.ShowReportPurchase, SettingName = "Purchase Report Visibility", SettingValue = true, Category = SettingCategory.REPORT, Description = "Toggle visibility of Purchase Report card" },
+                new Setting { Id = (int)SettingKey.ShowReportExpense, SettingKey = SettingKey.ShowReportExpense, SettingName = "Expense Report Visibility", SettingValue = true, Category = SettingCategory.REPORT, Description = "Toggle visibility of Expense Report card" },
+                new Setting { Id = (int)SettingKey.ShowReportProfitLoss, SettingKey = SettingKey.ShowReportProfitLoss, SettingName = "Profit & Loss Report Visibility", SettingValue = true, Category = SettingCategory.REPORT, Description = "Toggle visibility of Profit & Loss Report card" },
+                new Setting { Id = (int)SettingKey.ShowReportCashRegister, SettingKey = SettingKey.ShowReportCashRegister, SettingName = "Cash Register Report Visibility", SettingValue = true, Category = SettingCategory.REPORT, Description = "Toggle visibility of Cash Register Report card" },
+                new Setting { Id = (int)SettingKey.ShowReportCustomerSales, SettingKey = SettingKey.ShowReportCustomerSales, SettingName = "Customer Sales Report Visibility", SettingValue = true, Category = SettingCategory.REPORT, Description = "Toggle visibility of Customer Sales Report card" },
+                new Setting { Id = (int)SettingKey.ShowReportSupplier, SettingKey = SettingKey.ShowReportSupplier, SettingName = "Supplier Report Visibility", SettingValue = true, Category = SettingCategory.REPORT, Description = "Toggle visibility of Supplier Report card" },
+                new Setting { Id = (int)SettingKey.ShowReportSalesReturn, SettingKey = SettingKey.ShowReportSalesReturn, SettingName = "Sales Return Report Visibility", SettingValue = true, Category = SettingCategory.REPORT, Description = "Toggle visibility of Sales Return Report card" },
+                new Setting { Id = (int)SettingKey.ShowReportCashierPerformance, SettingKey = SettingKey.ShowReportCashierPerformance, SettingName = "Cashier Performance Report Visibility", SettingValue = true, Category = SettingCategory.REPORT, Description = "Toggle visibility of Cashier Performance card" },
             };
 
             foreach (var s in desired)
@@ -64,10 +81,20 @@ namespace pos_service.Data
                 }
                 else
                 {
+                    bool modified = false;
                     // ensure existing records have SettingName populated
                     if (string.IsNullOrWhiteSpace(existing.SettingName))
                     {
                         existing.SettingName = s.SettingName;
+                        modified = true;
+                    }
+                    if (existing.Category != s.Category)
+                    {
+                        existing.Category = s.Category;
+                        modified = true;
+                    }
+                    if (modified)
+                    {
                         context.Entry(existing).State = EntityState.Modified;
                     }
                 }
@@ -82,7 +109,7 @@ namespace pos_service.Data
             {
                 var roles = new List<Role>
                 {
-                    new Role { Id = 1, Name = "SystemAdmin", Uuid = Guid.NewGuid().ToString() },
+                    new Role { Id = 1, Name = "SuperAdmin", Uuid = Guid.NewGuid().ToString() },
                     new Role { Id = 2, Name = "ShopAdmin", Uuid = Guid.NewGuid().ToString() },
                     new Role { Id = 3, Name = "Manager", Uuid = Guid.NewGuid().ToString() },
                     new Role { Id = 4, Name = "Cashier", Uuid = Guid.NewGuid().ToString() },
@@ -153,7 +180,7 @@ namespace pos_service.Data
                 new Permission { Id = (int)PermissionType.USER_UPDATE, PermissionType = PermissionType.USER_UPDATE, PermissionCatagory = PermissionCatagory.USER, Description = "Can update other system users details" },
                 new Permission { Id = (int)PermissionType.USER_ACTIVE_STATUS_CHANGE, PermissionType = PermissionType.USER_ACTIVE_STATUS_CHANGE, PermissionCatagory = PermissionCatagory.USER, Description = "Can change user active status users" },
                 new Permission { Id = (int)PermissionType.USER_DELETE, PermissionType = PermissionType.USER_DELETE, PermissionCatagory = PermissionCatagory.USER, Description = "Can delete users" },
-                new Permission { Id = (int)PermissionType.USER_CHANGE_PASSWORD, PermissionType = PermissionType.USER_CHANGE_PASSWORD, PermissionCatagory = PermissionCatagory.USER, Description = "Can change other users password (like reset)" },
+                new Permission { Id = (int)PermissionType.USER_CHANGE_PASSWORD, PermissionType = PermissionType.USER_CHANGE_PASSWORD, PermissionCatagory = PermissionCatagory.USER, Description = "Can change other users password (Reset other users passwords)" },
 
                 // Suppliers
                 new Permission { Id = (int)PermissionType.SUPPLIER_VIEW, PermissionType = PermissionType.SUPPLIER_VIEW, PermissionCatagory = PermissionCatagory.SUPPLIER, Description = "Can view suppliers" },
@@ -187,29 +214,18 @@ namespace pos_service.Data
                 //Shop details
                 new Permission { Id = (int)PermissionType.SHOP_DETAILS_UPDATE, PermissionType = PermissionType.SHOP_DETAILS_UPDATE, PermissionCatagory = PermissionCatagory.SHOP, Description = "Can change shop related details" },
 
-                // Report Templates
-                new Permission { Id = (int)PermissionType.REPORT_TEMPLATE_CREATE, PermissionType = PermissionType.REPORT_TEMPLATE_CREATE, PermissionCatagory = PermissionCatagory.REPORT_TEMPLATE, Description = "Can create report templates" },
-                new Permission { Id = (int)PermissionType.REPORT_TEMPLATE_VIEW, PermissionType = PermissionType.REPORT_TEMPLATE_VIEW, PermissionCatagory = PermissionCatagory.REPORT_TEMPLATE, Description = "Can view report templates" },
-                new Permission { Id = (int)PermissionType.REPORT_TEMPLATE_EDIT, PermissionType = PermissionType.REPORT_TEMPLATE_EDIT, PermissionCatagory = PermissionCatagory.REPORT_TEMPLATE, Description = "Can edit report templates" },
-                new Permission { Id = (int)PermissionType.REPORT_TEMPLATE_DELETE, PermissionType = PermissionType.REPORT_TEMPLATE_DELETE, PermissionCatagory = PermissionCatagory.REPORT_TEMPLATE, Description = "Can delete report templates" },
-                new Permission { Id = (int)PermissionType.REPORT_TEMPLATE_DOWNLOAD, PermissionType = PermissionType.REPORT_TEMPLATE_DOWNLOAD, PermissionCatagory = PermissionCatagory.REPORT_TEMPLATE, Description = "Can download report templates" },
-                new Permission { Id = (int)PermissionType.REPORT_TEMPLATE_ASSIGN, PermissionType = PermissionType.REPORT_TEMPLATE_ASSIGN, PermissionCatagory = PermissionCatagory.REPORT_TEMPLATE, Description = "Can assign report templates to processes" },
-
-                // SQL Templates
-                new Permission { Id = (int)PermissionType.SQL_TEMPLATE_VIEW,   PermissionType = PermissionType.SQL_TEMPLATE_VIEW,   PermissionCatagory = PermissionCatagory.SQL_TEMPLATE, Description = "Can view SQL templates" },
-                new Permission { Id = (int)PermissionType.SQL_TEMPLATE_CREATE, PermissionType = PermissionType.SQL_TEMPLATE_CREATE, PermissionCatagory = PermissionCatagory.SQL_TEMPLATE, Description = "Can create SQL templates" },
-                new Permission { Id = (int)PermissionType.SQL_TEMPLATE_EDIT,   PermissionType = PermissionType.SQL_TEMPLATE_EDIT,   PermissionCatagory = PermissionCatagory.SQL_TEMPLATE, Description = "Can edit SQL templates" },
-                new Permission { Id = (int)PermissionType.SQL_TEMPLATE_DELETE, PermissionType = PermissionType.SQL_TEMPLATE_DELETE, PermissionCatagory = PermissionCatagory.SQL_TEMPLATE, Description = "Can delete SQL templates" },
+                // Reports
+                new Permission { Id = (int)PermissionType.REPORT_VIEW, PermissionType = PermissionType.REPORT_VIEW, PermissionCatagory = PermissionCatagory.REPORT, Description = "Can view system reports" },
+                new Permission { Id = (int)PermissionType.REPORT_VISIBILITY_MANAGE, PermissionType = PermissionType.REPORT_VISIBILITY_MANAGE, PermissionCatagory = PermissionCatagory.REPORT, Description = "Can manage report visibility settings" },
 
                 // Only for Admin
-                new Permission { Id = (int)PermissionType.PERMISSION_SYSADMIN_VIEW, PermissionType = PermissionType.PERMISSION_SYSADMIN_VIEW, PermissionCatagory = PermissionCatagory.ROLE, Description = "Can view the SystemAdmin role existence/details" },
+                new Permission { Id = (int)PermissionType.PERMISSION_SUPER_ADMIN_VIEW, PermissionType = PermissionType.PERMISSION_SUPER_ADMIN_VIEW, PermissionCatagory = PermissionCatagory.ROLE, Description = "Can view the SuperAdmin role existence/details" },
 
                 // Setting Options
                 new Permission { Id = (int)PermissionType.SETTING_OPTIONS_BACKUP_VIEW, PermissionType = PermissionType.SETTING_OPTIONS_BACKUP_VIEW, PermissionCatagory = PermissionCatagory.SETTING_OPTIONS, Description = "Can view backup settings" },
                 new Permission { Id = (int)PermissionType.SETTING_OPTIONS_SHOP_VIEW, PermissionType = PermissionType.SETTING_OPTIONS_SHOP_VIEW, PermissionCatagory = PermissionCatagory.SETTING_OPTIONS, Description = "Can view shop details settings" },
                 new Permission { Id = (int)PermissionType.SETTING_OPTIONS_ROLES_VIEW, PermissionType = PermissionType.SETTING_OPTIONS_ROLES_VIEW, PermissionCatagory = PermissionCatagory.SETTING_OPTIONS, Description = "Can view roles and permissions settings" },
-                new Permission { Id = (int)PermissionType.SETTING_OPTIONS_REPORTS_VIEW, PermissionType = PermissionType.SETTING_OPTIONS_REPORTS_VIEW, PermissionCatagory = PermissionCatagory.SETTING_OPTIONS, Description = "Can view reports settings" },
-                new Permission { Id = (int)PermissionType.SETTING_OPTIONS_SQL_TEMPLATES_VIEW, PermissionType = PermissionType.SETTING_OPTIONS_SQL_TEMPLATES_VIEW, PermissionCatagory = PermissionCatagory.SETTING_OPTIONS, Description = "Can view SQL templates settings" },
+                new Permission { Id = (int)PermissionType.SETTING_OPTIONS_REPORT_VISIBILITY_VIEW, PermissionType = PermissionType.SETTING_OPTIONS_REPORT_VISIBILITY_VIEW, PermissionCatagory = PermissionCatagory.SETTING_OPTIONS, Description = "Can view report visibility settings tab" },
                 new Permission { Id = (int)PermissionType.SETTING_OPTIONS_SYSTEM_VIEW, PermissionType = PermissionType.SETTING_OPTIONS_SYSTEM_VIEW, PermissionCatagory = PermissionCatagory.SETTING_OPTIONS, Description = "Can view system settings" },
                 new Permission { Id = (int)PermissionType.SETTING_OPTIONS_USERS_VIEW, PermissionType = PermissionType.SETTING_OPTIONS_USERS_VIEW, PermissionCatagory = PermissionCatagory.SETTING_OPTIONS, Description = "Can view user management settings" },
 
@@ -291,7 +307,9 @@ namespace pos_service.Data
                 (int)PermissionType.NAV_BAR_SUPPLIERS_VIEW,
                 (int)PermissionType.NAV_BAR_CUSTOMERS_VIEW,
                 (int)PermissionType.NAV_BAR_INVENTORY_VIEW,
-                (int)PermissionType.NAV_BAR_REPORTS_VIEW
+                (int)PermissionType.NAV_BAR_REPORTS_VIEW,
+                (int)PermissionType.REPORT_VIEW,
+                (int)PermissionType.REPORT_VISIBILITY_MANAGE
             };
 
             // Add sensible defaults for Cashier but only add missing mappings (idempotent)

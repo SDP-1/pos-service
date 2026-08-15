@@ -1,4 +1,4 @@
-﻿using pos_service.Models;
+using pos_service.Models;
 
 namespace pos_service.Repositories
 {
@@ -58,6 +58,11 @@ namespace pos_service.Repositories
         /// Thrown when <paramref name="uuid"/> is null, empty, or whitespace.
         /// </exception>
         Task<User?> GetByUuidAsync(string uuid);
+
+        /// <summary>
+        /// Adds a new user and contacts inside a repository transaction.
+        /// </summary>
+        Task<User> SaveNewUserWithContactsAsync(User user, IEnumerable<Contact>? contacts);
 
         /// <summary>
         /// Adds a new user to the data store.

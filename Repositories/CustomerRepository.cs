@@ -5,14 +5,9 @@ using pos_service.Models.DTO.Customers;
 
 namespace pos_service.Repositories
 {
-    public class CustomerRepository : ICustomerRepository
+    public class CustomerRepository : BaseRepository, ICustomerRepository
     {
-        private readonly AppDbContext _context;
-        /// <summary>
-        /// Initializes a new instance of the CustomerRepository.
-        /// </summary>
-        /// <param name="context">The application's database context.</param>
-        public CustomerRepository(AppDbContext context) { _context = context; }
+        public CustomerRepository(AppDbContext context) : base(context) { }
 
         /// <summary>
         /// Retrieves all customers as response DTOs.
@@ -22,6 +17,16 @@ namespace pos_service.Repositories
         {
             var query = _context.Customers.AsQueryable();
             return await makeCustomreResponceDto(_context, query);
+        }
+
+        /// <summary>
+        /// Retrieves a customer entity by database id.
+        /// </summary>
+        /// <param name="id">Database id of the customer.</param>
+        /// <returns>Customer entity when found; otherwise null.</returns>
+        public async Task<Customer?> GetEntityByIdAsync(int id)
+        {
+            return await _context.Customers.FindAsync(id);
         }
 
         /// <summary>
@@ -124,6 +129,16 @@ namespace pos_service.Repositories
 
             await _context.SaveChangesAsync();
             return existing;
+        }
+
+        /// <summary>
+        /// Updates an existing tracked customer entity in the database.
+        /// </summary>
+        public async Task<Customer> UpdateAsync(Customer customer)
+        {
+            _context.Customers.Update(customer);
+            await _context.SaveChangesAsync();
+            return customer;
         }
 
         /// <summary>

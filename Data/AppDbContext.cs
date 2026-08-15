@@ -40,9 +40,8 @@ namespace pos_service.Data
         public DbSet<Inventory> Inventories                                { get; set; }
         public DbSet<InventoryUnit> InventoryUnits                         { get; set; }
         public DbSet<InventoryAdjustAudit> InventoryAdjustAudits           { get; set; }
-        public DbSet<ReportTemplate> ReportTemplates                       { get; set; }
-        public DbSet<SqlTemplate> SqlTemplates                             { get; set; }
-        public DbSet<ReportTemplateSqlTemplate> ReportTemplateSqlTemplates { get; set; }
+        public DbSet<ItemPriceAudit> ItemPriceAudits                       { get; set; }
+
 
         /// <summary>
         /// This method is used to configure the database model using the Fluent API.
@@ -51,6 +50,31 @@ namespace pos_service.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // ─── Table Configurations (Industry Standard Explicit Mappings) ──────────
+            modelBuilder.Entity<User>().ToTable("tbl_users");
+            modelBuilder.Entity<Contact>().ToTable("tbl_contacts");
+            modelBuilder.Entity<Customer>().ToTable("tbl_customers");
+            modelBuilder.Entity<Supplier>().ToTable("tbl_suppliers");
+            modelBuilder.Entity<Item>().ToTable("tbl_items");
+            modelBuilder.Entity<ItemPrice>().ToTable("tbl_item_prices");
+            modelBuilder.Entity<ItemPriceAudit>().ToTable("tbl_item_price_audits");
+            modelBuilder.Entity<ItemExpiry>().ToTable("tbl_item_expiries");
+            modelBuilder.Entity<ItemSupplier>().ToTable("tbl_item_suppliers");
+            modelBuilder.Entity<Order>().ToTable("tbl_orders");
+            modelBuilder.Entity<OrderItem>().ToTable("tbl_order_items");
+            modelBuilder.Entity<Permission>().ToTable("tbl_permissions");
+            modelBuilder.Entity<RolePermission>().ToTable("tbl_role_permissions");
+            modelBuilder.Entity<Role>().ToTable("tbl_roles");
+            modelBuilder.Entity<Setting>().ToTable("tbl_settings");
+            modelBuilder.Entity<BackupLocation>().ToTable("tbl_backup_locations");
+            modelBuilder.Entity<BackupHistory>().ToTable("tbl_backup_histories");
+            modelBuilder.Entity<Shop>().ToTable("tbl_shops");
+            modelBuilder.Entity<LoanSettlementLog>().ToTable("tbl_loan_settlement_logs");
+            modelBuilder.Entity<Inventory>().ToTable("tbl_inventories");
+            modelBuilder.Entity<InventoryUnit>().ToTable("tbl_inventory_units");
+            modelBuilder.Entity<InventoryAdjustAudit>().ToTable("tbl_inventory_adjust_audits");
+
 
             // Add database-side defaults for IAuditable timestamps so the database will populate
             // CreatedAt and UpdatedAt when not supplied by the application.
@@ -135,6 +159,17 @@ namespace pos_service.Data
                 entity.HasIndex(r => r.Name).IsUnique();
 
                 entity.HasAlternateKey(r => r.Uuid);
+
+                entity.HasOne(r => r.ParentRole)
+                      .WithMany(r => r.ChildRoles)
+                      .HasForeignKey(r => r.ParentRoleId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasMany(r => r.Permissions)
+                      .WithMany()
+                      .UsingEntity<RolePermission>(
+                          j => j.HasOne(rp => rp.Permission).WithMany().HasForeignKey(rp => rp.PermissionId),
+                          j => j.HasOne(rp => rp.Role).WithMany().HasForeignKey(rp => rp.RoleId));
             });
 
             // --- Permission configuration ---
@@ -295,6 +330,7 @@ namespace pos_service.Data
             {
                 entity.HasIndex(s => s.SettingKey).IsUnique();
                 entity.Property(s => s.SettingKey).HasConversion<string>().HasMaxLength(50);
+                entity.Property(s => s.Category).HasConversion<string>().HasMaxLength(50);
                 entity.Property(s => s.Description).HasMaxLength(500);
                 entity.HasAlternateKey(s => s.Uuid);
             });
@@ -440,35 +476,7 @@ namespace pos_service.Data
                 entity.HasAlternateKey(i => i.Uuid);   // creates unique constraint
             });
 
-            // --- ReportTemplate Configuration ---
-            modelBuilder.Entity<ReportTemplate>(entity =>
-            {
-                entity.HasIndex(r => r.ReportName).IsUnique();
-                entity.HasAlternateKey(r => r.Uuid);
-            });
 
-            // --- SqlTemplate Configuration ---
-            modelBuilder.Entity<SqlTemplate>(entity =>
-            {
-                entity.HasIndex(s => s.TemplateName).IsUnique();
-                entity.HasAlternateKey(s => s.Uuid);
-            });
-
-            // --- ReportTemplateSqlTemplate Join Configuration ---
-            modelBuilder.Entity<ReportTemplateSqlTemplate>(entity =>
-            {
-                entity.HasAlternateKey(j => j.Uuid);
-
-                entity.HasOne(j => j.ReportTemplate)
-                      .WithMany(t => t.ReportTemplateSqlTemplates)
-                      .HasForeignKey(j => j.ReportTemplateId)
-                      .OnDelete(DeleteBehavior.Cascade);
-
-                entity.HasOne(j => j.SqlTemplate)
-                      .WithMany(s => s.ReportTemplateSqlTemplates)
-                      .HasForeignKey(j => j.SqlTemplateId)
-                      .OnDelete(DeleteBehavior.Restrict);
-            });
 
             // --- ReturnedItemsSummary DB view mapping (keyless) ---
             modelBuilder.Entity<ReturnedItemsSummary>(eb =>

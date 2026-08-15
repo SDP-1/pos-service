@@ -5,14 +5,12 @@ using pos_service.Models.Enums;
 
 namespace pos_service.Repositories
 {
-    public class SettingRepository : ISettingRepository
+    public class SettingRepository : BaseRepository, ISettingRepository
     {
-        private readonly AppDbContext _context;
         private readonly ILogger<SettingRepository> _logger;
 
-        public SettingRepository(AppDbContext context, ILogger<SettingRepository> logger)
+        public SettingRepository(AppDbContext context, ILogger<SettingRepository> logger) : base(context)
         {
-            _context = context;
             _logger = logger;
         }
 

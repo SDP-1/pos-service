@@ -1,4 +1,4 @@
-﻿using pos_service.Models;
+using pos_service.Models;
 using pos_service.Models.DTO.Orders;
 using pos_service.Models.Enums;
 
@@ -6,6 +6,17 @@ namespace pos_service.Repositories
 {
     public interface IOrderRepository
     {
+        /// <summary>
+        /// Adds a loan settlement log to the database.
+        /// </summary>
+        Task AddLoanSettlementLogAsync(LoanSettlementLog log);
+
+        Task SaveRecordSettlementAsync(Order order, LoanSettlementLog log);
+        Task<Order> SaveCreateOrderAsync(Order order, LoanSettlementLog? initialLog, List<Inventory> inventoriesToUpdate, Customer? customerToUpdate);
+        Task<Order> SaveUpdateOrderAsync(Order existingOrder, List<Inventory> inventoriesToUpdate, Customer? customerToUpdate);
+        Task SaveDeleteOrderAsync(Order order, List<Inventory> inventoriesToUpdate, bool isPermanent);
+        Task<Order> SaveUpdateOrderStatusAsync(Order order, List<Inventory> inventoriesToUpdate);
+
         /// <summary>
         /// Creates a new order in the data store.
         /// </summary>

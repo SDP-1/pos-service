@@ -1,0 +1,23 @@
+CREATE TABLE `tbl_order_items` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `OrderId` int NOT NULL,
+  `OriginalItemUuid` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `PrintName` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `BarCode` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `PriceAtSale` decimal(18,2) NOT NULL,
+  `CostAtSale` decimal(18,2) NOT NULL,
+  `Quantity` decimal(18,3) NOT NULL,
+  `Discount` decimal(18,2) NOT NULL,
+  `LineTotal` decimal(18,2) NOT NULL,
+  `TotalProfit` decimal(18,2) NOT NULL,
+  `UnitType` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `IsReturnItem` tinyint(1) NOT NULL DEFAULT '0',
+  `ReturnedOrderItemUuid` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `Uuid` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  PRIMARY KEY (`Id`),
+  UNIQUE KEY `AK_tbl_order_items_Uuid` (`Uuid`),
+  KEY `IX_tbl_order_items_OrderId` (`OrderId`),
+  KEY `IX_tbl_order_items_OriginalItemUuid` (`OriginalItemUuid`),
+  CONSTRAINT `FK_tbl_order_items_tbl_items_OriginalItemUuid` FOREIGN KEY (`OriginalItemUuid`) REFERENCES `tbl_items` (`Uuid`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `FK_tbl_order_items_tbl_orders_OrderId` FOREIGN KEY (`OrderId`) REFERENCES `tbl_orders` (`Id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

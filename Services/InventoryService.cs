@@ -6,6 +6,8 @@ using pos_service.Models.Enums;
 using pos_service.Repositories;
 using pos_service.Services.Common.Cache;
 
+using pos_service.Data;
+
 namespace pos_service.Services
 {
     public class InventoryService : IInventoryService
@@ -58,10 +60,10 @@ namespace pos_service.Services
         /// When creating, initializes units based on provided packaging levels.
         /// </summary>
         /// <param name="itemUuid">UUID of the item.</param>
-        /// <param name="dto">Inventory upsert DTO.</param>
+        /// <param name="dto">Inventory update DTO.</param>
         /// <param name="currentUser">Current user context.</param>
-        /// <returns>The created or updated inventory DTO.</returns>
-        public async Task<InventoryResDto> UpsertAsync(string itemUuid, InventoryReqDto dto, CurrentUser currentUser)
+        /// <returns>The updated inventory DTO.</returns>
+        public async Task<InventoryResDto> UpdateAsync(string itemUuid, InventoryReqDto dto, CurrentUser currentUser)
         {
             var item = await _itemRepository.GetByUuidAsync(itemUuid);
             if (item == null)
@@ -109,7 +111,7 @@ namespace pos_service.Services
 
             InvalidateCache();
 
-            // Expiries are managed via inventory adjustments. Upsert no longer modifies Item.ExpDates.
+            // Expiries are managed via inventory adjustments. Update no longer modifies Item.ExpDates.
 
             return _mapper.Map<InventoryResDto>(inventory);
         }
@@ -163,22 +165,17 @@ namespace pos_service.Services
             // Mark as user-adjusted for audit trail tracking
             inventory.IsUserAdjusted = true;
 
-            await _inventoryRepository.UpdateAsync(inventory);
-
             // Manage expiries and price on the related Item if provided in the adjust request
             var item = await _itemRepository.GetByUuidAsync(inventory.ItemUuid);
+            bool itemNeedsUpdate = false;
             if (item != null)
             {
-                var itemChanged = false;
-
                 var expiriesChanged = ApplyExpiries(item, dto);
-                var priceChanged = ApplyPrice(item, dto.Price);
-
-                if (expiriesChanged || priceChanged)
-                {
-                    await _itemRepository.UpdateAsync(item);
-                }
+                var priceChanged    = ApplyPrice(item, dto.Price);
+                itemNeedsUpdate     = expiriesChanged || priceChanged;
             }
+
+            await _inventoryRepository.SaveStockAdjustmentAsync(inventory, item, itemNeedsUpdate);
 
             InvalidateCache();
 

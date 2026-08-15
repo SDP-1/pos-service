@@ -22,13 +22,13 @@ namespace pos_service.Services
         Task<InventoryResDto?> GetByItemUuidAsync(string itemUuid, CurrentUser currentUser);
 
         /// <summary>
-        /// Creates or updates the inventory record for the given item UUID.
+        /// Updates the inventory record for the given item UUID.
         /// </summary>
         /// <param name="itemUuid">UUID of the associated item.</param>
-        /// <param name="dto">Inventory upsert DTO containing stock and packaging info.</param>
-        /// <param name="currentUser">Current user performing the upsert.</param>
-        /// <returns>The created or updated InventoryResDto.</returns>
-        Task<InventoryResDto> UpsertAsync(string itemUuid, InventoryReqDto dto, CurrentUser currentUser);
+        /// <param name="dto">Inventory update DTO containing stock and packaging info.</param>
+        /// <param name="currentUser">Current user performing the update.</param>
+        /// <returns>The updated InventoryResDto.</returns>
+        Task<InventoryResDto> UpdateAsync(string itemUuid, InventoryReqDto dto, CurrentUser currentUser);
 
         /// <summary>
         /// Adjusts the stock quantity for the specified item.

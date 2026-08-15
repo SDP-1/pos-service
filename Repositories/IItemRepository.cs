@@ -1,4 +1,4 @@
-﻿using pos_service.Models;
+using pos_service.Models;
 using pos_service.Models.DTO.Items;
 
 namespace pos_service.Repositories
@@ -18,6 +18,16 @@ namespace pos_service.Repositories
         /// </summary>
         /// <returns>A list of item response DTOs.</returns>
         Task<IEnumerable<ItemResDto>> GetAllAsync();
+
+        /// <summary>
+        /// Adds a new item and its inventory inside a repository database transaction.
+        /// </summary>
+        Task SaveNewItemWithInventoryAsync(Item item, Inventory inventory);
+
+        /// <summary>
+        /// Updates an item and optional inventory record inside a repository database transaction.
+        /// </summary>
+        Task SaveUpdatedItemWithInventoryAsync(Item itemToUpdate, Inventory? inventoryToUpdate = null);
 
         /// <summary>
         /// Adds a new item to the data store.

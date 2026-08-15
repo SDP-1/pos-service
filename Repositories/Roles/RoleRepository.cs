@@ -4,13 +4,10 @@ using pos_service.Models;
 
 namespace pos_service.Repositories.Roles
 {
-    public class RoleRepository : IRoleRepository
+    public class RoleRepository : BaseRepository, IRoleRepository
     {
-        private readonly AppDbContext _context;
-
-        public RoleRepository(AppDbContext context)
+        public RoleRepository(AppDbContext context) : base(context)
         {
-            _context = context;
         }
 
         /// <summary>
@@ -58,7 +55,10 @@ namespace pos_service.Repositories.Roles
         /// <returns>The added Role with updated identity fields.</returns>
         public async Task<Role> AddAsync(Role role)
         {
-            role.Uuid = Guid.NewGuid().ToString();
+            if (string.IsNullOrEmpty(role.Uuid))
+            {
+                role.Uuid = Guid.NewGuid().ToString();
+            }
             _context.Roles.Add(role);
             await _context.SaveChangesAsync();
             return role;
@@ -84,6 +84,105 @@ namespace pos_service.Repositories.Roles
         {
             _context.Roles.Remove(role);
             await _context.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Breadth-First Search (BFS) Permission Resolution.
+        /// Parent/Senior roles automatically inherit all permissions of their Child/Subordinate roles recursively down the tree.
+        /// </summary>
+        public List<Permission> GetPermissionsByRoleId(int roleId)
+        {
+            // Load all active roles and their direct permissions into memory
+            var allRoles = _context.Roles
+                .Include(r => r.Permissions)
+                .Where(r => r.IsActive)
+                .ToList();
+
+            var rolesDict = allRoles.ToDictionary(r => r.Id, r => r);
+
+            // BFS queue to discover all descendant role IDs
+            var descendantIds = new HashSet<int> { roleId };
+            var queue = new Queue<int>();
+            queue.Enqueue(roleId);
+
+            while (queue.Count > 0)
+            {
+                var currentId = queue.Dequeue();
+                var children = allRoles.Where(r => r.ParentRoleId == currentId).Select(r => r.Id);
+                foreach (var childId in children)
+                {
+                    if (descendantIds.Add(childId))
+                    {
+                        queue.Enqueue(childId);
+                    }
+                }
+            }
+
+            // Accumulate unique permissions from target role and all descendant roles
+            var permissions = new List<Permission>();
+            var addedPermissionIds = new HashSet<int>();
+
+            foreach (var rId in descendantIds)
+            {
+                if (rolesDict.TryGetValue(rId, out var role))
+                {
+                    foreach (var perm in role.Permissions)
+                    {
+                        if (addedPermissionIds.Add(perm.Id))
+                        {
+                            permissions.Add(perm);
+                        }
+                    }
+                }
+            }
+
+            return permissions;
+        }
+
+        public async Task<List<Permission>> GetPermissionsByRoleIdAsync(int roleId)
+        {
+            var allRoles = await _context.Roles
+                .Include(r => r.Permissions)
+                .Where(r => r.IsActive)
+                .ToListAsync();
+
+            var rolesDict = allRoles.ToDictionary(r => r.Id, r => r);
+
+            var descendantIds = new HashSet<int> { roleId };
+            var queue = new Queue<int>();
+            queue.Enqueue(roleId);
+
+            while (queue.Count > 0)
+            {
+                var currentId = queue.Dequeue();
+                var children = allRoles.Where(r => r.ParentRoleId == currentId).Select(r => r.Id);
+                foreach (var childId in children)
+                {
+                    if (descendantIds.Add(childId))
+                    {
+                        queue.Enqueue(childId);
+                    }
+                }
+            }
+
+            var permissions = new List<Permission>();
+            var addedPermissionIds = new HashSet<int>();
+
+            foreach (var rId in descendantIds)
+            {
+                if (rolesDict.TryGetValue(rId, out var role))
+                {
+                    foreach (var perm in role.Permissions)
+                    {
+                        if (addedPermissionIds.Add(perm.Id))
+                        {
+                            permissions.Add(perm);
+                        }
+                    }
+                }
+            }
+
+            return permissions;
         }
     }
 }

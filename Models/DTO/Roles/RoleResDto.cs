@@ -1,4 +1,5 @@
-﻿using pos_service.Models.DTO.Audits;
+
+using pos_service.Models.DTO.Audits;
 using System.ComponentModel.DataAnnotations;
 
 namespace pos_service.Models.DTO.Roles
@@ -13,6 +14,8 @@ namespace pos_service.Models.DTO.Roles
 
         [MaxLength(250)]
         public string? Description { get; set; }
+
+        public int? ParentRoleId   { get; set; }
 
         // --- Implementation of IFullResAuditDto ---
         public string Uuid         { get; set; }

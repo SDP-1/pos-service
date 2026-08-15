@@ -1,10 +1,13 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using pos_service.Data;
-using pos_service.Data.Utilities;
-using pos_service.Exceptions;
+using pos_service.Services.Roles;
+using pos_service.Repositories.Roles;
+using pos_service.Repositories.Reports;
+using pos_service.Services.Reports;
+using pos_service.Repositories.Base;
+using pos_service.Services.Backup;
 using pos_service.Middlewares;
 using pos_service.Repositories;
 using pos_service.Repositories.Permissions;
@@ -57,7 +60,7 @@ builder.Services.AddScoped<ISupplierService, SupplierService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
-builder.Services.AddScoped<pos_service.Services.Roles.IRoleService, pos_service.Services.Roles.RoleService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
 
 // Customer services and repositories
 builder.Services.AddScoped<ICustomerService, CustomerService>();
@@ -72,21 +75,19 @@ builder.Services.AddScoped<ISupplierRepository, SupplierRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();
-builder.Services.AddScoped<pos_service.Repositories.Roles.IRoleRepository, pos_service.Repositories.Roles.RoleRepository>();
+builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<ISettingRepository, SettingRepository>();
 builder.Services.AddScoped<ISettingService, SettingService>();
 builder.Services.AddScoped<IShopRepository, ShopRepository>();
 builder.Services.AddScoped<IShopService, ShopService>();
-builder.Services.AddScoped<IReportTemplateRepository, ReportTemplateRepository>();
-builder.Services.AddScoped<IReportTemplateService, ReportTemplateService>();
-builder.Services.AddScoped<ISqlTemplateRepository, SqlTemplateRepository>();
-builder.Services.AddScoped<ISqlTemplateService, SqlTemplateService>();
+builder.Services.AddScoped<IReportRepository, ReportRepository>();
+builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IPdfService, PdfService>();
 // Backup repositories - only location and history needed for manual backups
 builder.Services.AddScoped<IBackupLocationRepository, BackupLocationRepository>();
 builder.Services.AddScoped<IBackupHistoryRepository, BackupHistoryRepository>();
 // Stored Procedure Executor
-builder.Services.AddScoped<pos_service.Repositories.Base.IStoredProcedureExecutor, pos_service.Repositories.Base.StoredProcedureExecutor>();
+builder.Services.AddScoped<IStoredProcedureExecutor, StoredProcedureExecutor>();
 
 // FIXED: DbContext registration with all dependencies
 builder.Services.AddDbContext<AppDbContext>((provider, options) =>
@@ -99,7 +100,7 @@ builder.Services.AddDbContext<AppDbContext>((provider, options) =>
 builder.Services.AddAutoMapper(cfg => { }, typeof(Program));
 
 // Register backup services
-builder.Services.AddScoped<pos_service.Services.Backup.IBackupService, pos_service.Services.Backup.BackupService>();
+builder.Services.AddScoped<IBackupService, BackupService>();
 
 builder.Services.AddControllers();
 builder.Services.AddHealthChecks();

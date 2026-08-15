@@ -12,16 +12,14 @@ namespace pos_service.Services
     {
         private readonly ISettingRepository _settingRepository;
         private readonly IMapper _mapper;
-        private readonly AppDbContext _context;
         private readonly ICacheService _cache;
 
         private const CacheExpiry DefaultExpiry = CacheExpiry.OneDay;
 
-        public SettingService(ISettingRepository settingRepository, IMapper mapper, AppDbContext context, ICacheService cache)
+        public SettingService(ISettingRepository settingRepository, IMapper mapper, ICacheService cache)
         {
             _settingRepository = settingRepository;
             _mapper            = mapper;
-            _context           = context;
             _cache             = cache;
         }
 
@@ -31,6 +29,12 @@ namespace pos_service.Services
         {
             return await _cache.GetOrCreateAsync<IEnumerable<Setting>>(ServiceCacheKey.Settings, null,
                 () => _settingRepository.GetAllAsync(), DefaultExpiry);
+        }
+
+        public async Task<IEnumerable<Setting>> GetByCategoryAsync(SettingCategory category, CurrentUser currentUser)
+        {
+            var all = await GetAllAsync(currentUser);
+            return all.Where(s => s.Category == category);
         }
 
         public async Task<Setting?> GetByKeyAsync(SettingKey key, CurrentUser currentUser)

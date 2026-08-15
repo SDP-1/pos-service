@@ -12,9 +12,9 @@ namespace pos_service.Models.Enums
         DEFAULT = 0,
 
         /// <summary>
-        /// System administrator role with full privileges.
+        /// Super administrator role with full privileges.
         /// </summary>
-        SYSTEM_ADMIN = 1,
+        SUPER_ADMIN = 1,
     }
 
     /// <summary>
@@ -68,13 +68,9 @@ namespace pos_service.Models.Enums
         /// </summary>
         CUSTOMER   = 10,
         /// <summary>
-        /// Report template related permissions.
+        /// Report related permissions.
         /// </summary>
-        REPORT_TEMPLATE = 11,
-        /// <summary>
-        /// SQL template related permissions.
-        /// </summary>
-        SQL_TEMPLATE    = 12,
+        REPORT          = 11,
         /// <summary>
         /// Settings option related permissions.
         /// </summary>
@@ -136,7 +132,7 @@ namespace pos_service.Models.Enums
         CUSTOMER_DELETE                     = 553,
 
         // Permissions (start at 600)
-        PERMISSION_VIEW = 600,
+        PERMISSION_VIEW                     = 600,
         PERMISSION_ASSIGN                   = 601,
 
         // Roles (start at 650)
@@ -151,32 +147,21 @@ namespace pos_service.Models.Enums
         // Shop details (start at 750)
         SHOP_DETAILS_UPDATE                 = 750,
 
-        // Report Templates (start at 800)
-        REPORT_TEMPLATE_CREATE              = 800,
-        REPORT_TEMPLATE_VIEW                = 801,
-        REPORT_TEMPLATE_EDIT                = 802,
-        REPORT_TEMPLATE_DELETE              = 803,
-        REPORT_TEMPLATE_DOWNLOAD            = 804,
-        REPORT_TEMPLATE_ASSIGN              = 805,
-
-        // SQL Templates (start at 850)
-        SQL_TEMPLATE_VIEW                   = 850,
-        SQL_TEMPLATE_CREATE                 = 851,
-        SQL_TEMPLATE_EDIT                   = 852,
-        SQL_TEMPLATE_DELETE                 = 853,
+        // Reports (start at 800)
+        REPORT_VIEW                         = 800,
+        REPORT_VISIBILITY_MANAGE            = 801,
 
         // Setting Options (start at 900)
-        SETTING_OPTIONS_BACKUP_VIEW         = 900,
-        SETTING_OPTIONS_SHOP_VIEW           = 901,
-        SETTING_OPTIONS_ROLES_VIEW          = 902,
-        SETTING_OPTIONS_REPORTS_VIEW        = 903,
-        SETTING_OPTIONS_SQL_TEMPLATES_VIEW  = 904,
-        SETTING_OPTIONS_SYSTEM_VIEW         = 905,
-        SETTING_OPTIONS_USERS_VIEW          = 906,
+        SETTING_OPTIONS_BACKUP_VIEW            = 900,
+        SETTING_OPTIONS_SHOP_VIEW              = 901,
+        SETTING_OPTIONS_ROLES_VIEW             = 902,
+        SETTING_OPTIONS_REPORT_VISIBILITY_VIEW = 903,
+        SETTING_OPTIONS_SYSTEM_VIEW            = 905,
+        SETTING_OPTIONS_USERS_VIEW             = 906,
 
         // Only for SYS Admin (start at 1000 - 1050)
-        // Special permission to allow viewing existence/details of the SystemAdmin role (id=1)
-        PERMISSION_SYSADMIN_VIEW            = 1000,
+        // Special permission to allow viewing existence/details of the SuperAdmin role (id=1)
+        PERMISSION_SUPER_ADMIN_VIEW         = 1000,
 
         // Navigation Bar Options (start at 1100)
         NAV_BAR_HOME_VIEW                   = 1100,

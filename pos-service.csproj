@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0-windows</TargetFramework>
@@ -63,6 +63,8 @@
 
   <ItemGroup>
     <Folder Include="Data\Utilities\" />
+    <Folder Include="SQL\Views\" />
+    <Folder Include="SQL\Tables\" />
   </ItemGroup>
 
   <ItemGroup>

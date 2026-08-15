@@ -1,4 +1,5 @@
 using AutoMapper;
+using pos_service.Exceptions;
 using pos_service.Models;
 using pos_service.Models.DTO.Roles;
 using pos_service.Models.DTO.Users;
@@ -45,37 +46,60 @@ namespace pos_service.Services.Roles
         }
 
         /// <summary>
-        /// Creates a new role. Creation of the protected SystemAdmin role (id=1 or name SystemAdmin) is not allowed.
+        /// Creates a new role with parent hierarchy link.
         /// </summary>
         public async Task<RoleResDto?> CreateAsync(RoleReqDto roleDto)
         {
-            // prevent creation of SystemAdmin with id 1 and name
-            if (string.Equals(roleDto.Name, "SystemAdmin", StringComparison.OrdinalIgnoreCase) || roleDto.Id == 1)
+            // prevent creation of SuperAdmin with id 1 and name
+            if (string.Equals(roleDto.Name, "SuperAdmin", StringComparison.OrdinalIgnoreCase) || string.Equals(roleDto.Name, "SystemAdmin", StringComparison.OrdinalIgnoreCase) || roleDto.Id == 1)
                 return null;
 
             var exists = await _repo.GetByNameAsync(roleDto.Name);
             if (exists != null) return null;
 
             var role = _mapper.Map<Role>(roleDto);
+            role.ParentRoleId = roleDto.ParentRoleId;
 
-            var result =  await _repo.AddAsync(role);
+            var result = await _repo.AddAsync(role);
             return _mapper.Map<RoleResDto>(result);
         }
 
         /// <summary>
-        /// Updates an existing role by id. SystemAdmin (id=1) cannot be updated.
+        /// Updates an existing role by id with cyclic reference prevention.
         /// </summary>
         public async Task<RoleResDto?> UpdateAsync(int id, RoleReqDto roleDto)
         {
             var existing = await _repo.GetByIdAsync(id);
             if (existing == null) return null;
 
-            // protect SystemAdmin
-            if (existing.Id == 1) return null;  // don't allow updating SystemAdmin
+            // protect SuperAdmin
+            if (existing.Id == 1) return null; // don't allow updating SuperAdmin
 
-            existing.Name        = roleDto.Name;
-            existing.Description = roleDto.Description;
-            existing.IsActive    = roleDto.IsActive;
+            if (roleDto.ParentRoleId.HasValue)
+            {
+                if (roleDto.ParentRoleId.Value == id)
+                    throw new BusinessRuleException("A role cannot be its own parent.");
+
+                var allRoles = await _repo.GetAllAsync();
+                var rolesDict = allRoles.ToDictionary(r => r.Id, r => r);
+
+                var currentParentId = (int?)roleDto.ParentRoleId;
+                while (currentParentId.HasValue)
+                {
+                    if (currentParentId.Value == id)
+                        throw new BusinessRuleException("Cyclic reference detected: A role cannot have one of its descendant roles as its parent.");
+
+                    if (rolesDict.TryGetValue(currentParentId.Value, out var parentRole))
+                        currentParentId = parentRole.ParentRoleId;
+                    else
+                        break;
+                }
+            }
+
+            existing.Name         = roleDto.Name;
+            existing.Description  = roleDto.Description;
+            existing.ParentRoleId = roleDto.ParentRoleId;
+            existing.IsActive     = roleDto.IsActive;
 
             var result = await _repo.UpdateAsync(existing);
             return _mapper.Map<RoleResDto>(result);

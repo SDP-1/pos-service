@@ -10,13 +10,62 @@ using System.Linq;
 
 namespace pos_service.Repositories
 {
-    public class ItemRepository : IItemRepository
+    public class ItemRepository : BaseRepository, IItemRepository
     {
-        private readonly AppDbContext _context;
-
-        public ItemRepository(AppDbContext context)
+        public ItemRepository(AppDbContext context) : base(context)
         {
-            _context = context;
+        }
+
+        public async Task SaveNewItemWithInventoryAsync(Item item, Inventory inventory)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                _context.Items.Add(item);
+                await _context.SaveChangesAsync();
+
+                inventory.ItemUuid = item.Uuid;
+                _context.Inventories.Add(inventory);
+                await _context.SaveChangesAsync();
+
+                item.Inventory = inventory;
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        public async Task SaveUpdatedItemWithInventoryAsync(Item itemToUpdate, Inventory? inventoryToUpdate = null)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                _context.Items.Update(itemToUpdate);
+
+                if (inventoryToUpdate != null)
+                {
+                    var tracked = _context.Inventories.Local.FirstOrDefault(i => i.Id == inventoryToUpdate.Id);
+                    if (tracked != null)
+                    {
+                        _context.Entry(tracked).CurrentValues.SetValues(inventoryToUpdate);
+                    }
+                    else
+                    {
+                        _context.Inventories.Update(inventoryToUpdate);
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<ItemResDto?> GetByIdAsync(int id, int subId)

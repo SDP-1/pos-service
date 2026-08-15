@@ -1,8 +1,10 @@
-﻿using AutoMapper;
+using AutoMapper;
 using pos_service.Models;
 using pos_service.Models.DTO.Suppliers;
 using pos_service.Models.Enums;
 using pos_service.Repositories;
+
+using pos_service.Data;
 
 namespace pos_service.Services
 {
@@ -79,34 +81,19 @@ namespace pos_service.Services
                 }
             }
 
-            // Add supplier first to get Id
-            var newSupplier = await _supplierRepo.AddAsync(supplier);
-
-            // Handle Item associations by UUID if provided
+            var itemSuppliers = new List<ItemSupplier>();
             if (dto.ItemUuids != null && dto.ItemUuids.Any())
             {
-                foreach (var itemUuid in dto.ItemUuids)
+                var items = await _itemRepo.GetByUuidsAsync(dto.ItemUuids);
+                itemSuppliers = items.Select(item => new ItemSupplier
                 {
-                    var item = await _itemRepo.GetByUuidAsync(itemUuid);
-                    if (item != null)
-                    {
-                        var isu = new ItemSupplier
-                        {
-                            Uuid        = Guid.NewGuid().ToString(),
-                            SuppliersId = newSupplier.Id,
-                            ItemsId     = item.Id,
-                            ItemsSubId  = item.SubId,
-                            Supplier    = newSupplier,
-                            Item        = item
-                        };
-
-                        newSupplier.ItemSuppliers.Add(isu);
-                    }
-                }
-
-                // persist changes
-                await _supplierRepo.UpdateAsync(newSupplier);
+                    Uuid       = Guid.NewGuid().ToString(),
+                    ItemsId    = item.Id,
+                    ItemsSubId = item.SubId
+                }).ToList();
             }
+
+            var newSupplier = await _supplierRepo.SaveNewSupplierAsync(supplier, itemSuppliers);
 
             return _mapper.Map<SupplierResDto>(newSupplier);
         }
@@ -134,13 +121,11 @@ namespace pos_service.Services
                     throw new ArgumentException("This supplier name already exists.");
             }
 
-
             _mapper.Map(dto, existing);
 
-            await _supplierRepo.UpdateAsync(existing);
+            await _supplierRepo.SaveUpdatedSupplierAsync(existing);
 
             // Merge contacts: update existing, add new, delete removed
-            // For PUT updates, a null/empty contacts payload should clear supplier contacts.
             await _contactService.MergeContactsAsync(ContactOwnerType.Supplier, id, dto.Contacts);
 
             // Update item associations if provided

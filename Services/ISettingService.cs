@@ -6,6 +6,7 @@ namespace pos_service.Services
     public interface ISettingService
     {
         Task<IEnumerable<Setting>> GetAllAsync(CurrentUser currentUser);
+        Task<IEnumerable<Setting>> GetByCategoryAsync(SettingCategory category, CurrentUser currentUser);
         Task<Setting?> GetByKeyAsync(SettingKey key, CurrentUser currentUser);
         Task<Setting?> SetSettingValueAsync(SettingKey key, bool value, CurrentUser currentUser);
 

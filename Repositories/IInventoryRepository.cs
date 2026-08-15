@@ -9,6 +9,7 @@ namespace pos_service.Repositories
         Task<IEnumerable<Inventory>> GetAllAsync();
         Task<Inventory> AddAsync(Inventory inventory);
         Task<Inventory> UpdateAsync(Inventory inventory);
+        Task SaveStockAdjustmentAsync(Inventory inventory, Item? item = null, bool itemNeedsUpdate = false);
 
         /// <summary>
         /// Query inventory adjustment audit history using stored procedure.

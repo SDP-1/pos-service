@@ -1,16 +1,41 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using pos_service.Data;
 using pos_service.Models;
 
 namespace pos_service.Repositories
 {
-    public class UserRepository : IUserRepository
+    public class UserRepository : BaseRepository, IUserRepository
     {
-        private readonly AppDbContext _context;
-
-        public UserRepository(AppDbContext context)
+        public UserRepository(AppDbContext context) : base(context)
         {
-            _context = context;
+        }
+
+        public async Task<User> SaveNewUserWithContactsAsync(User user, IEnumerable<Contact>? contacts)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+
+                if (contacts != null && contacts.Any())
+                {
+                    foreach (var contact in contacts)
+                    {
+                        contact.UserId = user.Id;
+                    }
+                    _context.Contacts.AddRange(contacts);
+                    await _context.SaveChangesAsync();
+                }
+
+                await transaction.CommitAsync();
+                return user;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         /// <summary>
@@ -86,6 +111,9 @@ namespace pos_service.Repositories
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
 
+                // Explicitly load the Role reference
+                await _context.Entry(user).Reference(u => u.Role).LoadAsync();
+
                 return user;
             }
             catch (Exception e) 
@@ -107,6 +135,10 @@ namespace pos_service.Repositories
             {
                 _context.Entry(user).State = EntityState.Modified;
                 await _context.SaveChangesAsync();
+
+                // Force reload the Role reference in case RoleId has changed
+                _context.Entry(user).Reference(u => u.Role).IsLoaded = false;
+                await _context.Entry(user).Reference(u => u.Role).LoadAsync();
 
                 return user;
             }

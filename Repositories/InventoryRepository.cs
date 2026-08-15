@@ -8,14 +8,11 @@ using System.Data.Common;
 
 namespace pos_service.Repositories
 {
-    public class InventoryRepository : BaseOperations, IInventoryRepository
+    public class InventoryRepository : BaseRepository, IInventoryRepository
     {
-        private readonly AppDbContext _context;
-
         public InventoryRepository(AppDbContext context, ILogger<InventoryRepository>? logger = null) 
-            : base(logger as ILogger<BaseOperations>)
+            : base(context)
         {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
         public async Task<Inventory?> GetByItemUuidAsync(string itemUuid)
@@ -73,28 +70,53 @@ namespace pos_service.Repositories
             return inventory;
         }
 
+        public async Task SaveStockAdjustmentAsync(Inventory inventory, Item? item = null, bool itemNeedsUpdate = false)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var tracked = _context.Inventories.Local.FirstOrDefault(i => i.Id == inventory.Id);
+                if (tracked != null)
+                {
+                    _context.Entry(tracked).CurrentValues.SetValues(inventory);
+                }
+                else
+                {
+                    _context.Inventories.Update(inventory);
+                }
+
+                if (item != null && itemNeedsUpdate)
+                {
+                    _context.Items.Update(item);
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
         public async Task<IEnumerable<InventoryAdjustAuditResDto>> GetAuditHistoryAsync(
             string itemUuid,
             DateTime? startDate = null,
             DateTime? endDate = null,
             int? maxRecords = null)
         {
-            // Build parameters for stored procedure using inherited CreateParameter method
             var parameters = new DbParameter[]
             {
-                CreateParameter(_context, "@p_item_uuid", itemUuid ?? (object)DBNull.Value),
-                CreateParameter(_context, "@p_start_date", startDate ?? (object)DBNull.Value),
-                CreateParameter(_context, "@p_end_date", endDate ?? (object)DBNull.Value),
-                CreateParameter(_context, "@p_max_records", maxRecords ?? 100)
+                CreateParameter("p_item_uuid", itemUuid),
+                CreateParameter("p_start_date", startDate),
+                CreateParameter("p_end_date", endDate),
+                CreateParameter("p_max_records", maxRecords ?? 100)
             };
 
-            // Execute stored procedure using inherited method
-            var results = await ExecuteStoredProcedureAsync<InventoryAdjustAuditResDto>(
-                _context,
+            return await ExecuteStoredProcedureAsync<InventoryAdjustAuditResDto>(
                 "sp_get_inventory_audit_history",
                 parameters);
-
-            return results;
         }
     }
 }

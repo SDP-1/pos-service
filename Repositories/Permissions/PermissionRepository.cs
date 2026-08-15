@@ -24,16 +24,38 @@ namespace pos_service.Repositories.Permissions
         }
 
         /// <summary>
-        /// Retrieves permissions that are assigned to a specific role.
+        /// Retrieves permissions assigned to a specific role, automatically inheriting permissions from descendant child roles via BFS traversal.
         /// </summary>
         /// <param name="roleId">Database id of the role.</param>
-        /// <returns>A collection of Permission entities assigned to the role.</returns>
+        /// <returns>A collection of Permission entities assigned to or inherited by the role.</returns>
         public async Task<IEnumerable<Permission>> GetForRoleAsync(int roleId)
         {
+            var allRoles = await _context.Roles
+                .Where(r => r.IsActive)
+                .ToListAsync();
+
+            var descendantIds = new HashSet<int> { roleId };
+            var queue = new Queue<int>();
+            queue.Enqueue(roleId);
+
+            while (queue.Count > 0)
+            {
+                var currentId = queue.Dequeue();
+                var children = allRoles.Where(r => r.ParentRoleId == currentId).Select(r => r.Id);
+                foreach (var childId in children)
+                {
+                    if (descendantIds.Add(childId))
+                    {
+                        queue.Enqueue(childId);
+                    }
+                }
+            }
+
             return await _context.RolePermissions
-                .Where(rp => rp.RoleId == roleId)
+                .Where(rp => descendantIds.Contains(rp.RoleId))
                 .Include(rp => rp.Permission)
                 .Select(rp => rp.Permission)
+                .Distinct()
                 .ToListAsync();
         }
 
@@ -46,37 +68,52 @@ namespace pos_service.Repositories.Permissions
         /// <exception cref="ArgumentException">Thrown when permissionName is not a valid PermissionType.</exception>
         public async Task<bool> AddPermissionToRoleAsync(int roleId, string permissionName)
         {
-            if (!Enum.TryParse<PermissionType>(permissionName, true, out var permType))
-                throw new ArgumentException("Invalid permission type", nameof(permissionName));
-
-            var perm = await _context.Permissions.SingleOrDefaultAsync(p => p.PermissionType == permType);
-            if (perm == null)
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                var val = (int)permType;
-                var cat = val switch
+                if (!Enum.TryParse<PermissionType>(permissionName, true, out var permType))
+                    throw new ArgumentException("Invalid permission type", nameof(permissionName));
+
+                var perm = await _context.Permissions.SingleOrDefaultAsync(p => p.PermissionType == permType);
+                if (perm == null)
                 {
-                    >= 100 and < 200 => PermissionCatagory.ORDER,
-                    >= 200 and < 300 => PermissionCatagory.ITEM,
-                    >= 300 and < 400 => PermissionCatagory.USER,
-                    >= 400 and < 500 => PermissionCatagory.SUPPLIER,
-                    >= 500 and < 600 => PermissionCatagory.CONTACT,
-                    >= 600 and < 650 => PermissionCatagory.PERMISSION,
-                    >= 650 and < 700 => PermissionCatagory.ROLE,
-                    _ => PermissionCatagory.DEFAULT
-                };
+                    var val = (int)permType;
+                    var cat = val switch
+                    {
+                        >= 100 and < 200 => PermissionCatagory.ORDER,
+                        >= 200 and < 300 => PermissionCatagory.ITEM,
+                        >= 300 and < 400 => PermissionCatagory.USER,
+                        >= 400 and < 500 => PermissionCatagory.SUPPLIER,
+                        >= 500 and < 600 => PermissionCatagory.CONTACT,
+                        >= 600 and < 650 => PermissionCatagory.PERMISSION,
+                        >= 650 and < 700 => PermissionCatagory.ROLE,
+                        >= 800 and < 850 => PermissionCatagory.REPORT,
+                        _ => PermissionCatagory.DEFAULT
+                    };
 
-                perm = new Permission { Id = val, PermissionType = permType, PermissionCatagory = cat };
-                _context.Permissions.Add(perm);
+                    perm = new Permission { Id = val, PermissionType = permType, PermissionCatagory = cat };
+                    _context.Permissions.Add(perm);
+                    await _context.SaveChangesAsync();
+                }
+
+                if (await _context.RolePermissions.AnyAsync(rp => rp.RoleId == roleId && rp.PermissionId == perm.Id))
+                {
+                    await transaction.CommitAsync();
+                    return false;
+                }
+
+                _context.RolePermissions.Add(new RolePermission { RoleId = roleId, PermissionId = perm.Id, Uuid = Guid.NewGuid().ToString() });
                 await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+
+                return true;
             }
-
-            if (await _context.RolePermissions.AnyAsync(rp => rp.RoleId == roleId && rp.PermissionId == perm.Id))
-                return false;
-
-            _context.RolePermissions.Add(new RolePermission { RoleId = roleId, PermissionId = perm.Id, Uuid = Guid.NewGuid().ToString() });
-            await _context.SaveChangesAsync();
-
-            return true;
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         /// <summary>

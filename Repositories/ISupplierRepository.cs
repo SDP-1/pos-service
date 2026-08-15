@@ -1,4 +1,4 @@
-﻿using pos_service.Models;
+using pos_service.Models;
 using pos_service.Models.DTO.Suppliers;
 
 namespace pos_service.Repositories
@@ -48,6 +48,16 @@ namespace pos_service.Repositories
         /// Use this for lightweight queries (e.g. dropdowns) to avoid eager-loading contacts and items.
         /// </summary>
         Task<IEnumerable<SupplierResDto>> GetAllBasicAsync();
+
+        /// <summary>
+        /// Adds a new supplier with contacts and item associations inside a repository transaction.
+        /// </summary>
+        Task<Supplier> SaveNewSupplierAsync(Supplier supplier, IEnumerable<ItemSupplier> itemSuppliers);
+
+        /// <summary>
+        /// Updates an existing supplier inside a repository transaction.
+        /// </summary>
+        Task SaveUpdatedSupplierAsync(Supplier supplier);
 
         /// <summary>
         /// Adds a new supplier to the data store.

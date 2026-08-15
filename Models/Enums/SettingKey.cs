@@ -53,5 +53,26 @@ namespace pos_service.Models.Enums
         /// When disabled, inventory can be freely updated during item edits.
         /// </summary>
         DisableInventoryUpdateInItemEdit                                 = 8,
+
+        // --- 15 Report Visibility Settings ---
+        /// <summary>
+        /// When enabled, t report is visible and accessible in the system. When disabled, this report is hidden from users.
+        /// Each enum value corresponds to a specific report type, allowing granular control over report visibility.
+        /// </summary>
+        ShowReportDailySales                                             = 9,
+        ShowReportSalesSummary                                           = 10,
+        ShowReportSalesDetails                                           = 11,
+        ShowReportProductSales                                           = 12,
+        ShowReportCategorySales                                          = 13,
+        ShowReportCurrentStock                                           = 14,
+        ShowReportLowStock                                               = 15,
+        ShowReportPurchase                                               = 16,
+        ShowReportExpense                                                = 17,
+        ShowReportProfitLoss                                             = 18,
+        ShowReportCashRegister                                           = 19,
+        ShowReportCustomerSales                                          = 20,
+        ShowReportSupplier                                               = 21,
+        ShowReportSalesReturn                                            = 22,
+        ShowReportCashierPerformance                                     = 23,
     }
 }

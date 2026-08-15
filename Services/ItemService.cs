@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+using AutoMapper;
+using pos_service.Data;
 using pos_service.Models;
 using pos_service.Models.DTO.Items;
 using pos_service.Models.DTO.Inventory;
@@ -109,11 +110,9 @@ namespace pos_service.Services
 
             await ApplySuppliersAsync(item, itemDto.SupplierIds);
 
-            var newItem = await _itemRepository.AddAsync(item);
-
             var inventory = new Inventory
             {
-                ItemUuid                = newItem.Uuid,
+                ItemUuid                = item.Uuid,
                 StockQuantity           = itemDto.StockQuantity,
                 AllowsDecimalQuantities = itemDto.AllowsDecimalQuantities,
                 UnitType                = itemDto.UnitType,
@@ -128,12 +127,11 @@ namespace pos_service.Services
                 Uuid                    = Guid.NewGuid().ToString()
             };
 
-            inventory         = await _inventoryRepository.AddAsync(inventory);
-            newItem.Inventory = inventory;
+            await _itemRepository.SaveNewItemWithInventoryAsync(item, inventory);
 
             InvalidateCache();
 
-            return _mapper.Map<ItemResDto>(newItem);
+            return _mapper.Map<ItemResDto>(item);
         }
 
         /// <summary>
@@ -162,11 +160,11 @@ namespace pos_service.Services
 
             await ApplySuppliersAsync(itemToUpdate, itemDto.SupplierIds);
 
-            var result = await _itemRepository.UpdateAsync(itemToUpdate);
-
             // Check if inventory update is disabled
             var disableInventoryUpdateSetting = await _settingService.GetByKeyAsync(SettingKey.DisableInventoryUpdateInItemEdit, currentUser);
             var shouldDisableInventoryUpdate = disableInventoryUpdateSetting?.SettingValue == true;
+
+            Inventory? inventoryToUpdate = null;
 
             if (!shouldDisableInventoryUpdate)
             {
@@ -177,10 +175,6 @@ namespace pos_service.Services
                 inventory.AllowsDecimalQuantities = itemDto.AllowsDecimalQuantities;
                 inventory.UnitType                = itemDto.UnitType;
 
-                // Only replace Units if the request explicitly supplied them. This prevents
-                // clearing packaging configuration when callers only update scalar fields
-                // such as StockQuantity. Use ApplyInventoryUnits to only change when
-                // units actually differ from existing ones.
                 if (itemDto.Units != null && itemDto.Units.Any())
                 {
                     ApplyInventoryUnits(inventory, itemDto.Units);
@@ -189,19 +183,20 @@ namespace pos_service.Services
                 // Mark as user-adjusted for audit trail tracking
                 inventory.IsUserAdjusted = true;
 
-                await _inventoryRepository.UpdateAsync(inventory);
-                result.Inventory = inventory;
+                inventoryToUpdate = inventory;
+                itemToUpdate.Inventory = inventory;
             }
             else
             {
-                // Load inventory but don't update it
                 var inventory = await _inventoryRepository.GetByItemUuidAsync(itemToUpdate.Uuid);
-                result.Inventory = inventory;
+                itemToUpdate.Inventory = inventory;
             }
+
+            await _itemRepository.SaveUpdatedItemWithInventoryAsync(itemToUpdate, inventoryToUpdate);
 
             InvalidateCache();
 
-            return _mapper.Map<ItemResDto>(result); ;
+            return _mapper.Map<ItemResDto>(itemToUpdate);
         }
 
         /// <summary>

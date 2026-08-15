@@ -7,6 +7,8 @@ using pos_service.Security;
 using pos_service.Services.Common.Cache;
 using pos_service.Helpers;
 
+using pos_service.Data;
+
 namespace pos_service.Services
 {
     public class UserService : IUserService
@@ -72,24 +74,22 @@ namespace pos_service.Services
             var user = _mapper.Map<User>(userDto);
             user.PasswordHash = _passwordHasher.HashPassword(userDto.Password);
 
-            // 2. Convert profile image to bytes if provided
+            // 3. Convert profile image to bytes if provided
             user.ProfileImage = await FileHelper.ConvertFileToBytesAsync(userDto.ProfileImage);
 
-            var newUser = await _userRepository.AddAsync(user);
-
-            // 4. Create associated contacts if provided
+            List<Contact>? contacts = null;
             if (userDto.Contacts != null && userDto.Contacts.Any())
             {
-                foreach (var contactDto in userDto.Contacts)
+                contacts = userDto.Contacts.Select(contactDto =>
                 {
-                    var contact       = _mapper.Map<Contact>(contactDto);
-                    contact.Uuid      = Guid.NewGuid().ToString();
-                    contact.UserId    = newUser.Id;
-                    contact.IsActive  = contactDto.IsActive;
-
-                    await _contactRepository.AddAsync(contact);
-                }
+                    var contact      = _mapper.Map<Contact>(contactDto);
+                    contact.Uuid     = Guid.NewGuid().ToString();
+                    contact.IsActive = contactDto.IsActive;
+                    return contact;
+                }).ToList();
             }
+
+            var newUser = await _userRepository.SaveNewUserWithContactsAsync(user, contacts);
 
             return _mapper.Map<UserResDto>(newUser);
         }
@@ -245,13 +245,10 @@ namespace pos_service.Services
             }
 
             // 2. Handle profile image according to DTO flags:
-            // - If RemoveImage == true => remove existing image (set null)
-            // - Else if a new file is provided => replace existing image with uploaded bytes
-            // - Else => keep existing image unchanged
             if (userDto.RemoveImage)
                 userToUpdate.ProfileImage = null;
             else if (userDto.ProfileImage != null)
-                    userToUpdate.ProfileImage = await FileHelper.ConvertFileToBytesAsync(userDto.ProfileImage);
+                userToUpdate.ProfileImage = await FileHelper.ConvertFileToBytesAsync(userDto.ProfileImage);
 
             // 3. Map incoming DTO properties into existing entity
             if (userDto.FirstName != null      ) userToUpdate.FirstName         = userDto.FirstName;

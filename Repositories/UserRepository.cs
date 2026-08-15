@@ -4,13 +4,38 @@ using pos_service.Models;
 
 namespace pos_service.Repositories
 {
-    public class UserRepository : IUserRepository
+    public class UserRepository : BaseRepository, IUserRepository
     {
-        private readonly AppDbContext _context;
-
-        public UserRepository(AppDbContext context)
+        public UserRepository(AppDbContext context) : base(context)
         {
-            _context = context;
+        }
+
+        public async Task<User> SaveNewUserWithContactsAsync(User user, IEnumerable<Contact>? contacts)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+
+                if (contacts != null && contacts.Any())
+                {
+                    foreach (var contact in contacts)
+                    {
+                        contact.UserId = user.Id;
+                    }
+                    _context.Contacts.AddRange(contacts);
+                    await _context.SaveChangesAsync();
+                }
+
+                await transaction.CommitAsync();
+                return user;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         /// <summary>

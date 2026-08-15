@@ -33,10 +33,10 @@ namespace pos_service.Controllers
             var roles = await _roleService.GetAllAsync();
 
             // hide SystemAdmin from users who do not have PERMISSION_SYSADMIN_VIEW
-            var canSeeSysAdmin = _currentUser.HasPermission(PermissionType.PERMISSION_SYSADMIN_VIEW);
+            var canSeeSysAdmin = _currentUser.HasPermission(PermissionType.PERMISSION_SUPER_ADMIN_VIEW);
             if (!canSeeSysAdmin)
             {
-                roles = roles.Where(r => r.Id != (int)UserRole.SYSTEM_ADMIN);
+                roles = roles.Where(r => r.Id != (int)UserRole.SUPER_ADMIN);
             }
 
             return Ok(roles);
@@ -53,10 +53,10 @@ namespace pos_service.Controllers
             var roles = await _roleService.GetActiveAsync();
 
             // hide SystemAdmin from users who do not have PERMISSION_SYSADMIN_VIEW
-            var canSeeSysAdmin = _currentUser.HasPermission(PermissionType.PERMISSION_SYSADMIN_VIEW);
+            var canSeeSysAdmin = _currentUser.HasPermission(PermissionType.PERMISSION_SUPER_ADMIN_VIEW);
             if (!canSeeSysAdmin)
             {
-                roles = roles.Where(r => r.Id != (int)UserRole.SYSTEM_ADMIN);
+                roles = roles.Where(r => r.Id != (int)UserRole.SUPER_ADMIN);
             }
 
             return Ok(roles);
@@ -72,7 +72,7 @@ namespace pos_service.Controllers
         public async Task<IActionResult> Get(int id)
         {
             // Only users with PERMISSION_SYSADMIN_VIEW (or the system admin themselves) may view the SystemAdmin role
-            if (id == (int)UserRole.SYSTEM_ADMIN && !(_currentUser.HasPermission(PermissionType.PERMISSION_SYSADMIN_VIEW)))
+            if (id == (int)UserRole.SUPER_ADMIN && !(_currentUser.HasPermission(PermissionType.PERMISSION_SUPER_ADMIN_VIEW)))
                 throw new PermissionDeniedException("Insufficient permission to view SystemAdmin role");
 
             var role = await _roleService.GetByIdAsync(id);
@@ -89,11 +89,11 @@ namespace pos_service.Controllers
         [Permission(PermissionType.ROLE_CREATE)]
         public async Task<IActionResult> Create(RoleReqDto role)
         {
-            // Prevent creating or tampering with SystemAdmin unless caller has PERMISSION_SYSADMIN_VIEW
-            if (string.Equals(role.Name, "SystemAdmin", StringComparison.OrdinalIgnoreCase) || role.Id == (int)UserRole.SYSTEM_ADMIN)
+            // Prevent creating or tampering with SuperAdmin unless caller has PERMISSION_SYSADMIN_VIEW
+            if (role.Id == (int)UserRole.SUPER_ADMIN || string.Equals(role.Name, "SuperAdmin", StringComparison.OrdinalIgnoreCase))
             {
-                if (!(_currentUser.HasPermission(PermissionType.PERMISSION_SYSADMIN_VIEW)))
-                    throw new PermissionDeniedException("Insufficient permission to create or modify SystemAdmin role");
+                if (!(_currentUser.HasPermission(PermissionType.PERMISSION_SUPER_ADMIN_VIEW)))
+                    throw new PermissionDeniedException("Insufficient permission to create or modify SuperAdmin role");
             }
 
             var created = await this._roleService.CreateAsync(role);
@@ -102,7 +102,7 @@ namespace pos_service.Controllers
         }
 
         /// <summary>
-        /// Updates an existing role. Modifying SystemAdmin requires elevated permission.
+        /// Updates an existing role. Modifying SuperAdmin requires elevated permission.
         /// </summary>
         /// <param name="id">Role identifier to update.</param>
         /// <param name="role">Role update DTO.</param>
@@ -111,11 +111,11 @@ namespace pos_service.Controllers
         [Permission(PermissionType.ROLE_UPDATE)]
         public async Task<IActionResult> Update(int id, RoleReqDto role)
         {
-            // Prevent updates to SystemAdmin unless caller has PERMISSION_SYSADMIN_VIEW or is the SystemAdmin
-            if (id == (int)UserRole.SYSTEM_ADMIN || string.Equals(role.Name, "SystemAdmin", StringComparison.OrdinalIgnoreCase))
+            // Prevent updates to SuperAdmin unless caller has PERMISSION_SYSADMIN_VIEW or is the SuperAdmin
+            if (id == (int)UserRole.SUPER_ADMIN || string.Equals(role.Name, "SuperAdmin", StringComparison.OrdinalIgnoreCase))
             {
-                if (!(_currentUser.HasPermission(PermissionType.PERMISSION_SYSADMIN_VIEW)))
-                    throw new PermissionDeniedException("Insufficient permission to update SystemAdmin role");
+                if (!(_currentUser.HasPermission(PermissionType.PERMISSION_SUPER_ADMIN_VIEW)))
+                    throw new PermissionDeniedException("Insufficient permission to update SuperAdmin role");
             }
 
             var updated = await this._roleService.UpdateAsync(id, role);
@@ -132,8 +132,8 @@ namespace pos_service.Controllers
         [Permission(PermissionType.ROLE_DELETE)]
         public async Task<IActionResult> Delete(int id)
         {
-            if (id == (int)UserRole.SYSTEM_ADMIN)
-                throw new InvalidOperationException("SystemAdmin role cannot be deleted.");
+            if (id == (int)UserRole.SUPER_ADMIN)
+                throw new InvalidOperationException("SuperAdmin role cannot be deleted.");
 
             var deleted = await this._roleService.DeleteAsync(id);
             if (!deleted) return NotFound();
@@ -151,8 +151,8 @@ namespace pos_service.Controllers
         [Permission(PermissionType.ROLE_UPDATE)]
         public async Task<IActionResult> SetActiveStatus(int id, [FromBody] bool isActive)
         {
-            if (id == (int)UserRole.SYSTEM_ADMIN && !(_currentUser.HasPermission(PermissionType.PERMISSION_SYSADMIN_VIEW)))
-                throw new PermissionDeniedException("Insufficient permission to modify SystemAdmin role");
+            if (id == (int)UserRole.SUPER_ADMIN && !(_currentUser.HasPermission(PermissionType.PERMISSION_SUPER_ADMIN_VIEW)))
+                throw new PermissionDeniedException("Insufficient permission to modify SuperAdmin role");
 
             var updated = await this._roleService.SetActiveStatusAsync(id, isActive);
             if (updated == null) return NotFound();

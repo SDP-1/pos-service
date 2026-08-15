@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace pos_service.Models.DTO.Roles
 {
@@ -12,6 +12,9 @@ namespace pos_service.Models.DTO.Roles
 
         [MaxLength(250)]
         public string? Description { get; set; }
+
+        public int? ParentRoleId   { get; set; }
+
         public bool IsActive       { get; set; } = true;
     }
 }

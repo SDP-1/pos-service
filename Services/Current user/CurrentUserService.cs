@@ -1,10 +1,11 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using pos_service.Data;
 using pos_service.Exceptions;
 using pos_service.Models;
 using pos_service.Models.Enums;
 using pos_service.Repositories;
+using pos_service.Repositories.Roles;
 using pos_service.Services.Common.Cache;
 using pos_service.Services.Permissions;
 
@@ -16,7 +17,7 @@ namespace pos_service.Services
         private readonly ILogger<CurrentUserService> _logger;
         private readonly IMapper                     _mapper;
         private readonly IPermissionService          _permissionService;
-        private readonly AppDbContext                _dbContext;
+        private readonly IRoleRepository             _roleRepository;
         private readonly ICacheService               _cacheService;
         private readonly IUserRepository             _userRepository;
 
@@ -27,13 +28,13 @@ namespace pos_service.Services
             IPermissionService permissionService,
             ICacheService cacheService,
             IUserRepository userRepository,
-            AppDbContext dbContext)
+            IRoleRepository roleRepository)
         {
             _httpContextAccessor = httpContextAccessor;
             _logger              = logger;
             _mapper              = mapper;
             _permissionService   = permissionService;
-            _dbContext           = dbContext;
+            _roleRepository      = roleRepository;
             _cacheService        = cacheService;
             _userRepository      = userRepository;
         }
@@ -123,7 +124,7 @@ namespace pos_service.Services
                 var roleId = currentUser.Role?.Id ?? 0;
                 if (roleId > 0)
                 {
-                    var role = _dbContext.Roles.AsNoTracking().FirstOrDefault(r => r.Id == roleId);
+                    var role = _roleRepository.GetByIdAsync(roleId).GetAwaiter().GetResult();
                     if (role != null) currentUser.Role = role;
                 }
             }

@@ -65,9 +65,9 @@ namespace pos_service.Controllers
         /// Creates or updates inventory record for the specified item UUID.
         /// </summary>
         [HttpPut("{itemUuid:guid}")]
-        public async Task<ActionResult<InventoryResDto>> Upsert(string itemUuid, [FromBody] InventoryReqDto dto)
+        public async Task<ActionResult<InventoryResDto>> Update(string itemUuid, [FromBody] InventoryReqDto dto)
         {
-            var inventory = await _inventoryService.UpsertAsync(itemUuid, dto, _currentUser);
+            var inventory = await _inventoryService.UpdateAsync(itemUuid, dto, _currentUser);
             return Ok(inventory);
         }
 

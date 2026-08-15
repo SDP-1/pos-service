@@ -22,6 +22,6 @@ namespace pos_service.Models.DTO.Inventory
         /// </summary>
         public List<PackagingLevelDto> PackagingLevels { get; set; } = new();
 
-        // Expiries are managed during inventory adjustments, not during full inventory upserts.
+        // Expiries are managed during inventory adjustments, not during full inventory updates.
     }
 }

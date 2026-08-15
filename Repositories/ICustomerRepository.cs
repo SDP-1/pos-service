@@ -12,6 +12,13 @@ namespace pos_service.Repositories
         Task<IEnumerable<CustomerResDto>> GetAllAsync();
 
         /// <summary>
+        /// Retrieves a customer entity by database id.
+        /// </summary>
+        /// <param name="id">Database id of the customer.</param>
+        /// <returns>Customer entity when found; otherwise null.</returns>
+        Task<Customer?> GetEntityByIdAsync(int id);
+
+        /// <summary>
         /// Retrieves a customer by database id as a response DTO.
         /// </summary>
         /// <param name="id">Database id of the customer.</param>
@@ -53,6 +60,13 @@ namespace pos_service.Repositories
         /// <param name="dto">Request DTO containing updated customer values.</param>
         /// <returns>The updated Customer when successful; otherwise null if not found.</returns>
         Task<Customer?> UpdateAsync(int id, CustomerReqDto dto);
+
+        /// <summary>
+        /// Updates an existing tracked customer entity in the database.
+        /// </summary>
+        /// <param name="customer">Tracked Customer entity to update.</param>
+        /// <returns>The updated Customer entity.</returns>
+        Task<Customer> UpdateAsync(Customer customer);
 
         /// <summary>
         /// Deletes a customer by id.

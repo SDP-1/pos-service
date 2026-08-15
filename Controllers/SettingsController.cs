@@ -83,5 +83,22 @@ namespace pos_service.Controllers
 
             return Ok(_mapper.Map<SettingResDto>(updated));
         }
+
+        /// <summary>
+        /// Toggle endpoint for updating setting value via PUT {key}/toggle/{value:bool}.
+        /// </summary>
+        [HttpPut("{key}/toggle/{value:bool}")]
+        [Permission(PermissionType.SETTING_MANAGE)]
+        [Permission(PermissionType.REPORT_VISIBILITY_MANAGE)]
+        public async Task<IActionResult> UpdateToggle(string key, bool value)
+        {
+            if (!Enum.TryParse<SettingKey>(key, ignoreCase: true, out var settingKey))
+                return BadRequest(new { message = $"Unknown setting key: {key}" });
+
+            var updated = await _settingService.SetSettingValueAsync(settingKey, value, _currentUser);
+            if (updated == null) return NotFound($"Setting not found for key: {key}");
+
+            return Ok(new { message = "Setting updated successfully.", key, value });
+        }
     }
 }

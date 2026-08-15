@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using pos_service.Data;
 using pos_service.Models;
 using pos_service.Models.DTO.Contacts;
@@ -7,10 +7,53 @@ using pos_service.Models.DTO.Suppliers;
 
 namespace pos_service.Repositories
 {
-    public class SupplierRepository : ISupplierRepository
+    public class SupplierRepository : BaseRepository, ISupplierRepository
     {
-        private readonly AppDbContext _context;
-        public SupplierRepository(AppDbContext context) { _context = context; }
+        public SupplierRepository(AppDbContext context) : base(context) { }
+
+        public async Task<Supplier> SaveNewSupplierAsync(Supplier supplier, IEnumerable<ItemSupplier> itemSuppliers)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                _context.Suppliers.Add(supplier);
+                await _context.SaveChangesAsync();
+
+                if (itemSuppliers != null && itemSuppliers.Any())
+                {
+                    foreach (var isu in itemSuppliers)
+                    {
+                        isu.SuppliersId = supplier.Id;
+                    }
+                    _context.ItemSuppliers.AddRange(itemSuppliers);
+                    await _context.SaveChangesAsync();
+                }
+
+                await transaction.CommitAsync();
+                return supplier;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        public async Task SaveUpdatedSupplierAsync(Supplier supplier)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                _context.Suppliers.Update(supplier);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
 
         public async Task<SupplierResDto?> GetByIdAsync(int id)
         {

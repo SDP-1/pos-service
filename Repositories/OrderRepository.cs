@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using pos_service.Data;
 using pos_service.Models;
 using pos_service.Models.DTO.Orders;
@@ -7,20 +7,202 @@ using pos_service.Repositories.Base;
 
 namespace pos_service.Repositories
 {
-    public class OrderRepository : IOrderRepository
+    public class OrderRepository : BaseRepository, IOrderRepository
     {
-        private readonly AppDbContext _context;
         private readonly ILogger<OrderRepository> _logger;
         private readonly IStoredProcedureExecutor _spExecutor;
 
         public OrderRepository(
             AppDbContext context, 
             ILogger<OrderRepository> logger,
-            IStoredProcedureExecutor spExecutor)
+            IStoredProcedureExecutor spExecutor) : base(context)
         {
             _logger = logger;
-            _context = context;
             _spExecutor = spExecutor;
+        }
+
+        /// <summary>
+        /// Adds a loan settlement log entry to the data store.
+        /// </summary>
+        public async Task AddLoanSettlementLogAsync(LoanSettlementLog log)
+        {
+            _context.LoanSettlementLogs.Add(log);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task SaveRecordSettlementAsync(Order order, LoanSettlementLog log)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                _context.LoanSettlementLogs.Add(log);
+                _context.Orders.Update(order);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        public async Task<Order> SaveCreateOrderAsync(Order order, LoanSettlementLog? initialLog, List<Inventory> inventoriesToUpdate, Customer? customerToUpdate)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                _context.Orders.Add(order);
+                await _context.SaveChangesAsync();
+
+                if (initialLog != null)
+                {
+                    initialLog.OrderId = order.Id;
+                    _context.LoanSettlementLogs.Add(initialLog);
+                }
+
+                if (inventoriesToUpdate != null && inventoriesToUpdate.Any())
+                {
+                    foreach (var inv in inventoriesToUpdate)
+                    {
+                        var tracked = _context.Inventories.Local.FirstOrDefault(i => i.Id == inv.Id);
+                        if (tracked != null)
+                        {
+                            _context.Entry(tracked).CurrentValues.SetValues(inv);
+                        }
+                        else
+                        {
+                            _context.Inventories.Update(inv);
+                        }
+                    }
+                }
+
+                if (customerToUpdate != null)
+                {
+                    _context.Customers.Update(customerToUpdate);
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return order;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        public async Task<Order> SaveUpdateOrderAsync(Order existingOrder, List<Inventory> inventoriesToUpdate, Customer? customerToUpdate)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                _context.Orders.Update(existingOrder);
+
+                if (inventoriesToUpdate != null && inventoriesToUpdate.Any())
+                {
+                    foreach (var inv in inventoriesToUpdate)
+                    {
+                        var tracked = _context.Inventories.Local.FirstOrDefault(i => i.Id == inv.Id);
+                        if (tracked != null)
+                        {
+                            _context.Entry(tracked).CurrentValues.SetValues(inv);
+                        }
+                        else
+                        {
+                            _context.Inventories.Update(inv);
+                        }
+                    }
+                }
+
+                if (customerToUpdate != null)
+                {
+                    _context.Customers.Update(customerToUpdate);
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return existingOrder;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        public async Task SaveDeleteOrderAsync(Order order, List<Inventory> inventoriesToUpdate, bool isPermanent)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                if (inventoriesToUpdate != null && inventoriesToUpdate.Any())
+                {
+                    foreach (var inv in inventoriesToUpdate)
+                    {
+                        var tracked = _context.Inventories.Local.FirstOrDefault(i => i.Id == inv.Id);
+                        if (tracked != null)
+                        {
+                            _context.Entry(tracked).CurrentValues.SetValues(inv);
+                        }
+                        else
+                        {
+                            _context.Inventories.Update(inv);
+                        }
+                    }
+                }
+
+                if (isPermanent)
+                {
+                    _context.Orders.Remove(order);
+                }
+                else
+                {
+                    _context.Orders.Update(order);
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        public async Task<Order> SaveUpdateOrderStatusAsync(Order order, List<Inventory> inventoriesToUpdate)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                if (inventoriesToUpdate != null && inventoriesToUpdate.Any())
+                {
+                    foreach (var inv in inventoriesToUpdate)
+                    {
+                        var tracked = _context.Inventories.Local.FirstOrDefault(i => i.Id == inv.Id);
+                        if (tracked != null)
+                        {
+                            _context.Entry(tracked).CurrentValues.SetValues(inv);
+                        }
+                        else
+                        {
+                            _context.Inventories.Update(inv);
+                        }
+                    }
+                }
+
+                _context.Orders.Update(order);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return order;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         /// <summary>

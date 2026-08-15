@@ -12,16 +12,14 @@ namespace pos_service.Services
     {
         private readonly ISettingRepository _settingRepository;
         private readonly IMapper _mapper;
-        private readonly AppDbContext _context;
         private readonly ICacheService _cache;
 
         private const CacheExpiry DefaultExpiry = CacheExpiry.OneDay;
 
-        public SettingService(ISettingRepository settingRepository, IMapper mapper, AppDbContext context, ICacheService cache)
+        public SettingService(ISettingRepository settingRepository, IMapper mapper, ICacheService cache)
         {
             _settingRepository = settingRepository;
             _mapper            = mapper;
-            _context           = context;
             _cache             = cache;
         }
 

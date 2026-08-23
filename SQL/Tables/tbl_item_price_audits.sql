@@ -9,10 +9,10 @@ CREATE TABLE IF NOT EXISTS `tbl_item_price_audits` (
   `WholesalePrice` decimal(18,2) NOT NULL,
   `RetailDiscountRatio` decimal(5,2) NOT NULL DEFAULT '0.00',
   `WholesaleDiscountRatio` decimal(5,2) NOT NULL DEFAULT '0.00',
-  `ChangedAt` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `ChangedBy` varchar(255) DEFAULT NULL,
-  `ChangeType` varchar(10) NOT NULL,
+  `ActionDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `ActionBy` varchar(255) DEFAULT NULL,
+  `Action` varchar(10) NOT NULL,
   PRIMARY KEY (`Id`),
-  KEY `IX_tbl_item_price_audits_ItemUuid_ChangedAt` (`ItemUuid`,`ChangedAt`),
+  KEY `IX_tbl_item_price_audits_ItemUuid_ActionDate` (`ItemUuid`,`ActionDate`),
   KEY `IX_tbl_item_price_audits_ItemsId_ItemsSubId` (`ItemsId`,`ItemsSubId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

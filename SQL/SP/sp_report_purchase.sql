@@ -12,8 +12,8 @@ BEGIN
         COALESCE(
             (
                 SELECT a.BuyingPrice FROM tbl_item_price_audits a
-                WHERE a.ItemUuid = i.Uuid AND a.ChangedAt <= audit.UpdatedAt
-                ORDER BY a.ChangedAt DESC, a.Id DESC LIMIT 1
+                WHERE a.ItemUuid = i.Uuid AND a.ActionDate <= audit.UpdatedAt
+                ORDER BY a.ActionDate DESC, a.Id DESC LIMIT 1
             ),
             ip.BuyingPrice,
             0.00
@@ -22,8 +22,8 @@ BEGIN
             COALESCE(
                 (
                     SELECT a.BuyingPrice FROM tbl_item_price_audits a
-                    WHERE a.ItemUuid = i.Uuid AND a.ChangedAt <= audit.UpdatedAt
-                    ORDER BY a.ChangedAt DESC, a.Id DESC LIMIT 1
+                    WHERE a.ItemUuid = i.Uuid AND a.ActionDate <= audit.UpdatedAt
+                    ORDER BY a.ActionDate DESC, a.Id DESC LIMIT 1
                 ),
                 ip.BuyingPrice,
                 0.00

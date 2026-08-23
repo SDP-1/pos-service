@@ -38,7 +38,7 @@ AFTER INSERT ON `tbl_item_prices`
 FOR EACH ROW
 BEGIN
   INSERT INTO `tbl_item_price_audits` (
-    `ItemsId`, `ItemsSubId`, `ItemUuid`, `BuyingPrice`, `MarkedPrice`, `RetailPrice`, `WholesalePrice`, `RetailDiscountRatio`, `WholesaleDiscountRatio`, `ChangedAt`, `ChangedBy`, `ChangeType`
+    `ItemsId`, `ItemsSubId`, `ItemUuid`, `BuyingPrice`, `MarkedPrice`, `RetailPrice`, `WholesalePrice`, `RetailDiscountRatio`, `WholesaleDiscountRatio`, `ActionDate`, `ActionBy`, `Action`
   ) VALUES (
     NEW.`ItemsId`, NEW.`ItemsSubId`, NEW.`ItemUuid`, NEW.`BuyingPrice`, NEW.`MarkedPrice`, NEW.`RetailPrice`, NEW.`WholesalePrice`, NEW.`RetailDiscountRatio`, NEW.`WholesaleDiscountRatio`, NOW(), NEW.`CreatedBy`, 'INSERT'
   );
@@ -59,9 +59,9 @@ BEGIN
       OLD.`RetailDiscountRatio` <> NEW.`RetailDiscountRatio` OR
       OLD.`WholesaleDiscountRatio` <> NEW.`WholesaleDiscountRatio`) THEN
     INSERT INTO `tbl_item_price_audits` (
-      `ItemsId`, `ItemsSubId`, `ItemUuid`, `BuyingPrice`, `MarkedPrice`, `RetailPrice`, `WholesalePrice`, `RetailDiscountRatio`, `WholesaleDiscountRatio`, `ChangedAt`, `ChangedBy`, `ChangeType`
+      `ItemsId`, `ItemsSubId`, `ItemUuid`, `BuyingPrice`, `MarkedPrice`, `RetailPrice`, `WholesalePrice`, `RetailDiscountRatio`, `WholesaleDiscountRatio`, `ActionDate`, `ActionBy`, `Action`
     ) VALUES (
-      NEW.`ItemsId`, NEW.`ItemsSubId`, NEW.`ItemUuid`, NEW.`BuyingPrice`, NEW.`MarkedPrice`, NEW.`RetailPrice`, NEW.`WholesalePrice`, NEW.`RetailDiscountRatio`, NEW.`WholesaleDiscountRatio`, NOW(), NEW.`UpdatedBy`, 'UPDATE'
+      OLD.`ItemsId`, OLD.`ItemsSubId`, OLD.`ItemUuid`, OLD.`BuyingPrice`, OLD.`MarkedPrice`, OLD.`RetailPrice`, OLD.`WholesalePrice`, OLD.`RetailDiscountRatio`, OLD.`WholesaleDiscountRatio`, NOW(), NEW.`UpdatedBy`, 'UPDATE'
     );
   END IF;
 END$$

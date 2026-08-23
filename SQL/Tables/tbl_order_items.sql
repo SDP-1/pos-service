@@ -2,6 +2,7 @@ CREATE TABLE `tbl_order_items` (
   `Id` int NOT NULL AUTO_INCREMENT,
   `OrderId` int NOT NULL,
   `OriginalItemUuid` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `BatchUuid` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `PrintName` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `BarCode` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `PriceAtSale` decimal(18,2) NOT NULL,
@@ -18,6 +19,10 @@ CREATE TABLE `tbl_order_items` (
   UNIQUE KEY `AK_tbl_order_items_Uuid` (`Uuid`),
   KEY `IX_tbl_order_items_OrderId` (`OrderId`),
   KEY `IX_tbl_order_items_OriginalItemUuid` (`OriginalItemUuid`),
+  KEY `IX_tbl_order_items_BatchUuid` (`BatchUuid`),
+  KEY `IX_tbl_order_items_ReturnedOrderItemUuid` (`ReturnedOrderItemUuid`),
   CONSTRAINT `FK_tbl_order_items_tbl_items_OriginalItemUuid` FOREIGN KEY (`OriginalItemUuid`) REFERENCES `tbl_items` (`Uuid`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `FK_tbl_order_items_tbl_inventory_batches_BatchUuid` FOREIGN KEY (`BatchUuid`) REFERENCES `tbl_inventory_batches` (`Uuid`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `FK_tbl_order_items_tbl_order_items_ReturnedOrderItemUuid` FOREIGN KEY (`ReturnedOrderItemUuid`) REFERENCES `tbl_order_items` (`Uuid`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `FK_tbl_order_items_tbl_orders_OrderId` FOREIGN KEY (`OrderId`) REFERENCES `tbl_orders` (`Id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

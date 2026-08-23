@@ -69,7 +69,7 @@ namespace pos_service.Services
 
             var supplier = _mapper.Map<Supplier>(dto);
 
-            // Handle Contacts if provided
+            // Assign unique UUIDs to any nested contacts
             if (dto.Contacts != null && dto.Contacts.Any())
             {
                 foreach (var c in dto.Contacts)
@@ -81,6 +81,7 @@ namespace pos_service.Services
                 }
             }
 
+            // Resolve item composite keys (Id, SubId) from provided UUIDs for supplier item associations
             var itemSuppliers = new List<ItemSupplier>();
             if (dto.ItemUuids != null && dto.ItemUuids.Any())
             {
@@ -128,7 +129,7 @@ namespace pos_service.Services
             // Merge contacts: update existing, add new, delete removed
             await _contactService.MergeContactsAsync(ContactOwnerType.Supplier, id, dto.Contacts);
 
-            // Update item associations if provided
+            // Re-sync supplier item catalog associations if provided
             if (dto.ItemUuids != null)
                 await UpdateItemAssociationsAsync(id, dto.ItemUuids);
 
@@ -141,8 +142,10 @@ namespace pos_service.Services
         /// </summary>
         private async Task UpdateItemAssociationsAsync(int supplierId, IEnumerable<string> itemUuids)
         {
+            // Clear previous supplier item catalog links
             await _supplierRepo.DeleteItemAssociationsBySupplierId(supplierId);
 
+            // Recreate associations from the latest item UUID list
             if (itemUuids.Any())
             {
                 var items = await _itemRepo.GetByUuidsAsync(itemUuids);

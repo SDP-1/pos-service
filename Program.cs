@@ -11,10 +11,12 @@ using pos_service.Services.Backup;
 using pos_service.Middlewares;
 using pos_service.Repositories;
 using pos_service.Repositories.Permissions;
+using pos_service.Repositories.Purchases;
 using pos_service.Security;
 using pos_service.Services;
 using pos_service.Services.Common.Cache;
 using pos_service.Services.Permissions;
+using pos_service.Services.Purchases;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder();
@@ -55,6 +57,8 @@ builder.Services.AddSingleton<ICacheService, CacheService>();
 // Add services to the container.
 builder.Services.AddScoped<IItemService, ItemService>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
+builder.Services.AddScoped<IInventoryBatchService, InventoryBatchService>();
+builder.Services.AddScoped<IPurchaseService, PurchaseService>();
 builder.Services.AddScoped<IContactService, ContactService>();
 builder.Services.AddScoped<ISupplierService, SupplierService>();
 builder.Services.AddScoped<IUserService, UserService>();
@@ -70,6 +74,8 @@ builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 builder.Services.AddScoped<IItemRepository, ItemRepository>();
 builder.Services.AddScoped<IInventoryRepository, InventoryRepository>();
+builder.Services.AddScoped<IInventoryBatchRepository, InventoryBatchRepository>();
+builder.Services.AddScoped<IPurchaseRepository, PurchaseRepository>();
 builder.Services.AddScoped<IContactRepository, ContactRepository>();
 builder.Services.AddScoped<ISupplierRepository, SupplierRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -102,7 +108,11 @@ builder.Services.AddAutoMapper(cfg => { }, typeof(Program));
 // Register backup services
 builder.Services.AddScoped<IBackupService, BackupService>();
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 builder.Services.AddHealthChecks();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();

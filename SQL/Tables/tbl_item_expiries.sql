@@ -3,9 +3,18 @@ CREATE TABLE `tbl_item_expiries` (
   `ItemsId` int NOT NULL,
   `ItemsSubId` int NOT NULL,
   `ItemUuid` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `ExpiryDate` datetime(6) NOT NULL,
-  `NotifyBeforeDays` int NOT NULL,
+  `ExpDate` date NOT NULL,
+  `NotifyBeforeDays` int NOT NULL DEFAULT '0',
+  `Uuid` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `CreatedAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `UpdatedAt` datetime(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  `CreatedBy` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `UpdatedBy` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `IsActive` tinyint(1) NOT NULL DEFAULT '1',
   PRIMARY KEY (`Id`),
+  UNIQUE KEY `AK_tbl_item_expiries_Uuid` (`Uuid`),
   KEY `IX_tbl_item_expiries_ItemsId_ItemsSubId` (`ItemsId`,`ItemsSubId`),
-  CONSTRAINT `FK_tbl_item_expiries_tbl_items_ItemsId_ItemsSubId` FOREIGN KEY (`ItemsId`, `ItemsSubId`) REFERENCES `tbl_items` (`Id`, `SubId`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `IX_tbl_item_expiries_ItemUuid` (`ItemUuid`),
+  CONSTRAINT `FK_tbl_item_expiries_tbl_items_ItemsId_ItemsSubId` FOREIGN KEY (`ItemsId`, `ItemsSubId`) REFERENCES `tbl_items` (`Id`, `SubId`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `FK_tbl_item_expiries_tbl_items_ItemUuid` FOREIGN KEY (`ItemUuid`) REFERENCES `tbl_items` (`Uuid`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

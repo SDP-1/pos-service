@@ -1,4 +1,4 @@
-﻿using pos_service.Models.Enums;
+using pos_service.Models.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace pos_service.Models.DTO.OrderItems
@@ -13,6 +13,12 @@ namespace pos_service.Models.DTO.OrderItems
 
         [Required]
         public string ItemUuid               { get; set; }
+
+        /// <summary>
+        /// Optional Batch UUID specified by cashier (manual override).
+        /// If omitted/empty, the backend FEFO allocation selects the earliest-expiry active batch.
+        /// </summary>
+        public string? BatchUuid             { get; set; }
 
         [Required]
         [Range(0.001, double.MaxValue, ErrorMessage = "Quantity must be greater than 0")]

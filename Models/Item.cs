@@ -1,4 +1,4 @@
-﻿using pos_service.Models.Audit;
+using pos_service.Models.Audit;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -40,12 +40,12 @@ namespace pos_service.Models
         [MaxLength(100)]
         public string? BarCode                 { get; set; }
 
-        // --- Pricing Information ---
-
         /// <summary>
-        /// Pricing details for this item.
+        /// Optional description or notes for the item.
         /// </summary>
-        public virtual ItemPrice? Price        { get; set; }
+        [MaxLength(500)]
+        public string? Description             { get; set; }
+
 
         /// <summary>
         /// Expiry dates for this item.
@@ -59,9 +59,20 @@ namespace pos_service.Models
         public virtual ICollection<ItemSupplier> ItemSuppliers { get; set; } = new List<ItemSupplier>();
 
         /// <summary>
-        /// Inventory information linked via ItemUuid.
+        /// Whether this item allows fractional / decimal quantities.
         /// </summary>
-        public virtual Inventory? Inventory     { get; set; }
+        public bool AllowsDecimalQuantities    { get; set; } = false;
+
+        /// <summary>
+        /// Packaging units (Pack, Box, Carton) linked directly to this item.
+        /// </summary>
+        public virtual ICollection<ItemUnit> Units { get; set; } = new List<ItemUnit>();
+
+
+        /// <summary>
+        /// Inventory batches associated with this item.
+        /// </summary>
+        public virtual ICollection<InventoryBatch> Batches { get; set; } = new List<InventoryBatch>();
 
         // --- Implementation of IAuditable ---
         public string Uuid                    { get; set; }

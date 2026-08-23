@@ -12,10 +12,11 @@ namespace pos_service.Services
     public class ItemService : IItemService
     {
         private readonly IItemRepository      _itemRepository;
-        private readonly IInventoryRepository _inventoryRepository;
-        private readonly ISettingService      _settingService;
-        private readonly IMapper              _mapper;
-        private readonly ICacheService        _cache;
+        private readonly IInventoryRepository      _inventoryRepository;
+        private readonly IInventoryBatchRepository _batchRepository;
+        private readonly ISettingService           _settingService;
+        private readonly IMapper                   _mapper;
+        private readonly ICacheService             _cache;
 
         /// <summary>
         /// Initializes a new instance of the ItemService.
@@ -23,12 +24,14 @@ namespace pos_service.Services
         public ItemService(
             IItemRepository itemRepository,
             IInventoryRepository inventoryRepository,
+            IInventoryBatchRepository batchRepository,
             ISettingService settingService,
             IMapper mapper,
             ICacheService cache)
         {
             _itemRepository      = itemRepository;
             _inventoryRepository = inventoryRepository;
+            _batchRepository     = batchRepository;
             _settingService      = settingService;
             _mapper              = mapper;
             _cache               = cache;
@@ -65,34 +68,35 @@ namespace pos_service.Services
         /// <returns>The newly created item details if successful, otherwise null.</returns>
         public async Task<ItemResDto?> CreateItemAsync(ItemReqDto itemDto, CurrentUser currentUser)
         {
-            // Determine Id/SubId values. If not supplied, assign next available values.
+            // Determine Id/SubId composite key values. If not supplied, assign next available sequence values.
             int idToUse;
             int subIdToUse;
 
             if (itemDto.Id.HasValue && itemDto.SubId.HasValue)
             {
+                // Explicit composite key provided
                 idToUse    = itemDto.Id.Value;
                 subIdToUse = itemDto.SubId.Value;
 
                 if (await _itemRepository.ItemExistsAsync(idToUse, subIdToUse))
                 {
-                    return null; // already exists
+                    return null; // Item already exists with this composite key
                 }
             }
             else if (itemDto.Id.HasValue && !itemDto.SubId.HasValue)
             {
+                // Parent family ID specified; allocate next sub-variant index
                 idToUse = itemDto.Id.Value;
-                // compute next sub id for this main id
                 subIdToUse = await _itemRepository.GetNextSubIdAsync(idToUse);
 
                 if (await _itemRepository.ItemExistsAsync(idToUse, subIdToUse))
                 {
-                    return null; // unlikely but safe
+                    return null;
                 }
             }
             else
             {
-                // No Id provided. Get next main id and start subId at 0
+                // New parent item family; allocate next main ID and start subId at 0
                 idToUse    = await _itemRepository.GetNextMainIdAsync();
                 subIdToUse = 0;
             }
@@ -105,29 +109,86 @@ namespace pos_service.Services
                 item.Uuid = Guid.NewGuid().ToString();
             }
 
-            ApplyPrice(item, itemDto.Price);
+            // Sync expiration dates and supplier linkages
             ApplyExpiries(item, itemDto);
-
             await ApplySuppliersAsync(item, itemDto.SupplierIds);
 
-            var inventory = new Inventory
-            {
-                ItemUuid                = item.Uuid,
-                StockQuantity           = itemDto.StockQuantity,
-                AllowsDecimalQuantities = itemDto.AllowsDecimalQuantities,
-                UnitType                = itemDto.UnitType,
-                Units                   = (itemDto.Units ?? Enumerable.Empty<InventoryUnitReqDto>()).Select(u => new InventoryUnit
-                {
-                    UnitType            = u.UnitType,
-                    ParentUnitType      = u.ParentUnitType,
-                    QuantityPerParent   = u.QuantityPerParent,
-                    QuantityInBaseUnits = u.QuantityInBaseUnits,
-                    Uuid                = Guid.NewGuid().ToString()
-                }).ToList(),
-                Uuid                    = Guid.NewGuid().ToString()
-            };
+            item.AllowsDecimalQuantities = itemDto.AllowsDecimalQuantities;
 
-            await _itemRepository.SaveNewItemWithInventoryAsync(item, inventory);
+            // Configure packaging units hierarchy and ensure base unit definition exists
+            var unitsToCreate = (itemDto.Units ?? Enumerable.Empty<InventoryUnitReqDto>()).ToList();
+            var baseUnitType = itemDto.UnitType != UnitType.None
+                ? itemDto.UnitType
+                : (unitsToCreate.FirstOrDefault(u => u.IsBaseUnit || u.QuantityInBaseUnits == 1)?.UnitType ?? UnitType.Each);
+
+            // Insert base unit definition if missing from the collection
+            if (!unitsToCreate.Any(u => u.IsBaseUnit || (u.UnitType == baseUnitType && u.QuantityInBaseUnits == 1)))
+            {
+                unitsToCreate.Insert(0, new InventoryUnitReqDto
+                {
+                    UnitType = baseUnitType,
+                    ParentUnitType = baseUnitType,
+                    QuantityPerParent = 1,
+                    QuantityInBaseUnits = 1,
+                    IsBaseUnit = true
+                });
+            }
+
+            item.Units = unitsToCreate.Select(u => new ItemUnit
+            {
+                ItemUuid            = item.Uuid,
+                UnitType            = u.UnitType,
+                ParentUnitType      = u.ParentUnitType,
+                QuantityPerParent   = u.QuantityPerParent,
+                QuantityInBaseUnits = u.QuantityInBaseUnits,
+                IsBaseUnit          = u.IsBaseUnit || (u.UnitType == baseUnitType && u.QuantityInBaseUnits == 1),
+                Uuid                = Guid.NewGuid().ToString()
+            }).ToList();
+
+            await _itemRepository.SaveNewItemWithInventoryAsync(item);
+
+            // Seed initial opening batch and stock movement ledger entry for this new item
+            try
+            {
+                var initialBatch = new InventoryBatch
+                {
+                    Uuid                   = Guid.NewGuid().ToString(),
+                    ItemUuid               = item.Uuid,
+                    BatchNumber            = $"BATCH-INIT-{item.Id:D5}",
+                    ReceivedQuantity       = itemDto.StockQuantity,
+                    RemainingQuantity      = itemDto.StockQuantity,
+                    CostPrice              = itemDto.Price?.BuyingPrice ?? 0,
+                    MarkedPrice            = itemDto.Price?.MarkedPrice ?? 0,
+                    RetailPrice            = itemDto.Price?.RetailPrice ?? 0,
+                    WholesalePrice         = itemDto.Price?.WholesalePrice ?? 0,
+                    RetailDiscountRatio    = itemDto.Price?.RetailDiscountRatio ?? 0,
+                    WholesaleDiscountRatio = itemDto.Price?.WholesaleDiscountRatio ?? 0,
+                    Reference              = "Initial Opening Lot",
+                    SupplierUuid           = item.ItemSuppliers.FirstOrDefault()?.Supplier?.Uuid,
+                    Status                 = BatchStatus.Active,
+                    CreatedBy              = item.CreatedBy,
+                    IsActive               = true
+                };
+
+                var initialMovement = new StockMovement
+                {
+                    Uuid          = Guid.NewGuid().ToString(),
+                    ItemUuid      = item.Uuid,
+                    MovementType  = StockMovementType.OpeningStock,
+                    Quantity      = itemDto.StockQuantity,
+                    Direction     = StockMovementDirection.IN,
+                    CostPrice     = itemDto.Price?.BuyingPrice ?? 0,
+                    Reason        = "Initial opening stock lot created with item",
+                    CreatedAt     = DateTime.UtcNow,
+                    CreatedBy     = item.CreatedBy
+                };
+
+                await _batchRepository.AddBatchAsync(initialBatch, initialMovement);
+            }
+            catch (Exception)
+            {
+                // Fallback: batch initialization failure will not crash item creation
+            }
 
             InvalidateCache();
 
@@ -155,44 +216,90 @@ namespace pos_service.Services
             // Map flat properties from DTO to entity
             _mapper.Map(itemDto, itemToUpdate);
 
-            ApplyPrice(itemToUpdate, itemDto.Price);
             ApplyExpiries(itemToUpdate, itemDto);
 
             await ApplySuppliersAsync(itemToUpdate, itemDto.SupplierIds);
 
-            // Check if inventory update is disabled
-            var disableInventoryUpdateSetting = await _settingService.GetByKeyAsync(SettingKey.DisableInventoryUpdateInItemEdit, currentUser);
-            var shouldDisableInventoryUpdate = disableInventoryUpdateSetting?.SettingValue == true;
+            itemToUpdate.AllowsDecimalQuantities = itemDto.AllowsDecimalQuantities;
 
-            Inventory? inventoryToUpdate = null;
+            var unitsToUpdate = (itemDto.Units ?? Enumerable.Empty<InventoryUnitReqDto>()).ToList();
+            var updateBaseUnitType = itemDto.UnitType != UnitType.None
+                ? itemDto.UnitType
+                : (unitsToUpdate.FirstOrDefault(u => u.IsBaseUnit || u.QuantityInBaseUnits == 1)?.UnitType ?? UnitType.Each);
 
-            if (!shouldDisableInventoryUpdate)
+            if (!unitsToUpdate.Any(u => u.IsBaseUnit || (u.UnitType == updateBaseUnitType && u.QuantityInBaseUnits == 1)))
             {
-                var inventory = await _inventoryRepository.GetByItemUuidAsync(itemToUpdate.Uuid)
-                    ?? throw new InvalidOperationException($"Inventory not found for item {itemToUpdate.Uuid}");
-
-                inventory.StockQuantity           = itemDto.StockQuantity;
-                inventory.AllowsDecimalQuantities = itemDto.AllowsDecimalQuantities;
-                inventory.UnitType                = itemDto.UnitType;
-
-                if (itemDto.Units != null && itemDto.Units.Any())
+                unitsToUpdate.Insert(0, new InventoryUnitReqDto
                 {
-                    ApplyInventoryUnits(inventory, itemDto.Units);
-                }
-
-                // Mark as user-adjusted for audit trail tracking
-                inventory.IsUserAdjusted = true;
-
-                inventoryToUpdate = inventory;
-                itemToUpdate.Inventory = inventory;
+                    UnitType = updateBaseUnitType,
+                    ParentUnitType = updateBaseUnitType,
+                    QuantityPerParent = 1,
+                    QuantityInBaseUnits = 1,
+                    IsBaseUnit = true
+                });
             }
-            else
+
+            itemToUpdate.Units = unitsToUpdate.Select(u => new ItemUnit
             {
-                var inventory = await _inventoryRepository.GetByItemUuidAsync(itemToUpdate.Uuid);
-                itemToUpdate.Inventory = inventory;
-            }
+                ItemUuid            = itemToUpdate.Uuid,
+                UnitType            = u.UnitType,
+                ParentUnitType      = u.ParentUnitType,
+                QuantityPerParent   = u.QuantityPerParent,
+                QuantityInBaseUnits = u.QuantityInBaseUnits,
+                IsBaseUnit          = u.IsBaseUnit || (u.UnitType == updateBaseUnitType && u.QuantityInBaseUnits == 1),
+                Uuid                = Guid.NewGuid().ToString()
+            }).ToList();
 
-            await _itemRepository.SaveUpdatedItemWithInventoryAsync(itemToUpdate, inventoryToUpdate);
+            await _itemRepository.SaveUpdatedItemWithInventoryAsync(itemToUpdate);
+
+            // Synchronize active batch prices or create default batch if none exists
+            try
+            {
+                if (itemDto.Price != null)
+                {
+                    var activeBatches = await _batchRepository.GetActiveBatchesByItemUuidAsync(itemToUpdate.Uuid, includeExpired: true);
+                    var primaryBatch = activeBatches.FirstOrDefault();
+                    if (primaryBatch != null)
+                    {
+                        primaryBatch.CostPrice              = itemDto.Price.BuyingPrice;
+                        primaryBatch.MarkedPrice            = itemDto.Price.MarkedPrice;
+                        primaryBatch.RetailPrice            = itemDto.Price.RetailPrice;
+                        primaryBatch.WholesalePrice         = itemDto.Price.WholesalePrice;
+                        primaryBatch.RetailDiscountRatio    = itemDto.Price.RetailDiscountRatio;
+                        primaryBatch.WholesaleDiscountRatio = itemDto.Price.WholesaleDiscountRatio;
+                        primaryBatch.UpdatedBy              = currentUser?.Uuid;
+                        primaryBatch.UpdatedAt              = DateTime.UtcNow;
+                        await _batchRepository.UpdateBatchAsync(primaryBatch);
+                    }
+                    else
+                    {
+                        var newDefaultBatch = new InventoryBatch
+                        {
+                            Uuid                   = Guid.NewGuid().ToString(),
+                            ItemUuid               = itemToUpdate.Uuid,
+                            BatchNumber            = $"BATCH-INIT-{itemToUpdate.Id:D5}",
+                            ReceivedQuantity       = 0,
+                            RemainingQuantity      = 0,
+                            CostPrice              = itemDto.Price.BuyingPrice,
+                            MarkedPrice            = itemDto.Price.MarkedPrice,
+                            RetailPrice            = itemDto.Price.RetailPrice,
+                            WholesalePrice         = itemDto.Price.WholesalePrice,
+                            RetailDiscountRatio    = itemDto.Price.RetailDiscountRatio,
+                            WholesaleDiscountRatio = itemDto.Price.WholesaleDiscountRatio,
+                            Reference              = "Default Batch",
+                            SupplierUuid           = itemToUpdate.ItemSuppliers.FirstOrDefault()?.Supplier?.Uuid,
+                            Status                 = BatchStatus.Active,
+                            CreatedBy              = currentUser?.Uuid ?? itemToUpdate.CreatedBy,
+                            IsActive               = true
+                        };
+                        await _batchRepository.AddBatchAsync(newDefaultBatch);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // Fallback safe
+            }
 
             InvalidateCache();
 
@@ -262,8 +369,7 @@ namespace pos_service.Services
         /// <returns>The item details if found, otherwise null.</returns>
         public async Task<ItemResDto?> GetItemByUuidAsync(string uuid, CurrentUser currentUser)
         {
-            var item = await _itemRepository.GetByUuidAsync(uuid);
-            return _mapper.Map<ItemResDto?>(item);
+            return await _itemRepository.GetResDtoByUuidAsync(uuid);
         }
 
         /// <summary>
@@ -282,30 +388,34 @@ namespace pos_service.Services
                 return null; // Item not found
             }
 
-            var inventory = await _inventoryRepository.GetByItemUuidAsync(itemDto.Uuid)
-                ?? throw new InvalidOperationException($"Inventory not found for item {itemDto.Uuid}");
-
-            inventory.StockQuantity += quantity;
-
-            await _inventoryRepository.UpdateAsync(inventory);
-
-            // Update DTO fields from inventory
-            itemDto.Inventory ??= new InventoryResDto();
-            itemDto.Inventory.ItemUuid                = inventory.ItemUuid;
-            itemDto.Inventory.StockQuantity           = inventory.StockQuantity;
-            itemDto.Inventory.AllowsDecimalQuantities = inventory.AllowsDecimalQuantities;
-            itemDto.Inventory.UnitType                = inventory.UnitType;
-            itemDto.Inventory.Units                   = inventory.Units.Select(u => new InventoryUnitResDto
+            var activeBatches = await _batchRepository.GetActiveBatchesByItemUuidAsync(itemDto.Uuid, includeExpired: true);
+            var primaryBatch = activeBatches.FirstOrDefault();
+            if (primaryBatch != null)
             {
-                UnitType            = u.UnitType,
-                ParentUnitType      = u.ParentUnitType,
-                QuantityPerParent   = u.QuantityPerParent,
-                QuantityInBaseUnits = u.QuantityInBaseUnits
-            }).ToList();
+                primaryBatch.ReceivedQuantity   += quantity;
+                primaryBatch.RemainingQuantity  += quantity;
+                primaryBatch.UpdatedBy           = currentUser?.Uuid;
+                primaryBatch.UpdatedAt           = DateTime.UtcNow;
+                await _batchRepository.UpdateBatchAsync(primaryBatch);
+
+                var movement = new StockMovement
+                {
+                    Uuid          = Guid.NewGuid().ToString(),
+                    BatchUuid     = primaryBatch.Uuid,
+                    ItemUuid      = itemDto.Uuid,
+                    MovementType  = StockMovementType.ManualAdjustIn,
+                    Quantity      = quantity,
+                    Direction     = StockMovementDirection.IN,
+                    CostPrice     = primaryBatch.CostPrice,
+                    Reason        = "Quick Add Stock",
+                    CreatedAt     = DateTime.UtcNow,
+                    CreatedBy     = currentUser?.Uuid
+                };
+                await _batchRepository.AddStockMovementAsync(movement);
+            }
 
             InvalidateCache();
-
-            return itemDto;
+            return await _itemRepository.GetByIdAsync(id, subId);
         }
 
         /// <summary>
@@ -333,12 +443,9 @@ namespace pos_service.Services
         public async Task<decimal?> GetQuantityByUuidAsync(string uuid, CurrentUser currentUser)
         {
             var item = await _itemRepository.GetByUuidAsync(uuid);
-            // Returns the quantity, or 0 if the item is found but stock is null.
-            // Returns null if the item is not found at all.
-            return item == null
-                ? null
-                : item.Inventory?.StockQuantity
-                    ?? throw new InvalidOperationException($"Inventory not found for item {item.Uuid}");
+            if (item == null) return null;
+            var batches = await _batchRepository.GetActiveBatchesByItemUuidAsync(item.Uuid, false);
+            return batches.Sum(b => b.RemainingQuantity);
         }
 
         /// <summary>
@@ -351,8 +458,9 @@ namespace pos_service.Services
         public async Task<decimal?> GetQuantityByIdAsync(int id, int subId, CurrentUser currentUser)
         {
             var item = await _itemRepository.GetByIdAsync(id, subId);
-
-            return item == null? null : item.Inventory?.StockQuantity ?? 0m;
+            if (item == null) return null;
+            var batches = await _batchRepository.GetActiveBatchesByItemUuidAsync(item.Uuid, false);
+            return batches.Sum(b => b.RemainingQuantity);
         }
 
         /// <summary>
@@ -379,50 +487,6 @@ namespace pos_service.Services
         // compares them to the existing ones and only applies (replaces) when there
         // is a difference. This avoids touching the collection when nothing changed.
 
-        /// <summary>
-        /// Ensures price details are applied to the item and keys are synchronized.
-        /// </summary>
-        private void ApplyPrice(Item item, ItemPriceReqDto? priceDto)
-        {
-            // Normalize incoming DTO
-            var dto = priceDto ?? new ItemPriceReqDto();
-
-            // If there's no existing price, create and map values
-            if (item.Price == null)
-            {
-                item.Price = new ItemPrice
-                {
-                    ItemsId    = item.Id,
-                    ItemsSubId = item.SubId,
-                    ItemUuid   = item.Uuid,
-                    Uuid       = Guid.NewGuid().ToString()
-                };
-
-                _mapper.Map(dto, item.Price);
-                item.Price.ItemsId    = item.Id;
-                item.Price.ItemsSubId = item.SubId;
-                item.Price.ItemUuid   = item.Uuid;
-                return;
-            }
-
-            // Determine if any meaningful price field changed. If not, avoid touching the entity.
-            bool changed =
-                item.Price.BuyingPrice           != dto.BuyingPrice ||
-                item.Price.MarkedPrice           != dto.MarkedPrice ||
-                item.Price.RetailPrice           != dto.RetailPrice ||
-                item.Price.WholesalePrice        != dto.WholesalePrice ||
-                item.Price.RetailDiscountRatio   != dto.RetailDiscountRatio ||
-                item.Price.WholesaleDiscountRatio!= dto.WholesaleDiscountRatio;
-
-            if (!changed)
-                return;
-
-            // Apply new values but preserve identity fields (Uuid) and keys.
-            _mapper.Map(dto, item.Price);
-            item.Price.ItemsId    = item.Id;
-            item.Price.ItemsSubId = item.SubId;
-            item.Price.ItemUuid   = item.Uuid;
-        }
 
         /// <summary>
         /// Replaces expiry dates for the item based on the request DTO.
@@ -486,45 +550,16 @@ namespace pos_service.Services
         }
 
         /// <summary>
-        /// Replaces inventory units only when there is a difference between the
-        /// existing units and the desired units from the request DTO. This avoids
-        /// touching the collection when nothing changed, following the pattern of
-        /// ApplyExpiries.
+        /// Permanently deletes specified item expiry records by their unique identifiers.
         /// </summary>
-        private void ApplyInventoryUnits(Inventory inventory, ICollection<InventoryUnitReqDto>? unitsDto)
+        /// <param name="expiryUuids">The collection of expiry date UUIDs to delete.</param>
+        /// <param name="currentUser">The current user requesting the operation.</param>
+        /// <returns>The count of deleted expiry records.</returns>
+        public async Task<int> DeleteExpiriesAsync(IEnumerable<string> expiryUuids, CurrentUser currentUser)
         {
-            if (unitsDto == null || !unitsDto.Any())
-                return;
-
-            inventory.Units ??= new List<InventoryUnit>();
-
-            // Build key sets for comparison
-            var newUnitKeys = unitsDto
-                .Select(u => new { u.UnitType, u.ParentUnitType, u.QuantityPerParent,u.QuantityInBaseUnits})
-                .ToHashSet();
-
-            var existingUnitKeys = inventory.Units
-                .Select(u => new { u.UnitType, u.ParentUnitType, u.QuantityPerParent,u.QuantityInBaseUnits })
-                .ToHashSet();
-
-            if (existingUnitKeys.SetEquals(newUnitKeys))
-                return;
-
-            // Replace units since there is a change
-            inventory.Units.Clear();
-
-            foreach (var unitDto in unitsDto.OrderBy(u => u.UnitType))
-            {
-                inventory.Units.Add(new InventoryUnit
-                {
-                    UnitType            = unitDto.UnitType,
-                    ParentUnitType      = unitDto.ParentUnitType,
-                    QuantityPerParent   = unitDto.QuantityPerParent,
-                    QuantityInBaseUnits = unitDto.QuantityInBaseUnits,
-                    InventoryId         = inventory.Id,
-                    Uuid                = Guid.NewGuid().ToString()
-                });
-            }
+            var count = await _itemRepository.DeleteExpiriesAsync(expiryUuids);
+            InvalidateCache();
+            return count;
         }
 
         private void InvalidateCache()

@@ -24,7 +24,6 @@ namespace pos_service.Data
         public DbSet<Customer> Customers                                   { get; set; }
         public DbSet<Supplier> Suppliers                                   { get; set; }
         public DbSet<Item> Items                                           { get; set; }
-        public DbSet<ItemPrice> ItemPrices                                 { get; set; }
         public DbSet<ItemExpiry> ItemExpiries                              { get; set; }
         public DbSet<ItemSupplier> ItemSuppliers                           { get; set; }
         public DbSet<Order> Orders                                         { get; set; }
@@ -37,10 +36,11 @@ namespace pos_service.Data
         public DbSet<BackupHistory> BackupHistories                        { get; set; }
         public DbSet<Shop> Shops                                           { get; set; }
         public DbSet<LoanSettlementLog> LoanSettlementLogs                 { get; set; }
-        public DbSet<Inventory> Inventories                                { get; set; }
-        public DbSet<InventoryUnit> InventoryUnits                         { get; set; }
-        public DbSet<InventoryAdjustAudit> InventoryAdjustAudits           { get; set; }
-        public DbSet<ItemPriceAudit> ItemPriceAudits                       { get; set; }
+        public DbSet<InventoryBatch> InventoryBatches                      { get; set; }
+        public DbSet<InventoryBatchLog> InventoryBatchLogs                  { get; set; }
+        public DbSet<StockMovement> StockMovements                         { get; set; }
+        public DbSet<Purchase> Purchases                                   { get; set; }
+        public DbSet<ItemUnit> ItemUnits                                   { get; set; }
 
 
         /// <summary>
@@ -57,8 +57,6 @@ namespace pos_service.Data
             modelBuilder.Entity<Customer>().ToTable("tbl_customers");
             modelBuilder.Entity<Supplier>().ToTable("tbl_suppliers");
             modelBuilder.Entity<Item>().ToTable("tbl_items");
-            modelBuilder.Entity<ItemPrice>().ToTable("tbl_item_prices");
-            modelBuilder.Entity<ItemPriceAudit>().ToTable("tbl_item_price_audits");
             modelBuilder.Entity<ItemExpiry>().ToTable("tbl_item_expiries");
             modelBuilder.Entity<ItemSupplier>().ToTable("tbl_item_suppliers");
             modelBuilder.Entity<Order>().ToTable("tbl_orders");
@@ -71,9 +69,11 @@ namespace pos_service.Data
             modelBuilder.Entity<BackupHistory>().ToTable("tbl_backup_histories");
             modelBuilder.Entity<Shop>().ToTable("tbl_shops");
             modelBuilder.Entity<LoanSettlementLog>().ToTable("tbl_loan_settlement_logs");
-            modelBuilder.Entity<Inventory>().ToTable("tbl_inventories");
-            modelBuilder.Entity<InventoryUnit>().ToTable("tbl_inventory_units");
-            modelBuilder.Entity<InventoryAdjustAudit>().ToTable("tbl_inventory_adjust_audits");
+            modelBuilder.Entity<ItemUnit>().ToTable("tbl_item_units");
+            modelBuilder.Entity<InventoryBatch>().ToTable("tbl_inventory_batches");
+            modelBuilder.Entity<InventoryBatchLog>().ToTable("tbl_inventory_batch_logs");
+            modelBuilder.Entity<StockMovement>().ToTable("tbl_stock_movements");
+            modelBuilder.Entity<Purchase>().ToTable("tbl_purchases");
 
 
             // Add database-side defaults for IAuditable timestamps so the database will populate
@@ -265,11 +265,8 @@ namespace pos_service.Data
             {
                 // Define the composite primary key using both Id and SubId.
                 entity.HasKey(i => new { i.Id, i.SubId });
-                entity.HasOne(i => i.Inventory)
-                      .WithOne(inv => inv.Item)
-                      .HasForeignKey<Inventory>(inv => inv.ItemUuid)
-                      .HasPrincipalKey<Item>(i => i.Uuid)
-                      .OnDelete(DeleteBehavior.Cascade);
+                entity.Property(i => i.Description).HasMaxLength(500);
+
                 // Configure one-to-many to the explicit join entity ItemSupplier.
                 entity.HasMany(i => i.ItemSuppliers)
                       .WithOne(isu => isu.Item)
@@ -277,16 +274,16 @@ namespace pos_service.Data
                       .IsRequired()
                       .OnDelete(DeleteBehavior.Cascade);
 
-                entity.HasOne(i => i.Price)
-                      .WithOne(p => p.Item)
-                      .HasForeignKey<ItemPrice>(p => new { p.ItemsId, p.ItemsSubId })
-                      .IsRequired()
-                      .OnDelete(DeleteBehavior.Cascade);
-
                 entity.HasMany(i => i.ExpDates)
                       .WithOne(e => e.Item)
                       .HasForeignKey(e => new { e.ItemsId, e.ItemsSubId })
                       .IsRequired()
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(i => i.Units)
+                      .WithOne(u => u.Item)
+                      .HasForeignKey(u => u.ItemUuid)
+                      .HasPrincipalKey(i => i.Uuid)
                       .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasAlternateKey(i => i.Uuid);   // creates unique constraint
@@ -310,13 +307,6 @@ namespace pos_service.Data
                 entity.Property(ls => ls.AmountPaid).HasColumnType("decimal(18,2)");
                 entity.Property(ls => ls.RemainingBalance).HasColumnType("decimal(18,2)");
                 entity.HasAlternateKey(ls => ls.Uuid);
-            });
-
-            modelBuilder.Entity<ItemPrice>(entity =>
-            {
-                entity.HasKey(p => new { p.ItemsId, p.ItemsSubId });
-                entity.Property(p => p.ItemUuid).HasMaxLength(255).IsRequired();
-                entity.HasAlternateKey(p => p.ItemUuid);
             });
 
             modelBuilder.Entity<ItemExpiry>(entity =>
@@ -373,53 +363,18 @@ namespace pos_service.Data
                 entity.HasAlternateKey(e => e.Uuid);
             });
 
-            modelBuilder.Entity<Inventory>(entity =>
-            {
-                entity.HasAlternateKey(i => i.Uuid);
-                entity.HasIndex(i => i.ItemUuid).IsUnique();
-
-                entity.Property(i => i.ItemUuid).HasMaxLength(255).IsRequired();
-                entity.Property(i => i.StockQuantity).HasColumnType("decimal(18,3)");
-                entity.Property(i => i.UnitType).HasConversion<string>().HasMaxLength(50);
-
-                entity.HasOne(i => i.Item)
-                      .WithOne(it => it.Inventory)
-                      .HasForeignKey<Inventory>(i => i.ItemUuid)
-                      .HasPrincipalKey<Item>(it => it.Uuid)
-                      .OnDelete(DeleteBehavior.Cascade);
-
-                entity.HasMany(i => i.Units)
-                      .WithOne(u => u.Inventory)
-                      .HasForeignKey(u => u.InventoryId)
-                      .OnDelete(DeleteBehavior.Cascade);
-            });
-
-            modelBuilder.Entity<InventoryUnit>(entity =>
+            modelBuilder.Entity<ItemUnit>(entity =>
             {
                 entity.HasAlternateKey(u => u.Uuid);
                 entity.Property(u => u.UnitType).HasConversion<string>().HasMaxLength(50);
                 entity.Property(u => u.ParentUnitType).HasConversion<string>().HasMaxLength(50);
                 entity.Property(u => u.QuantityPerParent).HasColumnType("decimal(18,3)");
                 entity.Property(u => u.QuantityInBaseUnits).HasColumnType("decimal(18,3)");
-            });
 
-            modelBuilder.Entity<InventoryAdjustAudit>(entity =>
-            {
-                entity.HasAlternateKey(a => a.Uuid);
-                entity.Property(a => a.InventoryUuid).HasMaxLength(36).IsRequired();
-                entity.Property(a => a.ItemUuid).HasMaxLength(36).IsRequired();
-                entity.Property(a => a.PreviousQuantity).HasColumnType("decimal(18,3)");
-                entity.Property(a => a.NewQuantity).HasColumnType("decimal(18,3)");
-                entity.Property(a => a.AdjustmentQuantity).HasColumnType("decimal(18,3)");
-                entity.Property(a => a.UnitType).HasConversion<string>().HasMaxLength(50);
-                entity.Property(a => a.Comment).HasMaxLength(255);
-                entity.Property(a => a.Reason).HasMaxLength(255);
-
-                entity.HasOne(a => a.Inventory)
-                      .WithMany()
-                      .HasForeignKey(a => a.InventoryUuid)
+                entity.HasOne(u => u.Item)
+                      .WithMany(i => i.Units)
+                      .HasForeignKey(u => u.ItemUuid)
                       .HasPrincipalKey(i => i.Uuid)
-                      .IsRequired()
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
@@ -473,10 +428,137 @@ namespace pos_service.Data
                       .HasPrincipalKey(i => i.Uuid)
                       .OnDelete(DeleteBehavior.SetNull); // do not delete set as null
 
+                entity.HasOne(oi => oi.Batch)
+                      .WithMany()
+                      .HasForeignKey(oi => oi.BatchUuid)
+                      .HasPrincipalKey(b => b.Uuid)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.SetNull);
+
                 entity.HasAlternateKey(i => i.Uuid);   // creates unique constraint
             });
 
+            // --- InventoryBatch Configuration ---
+            modelBuilder.Entity<InventoryBatch>(entity =>
+            {
+                entity.HasAlternateKey(b => b.Uuid);
+                entity.Property(b => b.BatchNumber).HasMaxLength(50).IsRequired();
+                entity.Property(b => b.Status).HasConversion<string>().HasMaxLength(20);
+                entity.Property(b => b.ReceivedQuantity).HasColumnType("decimal(18,3)");
+                entity.Property(b => b.RemainingQuantity).HasColumnType("decimal(18,3)");
+                entity.Property(b => b.CostPrice).HasColumnType("decimal(18,2)");
+                entity.Property(b => b.MarkedPrice).HasColumnType("decimal(18,2)");
+                entity.Property(b => b.RetailPrice).HasColumnType("decimal(18,2)");
+                entity.Property(b => b.WholesalePrice).HasColumnType("decimal(18,2)");
+                entity.Property(b => b.RetailDiscountRatio).HasColumnType("decimal(5,2)");
+                entity.Property(b => b.WholesaleDiscountRatio).HasColumnType("decimal(5,2)");
+                entity.Property(b => b.Reference).HasMaxLength(200);
 
+                entity.HasOne(b => b.Item)
+                      .WithMany(i => i.Batches)
+                      .HasForeignKey(b => b.ItemUuid)
+                      .HasPrincipalKey(i => i.Uuid)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(b => b.Purchase)
+                      .WithMany(p => p.Batches)
+                      .HasForeignKey(b => b.PurchaseUuid)
+                      .HasPrincipalKey(p => p.Uuid)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasOne(b => b.Supplier)
+                      .WithMany()
+                      .HasForeignKey(b => b.SupplierUuid)
+                      .HasPrincipalKey(s => s.Uuid)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // --- StockMovement Configuration ---
+            modelBuilder.Entity<StockMovement>(entity =>
+            {
+                entity.HasAlternateKey(sm => sm.Uuid);
+                entity.Property(sm => sm.MovementType).HasConversion<string>().HasMaxLength(30);
+                entity.Property(sm => sm.Direction).HasConversion<string>().HasMaxLength(3);
+                entity.Property(sm => sm.Quantity).HasColumnType("decimal(18,3)");
+                entity.Property(sm => sm.CostPrice).HasColumnType("decimal(18,2)");
+
+                entity.HasOne(sm => sm.Batch)
+                      .WithMany(b => b.StockMovements)
+                      .HasForeignKey(sm => sm.BatchUuid)
+                      .HasPrincipalKey(b => b.Uuid)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(sm => sm.Item)
+                      .WithMany()
+                      .HasForeignKey(sm => sm.ItemUuid)
+                      .HasPrincipalKey(i => i.Uuid)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(sm => sm.CreatedByUser)
+                      .WithMany()
+                      .HasForeignKey(sm => sm.CreatedBy)
+                      .HasPrincipalKey(u => u.Uuid)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // --- InventoryBatchLog Configuration ---
+            modelBuilder.Entity<InventoryBatchLog>(entity =>
+            {
+                entity.HasKey(l => l.Id);
+                entity.Property(l => l.Id).HasColumnName("LogId");
+                entity.Property(l => l.BatchId).HasColumnName("BatchId");
+                entity.Property(l => l.BatchNumber).HasMaxLength(50).IsRequired();
+                entity.Property(l => l.Status).HasConversion<string>().HasMaxLength(20);
+                entity.Property(l => l.Action).HasMaxLength(10).IsRequired();
+                entity.Property(l => l.ReceivedQuantity).HasColumnType("decimal(18,3)");
+                entity.Property(l => l.RemainingQuantity).HasColumnType("decimal(18,3)");
+                entity.Property(l => l.CostPrice).HasColumnType("decimal(18,2)");
+                entity.Property(l => l.MarkedPrice).HasColumnType("decimal(18,2)");
+                entity.Property(l => l.RetailPrice).HasColumnType("decimal(18,2)");
+                entity.Property(l => l.WholesalePrice).HasColumnType("decimal(18,2)");
+                entity.Property(l => l.RetailDiscountRatio).HasColumnType("decimal(5,2)");
+                entity.Property(l => l.WholesaleDiscountRatio).HasColumnType("decimal(5,2)");
+                entity.Property(l => l.Reference).HasMaxLength(200);
+
+                entity.HasOne(l => l.Item)
+                      .WithMany()
+                      .HasForeignKey(l => l.ItemUuid)
+                      .HasPrincipalKey(i => i.Uuid)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(l => l.Batch)
+                      .WithMany()
+                      .HasForeignKey(l => l.BatchUuid)
+                      .HasPrincipalKey(b => b.Uuid)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(l => l.ActionByUser)
+                      .WithMany()
+                      .HasForeignKey(l => l.ActionBy)
+                      .HasPrincipalKey(u => u.Uuid)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // --- Purchase Configuration ---
+            modelBuilder.Entity<Purchase>(entity =>
+            {
+                entity.HasAlternateKey(p => p.Uuid);
+                entity.HasIndex(p => p.PurchaseNumber).IsUnique();
+                entity.Property(p => p.PurchaseNumber).HasMaxLength(50).IsRequired();
+                entity.Property(p => p.Status).HasConversion<string>().HasMaxLength(20);
+                entity.Property(p => p.TotalCost).HasColumnType("decimal(18,2)");
+
+                entity.HasOne(p => p.Supplier)
+                      .WithMany()
+                      .HasForeignKey(p => p.SupplierUuid)
+                      .HasPrincipalKey(s => s.Uuid)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.SetNull);
+            });
 
             // --- ReturnedItemsSummary DB view mapping (keyless) ---
             modelBuilder.Entity<ReturnedItemsSummary>(eb =>

@@ -17,6 +17,11 @@ namespace pos_service.Models.DTO.Inventory
         [Range(0.0001, double.MaxValue)]
         public decimal QuantityInBaseUnits { get; set; }
 
+        /// <summary>
+        /// Indicates whether this unit represents the item's primary base unit of measure.
+        /// </summary>
+        public bool IsBaseUnit             { get; set; } = false;
+
         public string Uuid                 { get; set; }
         public DateTime CreatedAt          { get; set; }
         public DateTime? UpdatedAt         { get; set; }

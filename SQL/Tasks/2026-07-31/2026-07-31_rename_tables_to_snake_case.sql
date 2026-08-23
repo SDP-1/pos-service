@@ -158,4 +158,5 @@ BEGIN
 END$$
 DELIMITER ;
 
--- Apply on dev on 2026-07-31
+-- Applied on dev on 2026-07-31
+-- Applied on to prod 2026-08-22

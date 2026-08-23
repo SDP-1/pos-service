@@ -11,11 +11,47 @@ namespace pos_service.Repositories
         /// </summary>
         Task AddLoanSettlementLogAsync(LoanSettlementLog log);
 
+        /// <summary>
+        /// Saves order payment settlement updates and creates an associated loan settlement log within a transaction.
+        /// </summary>
+        /// <param name="order">The order entity with updated settlement status.</param>
+        /// <param name="log">The loan settlement audit log to record.</param>
         Task SaveRecordSettlementAsync(Order order, LoanSettlementLog log);
-        Task<Order> SaveCreateOrderAsync(Order order, LoanSettlementLog? initialLog, List<Inventory> inventoriesToUpdate, Customer? customerToUpdate);
-        Task<Order> SaveUpdateOrderAsync(Order existingOrder, List<Inventory> inventoriesToUpdate, Customer? customerToUpdate);
-        Task SaveDeleteOrderAsync(Order order, List<Inventory> inventoriesToUpdate, bool isPermanent);
-        Task<Order> SaveUpdateOrderStatusAsync(Order order, List<Inventory> inventoriesToUpdate);
+
+        /// <summary>
+        /// Atomically saves a new order, initial loan log, customer loyalty/debt updates, batch quantity deductions, and stock movement logs in a single transaction.
+        /// </summary>
+        /// <param name="order">The order entity to persist.</param>
+        /// <param name="initialLog">Optional initial loan settlement log.</param>
+        /// <param name="customerToUpdate">Optional customer entity with updated debt/loyalty balance.</param>
+        /// <param name="batchesToUpdate">Optional list of inventory batches to deduct remaining stock from.</param>
+        /// <param name="stockMovementsToAdd">Optional list of stock movement ledger records to insert.</param>
+        /// <returns>The created Order entity.</returns>
+        Task<Order> SaveCreateOrderAsync(Order order, LoanSettlementLog? initialLog, Customer? customerToUpdate, List<InventoryBatch>? batchesToUpdate = null, List<StockMovement>? stockMovementsToAdd = null);
+
+        /// <summary>
+        /// Atomically saves order modifications, customer updates, batch quantity adjustments, and stock movement logs in a transaction.
+        /// </summary>
+        /// <param name="existingOrder">The existing order with modified values.</param>
+        /// <param name="customerToUpdate">Optional customer entity with updated balance.</param>
+        /// <param name="batchesToUpdate">Optional list of modified inventory batches.</param>
+        /// <param name="stockMovementsToAdd">Optional list of stock movements to insert.</param>
+        /// <returns>The updated Order entity.</returns>
+        Task<Order> SaveUpdateOrderAsync(Order existingOrder, Customer? customerToUpdate, List<InventoryBatch>? batchesToUpdate = null, List<StockMovement>? stockMovementsToAdd = null);
+
+        /// <summary>
+        /// Deletes or voids an order (soft-delete or permanent delete).
+        /// </summary>
+        /// <param name="order">The order entity to delete.</param>
+        /// <param name="isPermanent">If true, permanently removes the record; otherwise soft-deletes.</param>
+        Task SaveDeleteOrderAsync(Order order, bool isPermanent);
+
+        /// <summary>
+        /// Updates the main status and sub-status of an order and commits changes.
+        /// </summary>
+        /// <param name="order">The order entity with updated status.</param>
+        /// <returns>The updated Order entity.</returns>
+        Task<Order> SaveUpdateOrderStatusAsync(Order order);
 
         /// <summary>
         /// Creates a new order in the data store.
@@ -103,6 +139,13 @@ namespace pos_service.Repositories
         /// <param name="orderNumber">Order number to query returned items for.</param>
         /// <returns>List of ReturnedItemsSummary rows associated with the order.</returns>
         Task<List<pos_service.Models.ReturnedItemsSummary>> GetReturnedItemsSummaryByOrderNumberAsync(string orderNumber);
+
+        /// <summary>
+        /// Retrieves an individual order item by its UUID.
+        /// </summary>
+        /// <param name="uuid">The UUID of the order item.</param>
+        /// <returns>OrderItem if found; otherwise null.</returns>
+        Task<OrderItem?> GetOrderItemByUuidAsync(string uuid);
 
         /// <summary>
         /// Retrieves all orders that are inactive (IsActive == false).

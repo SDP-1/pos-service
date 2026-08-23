@@ -1,0 +1,27 @@
+CREATE TABLE IF NOT EXISTS `tbl_stock_movements` (
+  `Id`              bigint NOT NULL AUTO_INCREMENT,
+  `Uuid`            varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `BatchUuid`       varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `ItemUuid`        varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `MovementType`    varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `Quantity`        decimal(18,3) NOT NULL,
+  `Direction`       varchar(3) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `CostPrice`       decimal(18,2) NOT NULL DEFAULT '0.00',
+  `ReferenceType`   varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `ReferenceUuid`   varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL COMMENT 'UUID of referenced Order, Purchase, Adjustment or Return',
+  `Reason`          varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `Comment`         varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `CreatedAt`       datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `CreatedBy`       varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+
+  PRIMARY KEY (`Id`),
+  UNIQUE KEY `AK_tbl_stock_movements_Uuid` (`Uuid`),
+  KEY `IX_tbl_stock_movements_BatchUuid` (`BatchUuid`),
+  KEY `IX_tbl_stock_movements_ItemUuid` (`ItemUuid`),
+  KEY `IX_tbl_stock_movements_MovementType` (`MovementType`),
+  KEY `IX_tbl_stock_movements_CreatedAt` (`CreatedAt`),
+  KEY `FK_tbl_stock_movements_tbl_users_CreatedBy` (`CreatedBy`),
+  CONSTRAINT `FK_tbl_stock_movements_tbl_inventory_batches_BatchUuid` FOREIGN KEY (`BatchUuid`) REFERENCES `tbl_inventory_batches` (`Uuid`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `FK_tbl_stock_movements_tbl_items_ItemUuid` FOREIGN KEY (`ItemUuid`) REFERENCES `tbl_items` (`Uuid`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `FK_tbl_stock_movements_tbl_users_CreatedBy` FOREIGN KEY (`CreatedBy`) REFERENCES `tbl_users` (`Uuid`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

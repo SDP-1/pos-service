@@ -143,7 +143,7 @@ namespace pos_service.Services
                 Uuid          = Guid.NewGuid().ToString(),
                 BatchUuid     = primaryBatch.Uuid,
                 ItemUuid      = itemUuid,
-                MovementType  = dto.Increase ? StockMovementType.ManualAdjustIn : StockMovementType.ManualAdjustOut,
+                MovementType  = dto.Increase ? StockMovementType.MANUAL_ADJUST_IN : StockMovementType.MANUAL_ADJUST_OUT,
                 Quantity      = baseQuantity,
                 Direction     = dto.Increase ? StockMovementDirection.IN : StockMovementDirection.OUT,
                 CostPrice     = primaryBatch.CostPrice,

@@ -40,11 +40,19 @@ namespace pos_service.Repositories
         Task<Order> SaveUpdateOrderAsync(Order existingOrder, Customer? customerToUpdate, List<InventoryBatch>? batchesToUpdate = null, List<StockMovement>? stockMovementsToAdd = null);
 
         /// <summary>
-        /// Deletes or voids an order (soft-delete or permanent delete).
+        /// Deletes or voids an order within a transaction, applying inventory batch stock reversals, stock movements, and customer adjustments.
         /// </summary>
         /// <param name="order">The order entity to delete.</param>
         /// <param name="isPermanent">If true, permanently removes the record; otherwise soft-deletes.</param>
-        Task SaveDeleteOrderAsync(Order order, bool isPermanent);
+        /// <param name="customerToUpdate">Optional customer entity with reversed loyalty points.</param>
+        /// <param name="batchesToUpdate">Optional collection of inventory batches with reversed stock quantities.</param>
+        /// <param name="stockMovementsToAdd">Optional audit stock movement ledger entries for the reversal.</param>
+        Task SaveDeleteOrderAsync(
+            Order order, 
+            bool isPermanent, 
+            Customer? customerToUpdate = null, 
+            List<InventoryBatch>? batchesToUpdate = null, 
+            List<StockMovement>? stockMovementsToAdd = null);
 
         /// <summary>
         /// Updates the main status and sub-status of an order and commits changes.

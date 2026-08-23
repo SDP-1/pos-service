@@ -85,7 +85,7 @@ namespace pos_service.Controllers
         public async Task<ActionResult<InventoryBatchResDto>> AdjustBatch(
             string batchUuid,
             [FromQuery] decimal quantityDelta,
-            [FromQuery] StockMovementType movementType = StockMovementType.ManualAdjustIn,
+            [FromQuery] StockMovementType movementType = StockMovementType.MANUAL_ADJUST_IN,
             [FromQuery] string? reason = null,
             [FromQuery] string? comment = null)
         {

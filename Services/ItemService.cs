@@ -174,7 +174,7 @@ namespace pos_service.Services
                 {
                     Uuid          = Guid.NewGuid().ToString(),
                     ItemUuid      = item.Uuid,
-                    MovementType  = StockMovementType.OpeningStock,
+                    MovementType  = StockMovementType.OPENING_STOCK,
                     Quantity      = itemDto.StockQuantity,
                     Direction     = StockMovementDirection.IN,
                     CostPrice     = itemDto.Price?.BuyingPrice ?? 0,
@@ -403,7 +403,7 @@ namespace pos_service.Services
                     Uuid          = Guid.NewGuid().ToString(),
                     BatchUuid     = primaryBatch.Uuid,
                     ItemUuid      = itemDto.Uuid,
-                    MovementType  = StockMovementType.ManualAdjustIn,
+                    MovementType  = StockMovementType.MANUAL_ADJUST_IN,
                     Quantity      = quantity,
                     Direction     = StockMovementDirection.IN,
                     CostPrice     = primaryBatch.CostPrice,

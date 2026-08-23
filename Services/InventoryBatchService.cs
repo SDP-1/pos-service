@@ -88,11 +88,11 @@ namespace pos_service.Services
             {
                 Uuid          = Guid.NewGuid().ToString(),
                 ItemUuid      = dto.ItemUuid,
-                MovementType  = StockMovementType.Purchase,
+                MovementType  = StockMovementType.PURCHASE,
                 Quantity      = dto.Quantity,
                 Direction     = StockMovementDirection.IN,
                 CostPrice     = dto.CostPrice,
-                ReferenceType = "ManualBatch",
+                ReferenceType = StockMovementReferenceType.MANUAL_BATCH,
                 Reason        = dto.Reason ?? "Initial batch stock receipt",
                 Comment       = dto.Comment,
                 CreatedAt     = DateTime.UtcNow,

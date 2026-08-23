@@ -26,3 +26,7 @@ BEGIN
     ORDER BY inv.StockQuantity ASC;
 END //
 DELIMITER ;
+
+-- Created on 2026-07-31
+-- Applied on dev 2026-07-31
+-- Applied on prod 2026-08-23

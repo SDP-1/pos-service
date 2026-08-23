@@ -55,10 +55,9 @@ namespace pos_service.Models
         public decimal CostPrice                { get; set; } = 0.0m;
 
         /// <summary>
-        /// The source entity type creating the movement (e.g. 'Purchase', 'Order', 'InventoryAdjustment').
+        /// The source entity type creating the movement (e.g. Purchase, Order, OrderReturn, OrderDelete, ManualBatch).
         /// </summary>
-        [MaxLength(50)]
-        public string? ReferenceType            { get; set; }
+        public StockMovementReferenceType? ReferenceType { get; set; }
 
         /// <summary>
         /// The UUID of the referencing source entity (e.g., PurchaseUuid, OrderItemUuid, AuditUuid).

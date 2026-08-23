@@ -130,11 +130,11 @@ namespace pos_service.Services.Purchases
                 {
                     Uuid          = Guid.NewGuid().ToString(),
                     ItemUuid      = line.ItemUuid,
-                    MovementType  = StockMovementType.Purchase,
+                    MovementType  = StockMovementType.PURCHASE,
                     Quantity      = line.Quantity,
                     Direction     = StockMovementDirection.IN,
                     CostPrice     = line.CostPrice,
-                    ReferenceType = "Purchase",
+                    ReferenceType = StockMovementReferenceType.PURCHASE,
                     ReferenceUuid = savedPurchase.Uuid,
                     Reason        = $"Purchase receipt: {savedPurchase.PurchaseNumber}",
                     CreatedAt     = DateTime.UtcNow,

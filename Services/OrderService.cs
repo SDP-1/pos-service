@@ -209,11 +209,11 @@ namespace pos_service.Services
                             Uuid          = Guid.NewGuid().ToString(),
                             BatchUuid     = batch.Uuid,
                             ItemUuid      = item.Uuid,
-                            MovementType  = StockMovementType.Sale,
+                            MovementType  = StockMovementType.SALE,
                             Quantity      = itemDto.Quantity,
                             Direction     = StockMovementDirection.OUT,
                             CostPrice     = batch.CostPrice,
-                            ReferenceType = "Order",
+                            ReferenceType = StockMovementReferenceType.ORDER,
                             Reason        = "POS sale item",
                             CreatedAt     = DateTime.UtcNow,
                             CreatedBy     = currentUser.Uuid
@@ -270,11 +270,11 @@ namespace pos_service.Services
                             Uuid          = Guid.NewGuid().ToString(),
                             BatchUuid     = returnBatch.Uuid,
                             ItemUuid      = item.Uuid,
-                            MovementType  = StockMovementType.SaleReturn,
+                            MovementType  = StockMovementType.SALE_RETURN,
                             Quantity      = itemDto.Quantity,
                             Direction     = StockMovementDirection.IN,
                             CostPrice     = returnBatch.CostPrice,
-                            ReferenceType = "OrderReturn",
+                            ReferenceType = StockMovementReferenceType.ORDER_RETURN,
                             ReferenceUuid = itemDto.ReturnedOrderItemUuid,
                             Reason        = "Customer return item",
                             CreatedAt     = DateTime.UtcNow,
@@ -636,7 +636,7 @@ namespace pos_service.Services
 
         /// <summary>
         /// Deletes an order with the specified identifier.
-        /// Performs soft-delete by default, which restores stock when appropriate. Use isPermanent=true to remove permanently.
+        /// Performs soft-delete by default, reversing all stock, stock movements, and customer loyalty changes. Use isPermanent=true to remove permanently.
         /// </summary>
         /// <param name="id">The unique identifier of the order to delete.</param>
         /// <param name="currentUser">The current user deleting the order.</param>
@@ -648,13 +648,115 @@ namespace pos_service.Services
             var order = await _orderRepository.GetByIdAsync(id, isActiveOnly);
             if (order == null) return false;
 
-            // Soft delete the order
-            if (order.IsActive)
+            var batchesToUpdate = new List<InventoryBatch>();
+            var stockMovementsToAdd = new List<StockMovement>();
+
+            // 1. Reverse Inventory Batch stock and create audit stock movement records
+            if (order.OrderItems != null && order.OrderItems.Any())
             {
-                order.IsActive = false;
+                foreach (var orderItem in order.OrderItems)
+                {
+                    InventoryBatch? batch = null;
+
+                    // Locate the batch allocated at checkout
+                    if (!string.IsNullOrWhiteSpace(orderItem.BatchUuid))
+                    {
+                        batch = batchesToUpdate.FirstOrDefault(b => b.Uuid == orderItem.BatchUuid)
+                             ?? await _batchRepository.GetByUuidAsync(orderItem.BatchUuid);
+                    }
+
+                    // Fallback to active/latest batch for the item if original batch record not found
+                    if (batch == null && !string.IsNullOrWhiteSpace(orderItem.OriginalItemUuid))
+                    {
+                        var activeBatches = await _batchRepository.GetActiveBatchesByItemUuidAsync(orderItem.OriginalItemUuid, includeExpired: true);
+                        batch = activeBatches.OrderByDescending(b => b.CreatedAt).FirstOrDefault();
+                    }
+
+                    if (batch != null)
+                    {
+                        if (!orderItem.IsReturnItem)
+                        {
+                            // Standard sale item: stock was deducted -> add it back to inventory
+                            batch.RemainingQuantity += orderItem.Quantity;
+                            if (batch.Status == BatchStatus.Depleted && batch.RemainingQuantity > 0)
+                            {
+                                batch.Status = BatchStatus.Active;
+                            }
+
+                            // Record Inbound stock movement
+                            stockMovementsToAdd.Add(new StockMovement
+                            {
+                                Uuid          = Guid.NewGuid().ToString(),
+                                BatchUuid     = batch.Uuid,
+                                ItemUuid      = batch.ItemUuid,
+                                MovementType  = StockMovementType.MANUAL_ADJUST_IN,
+                                Quantity      = orderItem.Quantity,
+                                Direction     = StockMovementDirection.IN,
+                                CostPrice     = orderItem.CostAtSale > 0 ? orderItem.CostAtSale : batch.CostPrice,
+                                ReferenceType = StockMovementReferenceType.ORDER_DELETE,
+                                ReferenceUuid = order.Uuid,
+                                Reason        = $"Restored stock from deleted order {order.OrderNumber}",
+                                CreatedAt     = DateTime.UtcNow,
+                                CreatedBy     = currentUser?.Uuid
+                            });
+                        }
+                        else
+                        {
+                            // Return item: stock was added back during customer return -> deduct it from inventory
+                            batch.RemainingQuantity = Math.Max(0m, batch.RemainingQuantity - orderItem.Quantity);
+                            if (batch.RemainingQuantity <= 0)
+                            {
+                                batch.Status = BatchStatus.Depleted;
+                            }
+
+                            // Record Outbound stock movement
+                            stockMovementsToAdd.Add(new StockMovement
+                            {
+                                Uuid          = Guid.NewGuid().ToString(),
+                                BatchUuid     = batch.Uuid,
+                                ItemUuid      = batch.ItemUuid,
+                                MovementType  = StockMovementType.MANUAL_ADJUST_OUT,
+                                Quantity      = orderItem.Quantity,
+                                Direction     = StockMovementDirection.OUT,
+                                CostPrice     = orderItem.CostAtSale > 0 ? orderItem.CostAtSale : batch.CostPrice,
+                                ReferenceType = StockMovementReferenceType.ORDER_DELETE,
+                                ReferenceUuid = order.Uuid,
+                                Reason        = $"Reversed returned stock from deleted order {order.OrderNumber}",
+                                CreatedAt     = DateTime.UtcNow,
+                                CreatedBy     = currentUser?.Uuid
+                            });
+                        }
+
+                        if (!batchesToUpdate.Any(b => b.Id == batch.Id))
+                        {
+                            batchesToUpdate.Add(batch);
+                        }
+                    }
+                }
             }
-            
-            await _orderRepository.SaveDeleteOrderAsync(order, isPermanent);
+
+            // 2. Reverse Customer Loyalty Points
+            Customer? customerToUpdate = null;
+            if (order.CustomerId.HasValue)
+            {
+                var customer = await _customerRepository.GetEntityByIdAsync(order.CustomerId.Value);
+                if (customer != null)
+                {
+                    var calculateLoyaltyForLoanOrders = await _settingService.GetSettingValueAsync(SettingKey.CalculateLoyaltyPointsForCreditOrders, currentUser);
+                    var suppressEarnForLoan = order.MainStatus == MainOrderStatus.Loan && !calculateLoyaltyForLoanOrders;
+                    var pointsEarnedOrDeducted = CalculateLoyaltyPointsFromOrderItems(order.OrderItems, suppressEarnForLoan);
+
+                    // Reverse: if points were earned (positive), deduct them; if deducted (negative), add back
+                    customer.LoyaltyPoints = Math.Max(0, customer.LoyaltyPoints - pointsEarnedOrDeducted);
+                    customerToUpdate = customer;
+                }
+            }
+
+            // 3. Atomically persist changes
+            await _orderRepository.SaveDeleteOrderAsync(order, isPermanent, customerToUpdate, batchesToUpdate, stockMovementsToAdd);
+
+            // 4. Invalidate item cache so frontend reflects the restored stock
+            _cache.Remove(ServiceCacheKey.Items);
 
             return true;
         }

@@ -209,21 +209,95 @@ namespace pos_service.Repositories
         }
 
         /// <summary>
-        /// Deletes or voids an order within a transaction.
+        /// Deletes or voids an order within a transaction, applying inventory batch stock reversals, stock movements, and customer adjustments.
         /// </summary>
         /// <param name="order">The order entity to delete.</param>
         /// <param name="isPermanent">If true, permanently removes the record; otherwise soft-deletes.</param>
-        public async Task SaveDeleteOrderAsync(Order order, bool isPermanent)
+        /// <param name="customerToUpdate">Optional customer entity with reversed loyalty points.</param>
+        /// <param name="batchesToUpdate">Optional collection of inventory batches with reversed stock quantities.</param>
+        /// <param name="stockMovementsToAdd">Optional audit stock movement ledger entries for the reversal.</param>
+        public async Task SaveDeleteOrderAsync(
+            Order order, 
+            bool isPermanent, 
+            Customer? customerToUpdate = null, 
+            List<InventoryBatch>? batchesToUpdate = null, 
+            List<StockMovement>? stockMovementsToAdd = null)
         {
+            // Atomically perform order deletion/voiding, inventory batch stock reversals, and customer updates
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                // Synchronize restored/reversed inventory batches
+                if (batchesToUpdate != null && batchesToUpdate.Any())
+                {
+                    foreach (var batch in batchesToUpdate)
+                    {
+                        var tracked = _context.InventoryBatches.Local.FirstOrDefault(b => b.Id == batch.Id || b.Uuid == batch.Uuid);
+                        if (tracked != null)
+                        {
+                            _context.Entry(tracked).CurrentValues.SetValues(batch);
+                        }
+                        else
+                        {
+                            _context.InventoryBatches.Update(batch);
+                        }
+                    }
+                }
+
+                // Insert corresponding reversal stock movement ledger entries
+                if (stockMovementsToAdd != null && stockMovementsToAdd.Any())
+                {
+                    foreach (var movement in stockMovementsToAdd)
+                    {
+                        if (string.IsNullOrWhiteSpace(movement.Uuid))
+                        {
+                            movement.Uuid = Guid.NewGuid().ToString();
+                        }
+                        _context.StockMovements.Add(movement);
+                    }
+                }
+
+                // Update customer loyalty points if reversed
+                if (customerToUpdate != null)
+                {
+                    _context.Customers.Update(customerToUpdate);
+                }
+
                 if (isPermanent)
                 {
+                    // Permanently remove loan settlement logs, line items, and the parent order
+                    if (order.LoanSettlementLogs != null && order.LoanSettlementLogs.Any())
+                    {
+                        _context.LoanSettlementLogs.RemoveRange(order.LoanSettlementLogs);
+                    }
+
+                    if (order.OrderItems != null && order.OrderItems.Any())
+                    {
+                        _context.OrderItems.RemoveRange(order.OrderItems);
+                    }
+
                     _context.Orders.Remove(order);
                 }
                 else
                 {
+                    // Soft-delete parent order and cascade inactive status to child items/logs
+                    order.IsActive = false;
+                    if (order.OrderItems != null && order.OrderItems.Any())
+                    {
+                        foreach (var item in order.OrderItems)
+                        {
+                            item.IsActive = false;
+                        }
+                    }
+
+                    if (order.LoanSettlementLogs != null && order.LoanSettlementLogs.Any())
+                    {
+                        foreach (var log in order.LoanSettlementLogs)
+                        {
+                            log.IsActive = false;
+                        }
+                    }
+
                     _context.Orders.Update(order);
                 }
 

@@ -41,6 +41,8 @@ namespace pos_service.Data
         public DbSet<StockMovement> StockMovements                         { get; set; }
         public DbSet<Purchase> Purchases                                   { get; set; }
         public DbSet<ItemUnit> ItemUnits                                   { get; set; }
+        public DbSet<OrderLog> OrderLogs                                   { get; set; }
+        public DbSet<OrderItemLog> OrderItemLogs                           { get; set; }
 
 
         /// <summary>
@@ -74,6 +76,8 @@ namespace pos_service.Data
             modelBuilder.Entity<InventoryBatchLog>().ToTable("tbl_inventory_batch_logs");
             modelBuilder.Entity<StockMovement>().ToTable("tbl_stock_movements");
             modelBuilder.Entity<Purchase>().ToTable("tbl_purchases");
+            modelBuilder.Entity<OrderLog>().ToTable("tbl_order_logs");
+            modelBuilder.Entity<OrderItemLog>().ToTable("tbl_order_item_logs");
 
 
             // Add database-side defaults for IAuditable timestamps so the database will populate
@@ -543,6 +547,39 @@ namespace pos_service.Data
                       .OnDelete(DeleteBehavior.SetNull);
             });
 
+            // --- StockMovement Configuration ---
+            modelBuilder.Entity<StockMovement>(entity =>
+            {
+                entity.HasKey(sm => sm.Id);
+                entity.HasAlternateKey(sm => sm.Uuid);
+                entity.Property(sm => sm.MovementType).HasConversion<string>().HasMaxLength(50);
+                entity.Property(sm => sm.Direction).HasConversion<string>().HasMaxLength(10);
+                entity.Property(sm => sm.ReferenceType).HasConversion<string>().HasMaxLength(50);
+                entity.Property(sm => sm.Quantity).HasColumnType("decimal(18,3)");
+                entity.Property(sm => sm.CostPrice).HasColumnType("decimal(18,2)");
+                entity.Property(sm => sm.Reason).HasMaxLength(500);
+                entity.Property(sm => sm.Comment).HasMaxLength(500);
+
+                entity.HasOne(sm => sm.Item)
+                      .WithMany()
+                      .HasForeignKey(sm => sm.ItemUuid)
+                      .HasPrincipalKey(i => i.Uuid)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(sm => sm.Batch)
+                      .WithMany()
+                      .HasForeignKey(sm => sm.BatchUuid)
+                      .HasPrincipalKey(b => b.Uuid)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(sm => sm.CreatedByUser)
+                      .WithMany()
+                      .HasForeignKey(sm => sm.CreatedBy)
+                      .HasPrincipalKey(u => u.Uuid)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.SetNull);
+            });
+
             // --- Purchase Configuration ---
             modelBuilder.Entity<Purchase>(entity =>
             {
@@ -556,6 +593,55 @@ namespace pos_service.Data
                       .WithMany()
                       .HasForeignKey(p => p.SupplierUuid)
                       .HasPrincipalKey(s => s.Uuid)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // --- OrderLog Configuration ---
+            modelBuilder.Entity<OrderLog>(entity =>
+            {
+                entity.HasKey(a => a.Id);
+                entity.Property(a => a.Id).HasColumnName("LogId");
+                entity.Property(a => a.OrderNumber).HasMaxLength(50).IsRequired();
+                entity.Property(a => a.MainStatus).HasMaxLength(50).IsRequired();
+                entity.Property(a => a.SubStatus).HasMaxLength(50);
+                entity.Property(a => a.PaymentMethod).HasMaxLength(50).IsRequired();
+                entity.Property(a => a.SaleType).HasMaxLength(50).IsRequired();
+                entity.Property(a => a.GrossAmount).HasColumnType("decimal(18,2)");
+                entity.Property(a => a.TotalDiscount).HasColumnType("decimal(18,2)");
+                entity.Property(a => a.NetAmount).HasColumnType("decimal(18,2)");
+                entity.Property(a => a.TotalCost).HasColumnType("decimal(18,2)");
+                entity.Property(a => a.AmountPaid).HasColumnType("decimal(18,2)");
+                entity.Property(a => a.Balance).HasColumnType("decimal(18,2)");
+                entity.Property(a => a.Action).HasMaxLength(10).IsRequired();
+
+                entity.HasOne(a => a.ActionByUser)
+                      .WithMany()
+                      .HasForeignKey(a => a.ActionBy)
+                      .HasPrincipalKey(u => u.Uuid)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // --- OrderItemLog Configuration ---
+            modelBuilder.Entity<OrderItemLog>(entity =>
+            {
+                entity.HasKey(a => a.Id);
+                entity.Property(a => a.Id).HasColumnName("LogId");
+                entity.Property(a => a.PrintName).HasMaxLength(255).IsRequired();
+                entity.Property(a => a.PriceAtSale).HasColumnType("decimal(18,2)");
+                entity.Property(a => a.CostAtSale).HasColumnType("decimal(18,2)");
+                entity.Property(a => a.Quantity).HasColumnType("decimal(18,3)");
+                entity.Property(a => a.Discount).HasColumnType("decimal(18,2)");
+                entity.Property(a => a.LineTotal).HasColumnType("decimal(18,2)");
+                entity.Property(a => a.TotalProfit).HasColumnType("decimal(18,2)");
+                entity.Property(a => a.UnitType).HasMaxLength(50);
+                entity.Property(a => a.Action).HasMaxLength(10).IsRequired();
+
+                entity.HasOne(a => a.ActionByUser)
+                      .WithMany()
+                      .HasForeignKey(a => a.ActionBy)
+                      .HasPrincipalKey(u => u.Uuid)
                       .IsRequired(false)
                       .OnDelete(DeleteBehavior.SetNull);
             });

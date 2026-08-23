@@ -6,27 +6,24 @@ BEGIN
         i.Id AS ItemId,
         i.PrintName AS ItemName,
         COALESCE(i.BarCode, '') AS BarCode,
-        COALESCE(inv.StockQuantity, 0.000) AS StockQuantity,
-        COALESCE(inv.UnitType, 'Piece') AS UnitType,
+        COALESCE(b_agg.StockQuantity, 0.000) AS StockQuantity,
+        COALESCE(u.UnitType, 'Each') AS UnitType,
         5.000 AS LowStockThreshold,
-        COALESCE(pa.RetailPrice, ip.RetailPrice, 0.00) AS SellingPrice
+        COALESCE(b_agg.AvgRetailPrice, 0.00) AS SellingPrice
     FROM tbl_items i
-    JOIN tbl_inventories inv ON i.Uuid = inv.ItemUuid
-    LEFT JOIN tbl_item_prices ip ON i.Uuid = ip.ItemUuid
     LEFT JOIN (
-        SELECT a1.*
-        FROM tbl_item_price_audits a1
-        INNER JOIN (
-            SELECT ItemUuid, MAX(ActionDate) AS MaxActionDate, MAX(Id) AS MaxId
-            FROM tbl_item_price_audits
-            GROUP BY ItemUuid
-        ) a2 ON a1.ItemUuid = a2.ItemUuid AND a1.ActionDate = a2.MaxActionDate AND a1.Id = a2.MaxId
-    ) pa ON i.Uuid = pa.ItemUuid
-    WHERE i.IsActive = 1 AND inv.IsActive = 1 AND inv.StockQuantity <= 5.000
-    ORDER BY inv.StockQuantity ASC;
+        SELECT 
+            b.ItemUuid,
+            SUM(b.RemainingQuantity) AS StockQuantity,
+            CASE WHEN SUM(b.RemainingQuantity) > 0 THEN SUM(b.RemainingQuantity * b.RetailPrice) / SUM(b.RemainingQuantity) ELSE 0.00 END AS AvgRetailPrice
+        FROM tbl_inventory_batches b
+        WHERE b.IsActive = 1 AND b.RemainingQuantity > 0
+        GROUP BY b.ItemUuid
+    ) b_agg ON i.Uuid = b_agg.ItemUuid
+    LEFT JOIN tbl_item_units u ON i.Uuid = u.ItemUuid AND u.IsBaseUnit = 1
+    WHERE i.IsActive = 1 AND COALESCE(b_agg.StockQuantity, 0.000) <= 5.000
+    ORDER BY COALESCE(b_agg.StockQuantity, 0.000) ASC;
 END //
 DELIMITER ;
 
--- Created on 2026-07-31
--- Applied on dev 2026-07-31
 -- Applied on prod 2026-08-23

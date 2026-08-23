@@ -59,9 +59,9 @@ namespace pos_service.Models.DTO.StockMovements
         public decimal CostPrice                { get; set; }
 
         /// <summary>
-        /// Source entity type that caused the movement (e.g. 'Purchase', 'Order', 'InventoryAdjustment').
+        /// Source entity type that caused the movement (e.g. Purchase, Order, OrderReturn, OrderDelete, ManualBatch).
         /// </summary>
-        public string? ReferenceType            { get; set; }
+        public StockMovementReferenceType? ReferenceType { get; set; }
 
         /// <summary>
         /// Reference UUID of the source transaction.

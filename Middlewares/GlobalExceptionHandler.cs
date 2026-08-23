@@ -40,22 +40,26 @@ namespace pos_service.Middlewares
             {
                 case PermissionDeniedException pde:
                     code = HttpStatusCode.Forbidden;
-                    payload = new { error = pde.Message };
+                    payload = new { error = pde.Message, message = pde.Message };
                     break;
                 case UnauthorizedAccessException ua:
                     code = HttpStatusCode.Unauthorized;
-                    payload = new { error = ua.Message };
+                    payload = new { error = ua.Message, message = ua.Message };
+                    break;
+                case InvalidOperationException ioe:
+                    code = HttpStatusCode.BadRequest;
+                    payload = new { error = ioe.Message, message = ioe.Message };
                     break;
                 case ArgumentException arg:
                     code = HttpStatusCode.BadRequest;
-                    payload = new { error = arg.Message };
+                    payload = new { error = arg.Message, message = arg.Message };
                     break;
                 case KeyNotFoundException knf:
                     code = HttpStatusCode.NotFound;
-                    payload = new { error = knf.Message };
+                    payload = new { error = knf.Message, message = knf.Message };
                     break;
                 default:
-                    payload = new { error = exception.Message };
+                    payload = new { error = exception.Message, message = exception.Message };
                     break;
             }
 

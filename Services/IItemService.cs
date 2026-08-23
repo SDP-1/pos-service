@@ -1,4 +1,4 @@
-﻿using pos_service.Models;
+using pos_service.Models;
 using pos_service.Models.DTO.Items;
 
 namespace pos_service.Services
@@ -126,6 +126,17 @@ namespace pos_service.Services
         /// <summary>
         /// Search items by term matching name, print name, barcode or uuid.
         /// </summary>
+        /// <param name="searchTerm">The search term to match against item attributes.</param>
+        /// <param name="currentUser">The current user requesting the search.</param>
+        /// <returns>A collection of item response DTOs matching the search term.</returns>
         Task<IEnumerable<ItemResDto>> SearchItemsAsync(string searchTerm, CurrentUser currentUser);
+
+        /// <summary>
+        /// Permanently deletes specified item expiry records by their unique identifiers.
+        /// </summary>
+        /// <param name="expiryUuids">The collection of expiry date UUIDs to delete.</param>
+        /// <param name="currentUser">The current user requesting the operation.</param>
+        /// <returns>The count of deleted expiry records.</returns>
+        Task<int> DeleteExpiriesAsync(IEnumerable<string> expiryUuids, CurrentUser currentUser);
     }
 }

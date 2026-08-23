@@ -22,12 +22,12 @@ namespace pos_service.Repositories
         /// <summary>
         /// Adds a new item and its inventory inside a repository database transaction.
         /// </summary>
-        Task SaveNewItemWithInventoryAsync(Item item, Inventory inventory);
+        Task SaveNewItemWithInventoryAsync(Item item);
 
         /// <summary>
         /// Updates an item and optional inventory record inside a repository database transaction.
         /// </summary>
-        Task SaveUpdatedItemWithInventoryAsync(Item itemToUpdate, Inventory? inventoryToUpdate = null);
+        Task SaveUpdatedItemWithInventoryAsync(Item itemToUpdate);
 
         /// <summary>
         /// Adds a new item to the data store.
@@ -89,6 +89,13 @@ namespace pos_service.Repositories
         Task<Item?> GetByUuidAsync(string uuid);
 
         /// <summary>
+        /// Gets a single item response DTO by its unique Guid (Uuid).
+        /// </summary>
+        /// <param name="uuid">The UUID of the item to retrieve.</param>
+        /// <returns>The item response DTO if found, otherwise null.</returns>
+        Task<ItemResDto?> GetResDtoByUuidAsync(string uuid);
+
+        /// <summary>
         /// Gets multiple items by their unique Guids (Uuids).
         /// </summary>
         /// <param name="uuids">The collection of UUIDs to retrieve.</param>
@@ -118,6 +125,15 @@ namespace pos_service.Repositories
         /// Returns the next available SubId for the given main Id.
         /// Typically returns max(SubId) + 1 or 0 if no variants exist.
         /// </summary>
+        /// <param name="mainId">The main identifier of the item.</param>
+        /// <returns>The next available sub-identifier integer.</returns>
         Task<int> GetNextSubIdAsync(int mainId);
+
+        /// <summary>
+        /// Permanently deletes a collection of item expiry records by their unique identifiers.
+        /// </summary>
+        /// <param name="expiryUuids">The collection of expiry UUIDs to permanently delete.</param>
+        /// <returns>The number of expiry records deleted.</returns>
+        Task<int> DeleteExpiriesAsync(IEnumerable<string> expiryUuids);
     }
 }

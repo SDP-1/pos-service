@@ -15,3 +15,7 @@ BEGIN
       AND (p_EndDate IS NULL OR DATE(o.CreatedAt) <= DATE(p_EndDate));
 END //
 DELIMITER ;
+
+-- Created on 2026-07-31
+-- Applied on dev 2026-07-31
+-- Applied on prod 2026-08-23

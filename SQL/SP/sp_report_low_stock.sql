@@ -17,12 +17,16 @@ BEGIN
         SELECT a1.*
         FROM tbl_item_price_audits a1
         INNER JOIN (
-            SELECT ItemUuid, MAX(ChangedAt) AS MaxChangedAt, MAX(Id) AS MaxId
+            SELECT ItemUuid, MAX(ActionDate) AS MaxActionDate, MAX(Id) AS MaxId
             FROM tbl_item_price_audits
             GROUP BY ItemUuid
-        ) a2 ON a1.ItemUuid = a2.ItemUuid AND a1.ChangedAt = a2.MaxChangedAt AND a1.Id = a2.MaxId
+        ) a2 ON a1.ItemUuid = a2.ItemUuid AND a1.ActionDate = a2.MaxActionDate AND a1.Id = a2.MaxId
     ) pa ON i.Uuid = pa.ItemUuid
     WHERE i.IsActive = 1 AND inv.IsActive = 1 AND inv.StockQuantity <= 5.000
     ORDER BY inv.StockQuantity ASC;
 END //
 DELIMITER ;
+
+-- Created on 2026-07-31
+-- Applied on dev 2026-07-31
+-- Applied on prod 2026-08-23

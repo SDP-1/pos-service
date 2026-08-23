@@ -12,6 +12,12 @@ namespace pos_service.Repositories
         private readonly ILogger<OrderRepository> _logger;
         private readonly IStoredProcedureExecutor _spExecutor;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="OrderRepository"/> class with the database context, logger, and stored procedure executor.
+        /// </summary>
+        /// <param name="context">The application database context.</param>
+        /// <param name="logger">The logger instance.</param>
+        /// <param name="spExecutor">The stored procedure executor service.</param>
         public OrderRepository(
             AppDbContext context, 
             ILogger<OrderRepository> logger,
@@ -30,6 +36,11 @@ namespace pos_service.Repositories
             await _context.SaveChangesAsync();
         }
 
+        /// <summary>
+        /// Saves order payment settlement updates and creates an associated loan settlement log within a transaction.
+        /// </summary>
+        /// <param name="order">The order entity with updated settlement status.</param>
+        /// <param name="log">The loan settlement audit log to record.</param>
         public async Task SaveRecordSettlementAsync(Order order, LoanSettlementLog log)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -47,36 +58,73 @@ namespace pos_service.Repositories
             }
         }
 
-        public async Task<Order> SaveCreateOrderAsync(Order order, LoanSettlementLog? initialLog, List<Inventory> inventoriesToUpdate, Customer? customerToUpdate)
+        /// <summary>
+        /// Atomically saves a new order, initial loan log, customer loyalty/debt updates, batch quantity deductions, and stock movement logs in a single transaction.
+        /// </summary>
+        /// <param name="order">The order entity to persist.</param>
+        /// <param name="initialLog">Optional initial loan settlement log.</param>
+        /// <param name="customerToUpdate">Optional customer entity with updated debt/loyalty balance.</param>
+        /// <param name="batchesToUpdate">Optional list of inventory batches to deduct remaining stock from.</param>
+        /// <param name="stockMovementsToAdd">Optional list of stock movement ledger records to insert.</param>
+        /// <returns>The created Order entity.</returns>
+        public async Task<Order> SaveCreateOrderAsync(
+            Order order, 
+            LoanSettlementLog? initialLog, 
+            Customer? customerToUpdate,
+            List<InventoryBatch>? batchesToUpdate = null,
+            List<StockMovement>? stockMovementsToAdd = null)
         {
+            // Execute order insertion, stock deduction, and ledger updates in an ACID transaction
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                // Ensure order has unique external identifier
+                if (string.IsNullOrWhiteSpace(order.Uuid))
+                {
+                    order.Uuid = Guid.NewGuid().ToString();
+                }
+
                 _context.Orders.Add(order);
                 await _context.SaveChangesAsync();
 
+                // Link and persist loan settlement log if this order was paid on credit/loan
                 if (initialLog != null)
                 {
                     initialLog.OrderId = order.Id;
                     _context.LoanSettlementLogs.Add(initialLog);
                 }
 
-                if (inventoriesToUpdate != null && inventoriesToUpdate.Any())
+                // Apply remaining batch quantity decrements
+                if (batchesToUpdate != null && batchesToUpdate.Any())
                 {
-                    foreach (var inv in inventoriesToUpdate)
+                    foreach (var batch in batchesToUpdate)
                     {
-                        var tracked = _context.Inventories.Local.FirstOrDefault(i => i.Id == inv.Id);
+                        var tracked = _context.InventoryBatches.Local.FirstOrDefault(b => b.Id == batch.Id);
                         if (tracked != null)
                         {
-                            _context.Entry(tracked).CurrentValues.SetValues(inv);
+                            _context.Entry(tracked).CurrentValues.SetValues(batch);
                         }
                         else
                         {
-                            _context.Inventories.Update(inv);
+                            _context.InventoryBatches.Update(batch);
                         }
                     }
                 }
 
+                // Insert immutable audit ledger entries for stock movements
+                if (stockMovementsToAdd != null && stockMovementsToAdd.Any())
+                {
+                    foreach (var movement in stockMovementsToAdd)
+                    {
+                        if (string.IsNullOrWhiteSpace(movement.Uuid))
+                        {
+                            movement.Uuid = Guid.NewGuid().ToString();
+                        }
+                        _context.StockMovements.Add(movement);
+                    }
+                }
+
+                // Update customer running balance / loyalty points if provided
                 if (customerToUpdate != null)
                 {
                     _context.Customers.Update(customerToUpdate);
@@ -93,29 +141,57 @@ namespace pos_service.Repositories
             }
         }
 
-        public async Task<Order> SaveUpdateOrderAsync(Order existingOrder, List<Inventory> inventoriesToUpdate, Customer? customerToUpdate)
+        /// <summary>
+        /// Atomically saves order modifications, customer updates, batch quantity adjustments, and stock movement logs in a transaction.
+        /// </summary>
+        /// <param name="existingOrder">The existing order with modified values.</param>
+        /// <param name="customerToUpdate">Optional customer entity with updated balance.</param>
+        /// <param name="batchesToUpdate">Optional list of modified inventory batches.</param>
+        /// <param name="stockMovementsToAdd">Optional list of stock movements to insert.</param>
+        /// <returns>The updated Order entity.</returns>
+        public async Task<Order> SaveUpdateOrderAsync(
+            Order existingOrder, 
+            Customer? customerToUpdate,
+            List<InventoryBatch>? batchesToUpdate = null,
+            List<StockMovement>? stockMovementsToAdd = null)
         {
+            // Execute order updates and stock reversals/deductions within a transaction
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 _context.Orders.Update(existingOrder);
 
-                if (inventoriesToUpdate != null && inventoriesToUpdate.Any())
+                // Update adjusted batch remaining quantities
+                if (batchesToUpdate != null && batchesToUpdate.Any())
                 {
-                    foreach (var inv in inventoriesToUpdate)
+                    foreach (var batch in batchesToUpdate)
                     {
-                        var tracked = _context.Inventories.Local.FirstOrDefault(i => i.Id == inv.Id);
+                        var tracked = _context.InventoryBatches.Local.FirstOrDefault(b => b.Id == batch.Id);
                         if (tracked != null)
                         {
-                            _context.Entry(tracked).CurrentValues.SetValues(inv);
+                            _context.Entry(tracked).CurrentValues.SetValues(batch);
                         }
                         else
                         {
-                            _context.Inventories.Update(inv);
+                            _context.InventoryBatches.Update(batch);
                         }
                     }
                 }
 
+                // Insert corresponding stock movement ledger entries
+                if (stockMovementsToAdd != null && stockMovementsToAdd.Any())
+                {
+                    foreach (var movement in stockMovementsToAdd)
+                    {
+                        if (string.IsNullOrWhiteSpace(movement.Uuid))
+                        {
+                            movement.Uuid = Guid.NewGuid().ToString();
+                        }
+                        _context.StockMovements.Add(movement);
+                    }
+                }
+
+                // Update customer balance if affected
                 if (customerToUpdate != null)
                 {
                     _context.Customers.Update(customerToUpdate);
@@ -132,27 +208,16 @@ namespace pos_service.Repositories
             }
         }
 
-        public async Task SaveDeleteOrderAsync(Order order, List<Inventory> inventoriesToUpdate, bool isPermanent)
+        /// <summary>
+        /// Deletes or voids an order within a transaction.
+        /// </summary>
+        /// <param name="order">The order entity to delete.</param>
+        /// <param name="isPermanent">If true, permanently removes the record; otherwise soft-deletes.</param>
+        public async Task SaveDeleteOrderAsync(Order order, bool isPermanent)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                if (inventoriesToUpdate != null && inventoriesToUpdate.Any())
-                {
-                    foreach (var inv in inventoriesToUpdate)
-                    {
-                        var tracked = _context.Inventories.Local.FirstOrDefault(i => i.Id == inv.Id);
-                        if (tracked != null)
-                        {
-                            _context.Entry(tracked).CurrentValues.SetValues(inv);
-                        }
-                        else
-                        {
-                            _context.Inventories.Update(inv);
-                        }
-                    }
-                }
-
                 if (isPermanent)
                 {
                     _context.Orders.Remove(order);
@@ -172,27 +237,16 @@ namespace pos_service.Repositories
             }
         }
 
-        public async Task<Order> SaveUpdateOrderStatusAsync(Order order, List<Inventory> inventoriesToUpdate)
+        /// <summary>
+        /// Updates the main status and sub-status of an order and commits changes within a transaction.
+        /// </summary>
+        /// <param name="order">The order entity with updated status.</param>
+        /// <returns>The updated Order entity.</returns>
+        public async Task<Order> SaveUpdateOrderStatusAsync(Order order)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                if (inventoriesToUpdate != null && inventoriesToUpdate.Any())
-                {
-                    foreach (var inv in inventoriesToUpdate)
-                    {
-                        var tracked = _context.Inventories.Local.FirstOrDefault(i => i.Id == inv.Id);
-                        if (tracked != null)
-                        {
-                            _context.Entry(tracked).CurrentValues.SetValues(inv);
-                        }
-                        else
-                        {
-                            _context.Inventories.Update(inv);
-                        }
-                    }
-                }
-
                 _context.Orders.Update(order);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -549,6 +603,26 @@ namespace pos_service.Repositories
             {
                 _logger.LogError(ex, "Error fetching returned items summary for order {OrderNumber}", orderNumber);
                 return new List<ReturnedItemsSummary>();
+            }
+        }
+
+        /// <summary>
+        /// Retrieves an individual order item by its UUID.
+        /// </summary>
+        /// <param name="uuid">The UUID of the order item.</param>
+        /// <returns>OrderItem if found; otherwise null.</returns>
+        public async Task<OrderItem?> GetOrderItemByUuidAsync(string uuid)
+        {
+            try
+            {
+                return await _context.OrderItems
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(oi => oi.Uuid == uuid);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching order item with UUID {Uuid}", uuid);
+                return null;
             }
         }
 

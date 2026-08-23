@@ -22,35 +22,54 @@ namespace pos_service.Profiles
         {
             // Item Mappings
             // map Item -> ItemResDto.Suppliers from ItemSuppliers join
-            CreateMap<ItemPrice, ItemPriceResDto>();
-            CreateMap<ItemPriceReqDto, ItemPrice>();
             CreateMap<ItemExpiry, ItemExpiryResDto>();
-            CreateMap<InventoryUnit, InventoryUnitResDto>();
-            CreateMap<InventoryUnitReqDto, InventoryUnit>();
-            CreateMap<Inventory, InventoryResDto>()
-                .ForMember(dest => dest.Units, opt => opt.MapFrom(src => src.Units.OrderBy(u => u.QuantityInBaseUnits).ToList()))
-                // Use a resolution function to safely map Item.ExpDates -> InventoryResDto.Expiries
-                .ForMember(dest => dest.Expiries, opt => opt.MapFrom((src, dest, destMember, ctx) =>
-                    src.Item != null
-                        ? ctx.Mapper.Map<IEnumerable<ItemExpiryResDto>>(src.Item.ExpDates.OrderBy(e => e.ExpDate))
-                        : new List<ItemExpiryResDto>()))
-                // Map item price into inventory response so callers retrieving inventory can also see price
-                .ForMember(dest => dest.Price, opt => opt.MapFrom((src, dest, destMember, ctx) =>
-                    src.Item != null && src.Item.Price != null
-                        ? ctx.Mapper.Map<ItemPriceResDto>(src.Item.Price)
-                        : new ItemPriceResDto()));
+            CreateMap<ItemUnit, InventoryUnitResDto>();
+            CreateMap<InventoryUnitReqDto, ItemUnit>();
+
+            // Inventory Batch Mappings
+            CreateMap<InventoryBatch, pos_service.Models.DTO.InventoryBatches.InventoryBatchResDto>()
+                .ForMember(dest => dest.ItemName, opt => opt.MapFrom(src => src.Item != null ? src.Item.Name : null))
+                .ForMember(dest => dest.ItemPrintName, opt => opt.MapFrom(src => src.Item != null ? src.Item.PrintName : null))
+                .ForMember(dest => dest.ItemBarcode, opt => opt.MapFrom(src => src.Item != null ? src.Item.BarCode : null))
+                .ForMember(dest => dest.ItemNumber, opt => opt.MapFrom(src => src.Item != null ? $"{src.Item.Id}-{src.Item.SubId}" : null))
+                .ForMember(dest => dest.SupplierName, opt => opt.MapFrom(src =>
+                    src.Supplier != null ? src.Supplier.Name :
+                    (src.Item != null && src.Item.ItemSuppliers.Any() ? src.Item.ItemSuppliers.First().Supplier!.Name : null)));
+
+            CreateMap<InventoryBatch, pos_service.Models.DTO.InventoryBatches.InventoryBatchSelectDto>();
+
+            CreateMap<pos_service.Models.DTO.InventoryBatches.InventoryBatchReqDto, InventoryBatch>();
+
+            // Stock Movement Mappings
+            CreateMap<StockMovement, pos_service.Models.DTO.StockMovements.StockMovementResDto>()
+                .ForMember(dest => dest.ItemName, opt => opt.MapFrom(src => src.Item != null ? src.Item.PrintName : null))
+                .ForMember(dest => dest.BatchNumber, opt => opt.MapFrom(src => src.Batch != null ? src.Batch.BatchNumber : null))
+                .ForMember(dest => dest.CreatedByName, opt => opt.MapFrom(src => src.CreatedByUser != null ? (!string.IsNullOrEmpty(src.CreatedByUser.FullName) ? src.CreatedByUser.FullName : src.CreatedByUser.UserName) : src.CreatedBy));
+
+            // Inventory Batch Log Mappings
+            CreateMap<InventoryBatchLog, pos_service.Models.DTO.InventoryBatches.InventoryBatchLogResDto>()
+                .ForMember(dest => dest.ItemName, opt => opt.MapFrom(src => src.Item != null ? src.Item.PrintName : null))
+                .ForMember(dest => dest.SupplierName, opt => opt.MapFrom(src => src.Batch != null && src.Batch.Supplier != null ? src.Batch.Supplier.Name : null))
+                .ForMember(dest => dest.ActionByName, opt => opt.MapFrom(src => src.ActionByUser != null ? (!string.IsNullOrEmpty(src.ActionByUser.FullName) ? src.ActionByUser.FullName : src.ActionByUser.UserName) : src.ActionBy));
+
+            // Purchase Mappings
+            CreateMap<Purchase, pos_service.Models.DTO.Purchases.PurchaseResDto>()
+                .ForMember(dest => dest.SupplierName, opt => opt.MapFrom(src => src.Supplier != null ? src.Supplier.Name : null))
+                .ForMember(dest => dest.Batches, opt => opt.MapFrom(src => src.Batches));
+            CreateMap<pos_service.Models.DTO.Purchases.PurchaseReqDto, Purchase>();
 
             CreateMap<Item, ItemResDto>()
                 .ForMember(dest => dest.Suppliers, opt => opt.MapFrom(src => src.ItemSuppliers.Select(isu => isu.Supplier)))
-                .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price ?? new ItemPrice()))
-                .ForMember(dest => dest.Inventory, opt => opt.MapFrom(src => src.Inventory))
                 .ForMember(dest => dest.ExpDates, opt => opt.MapFrom(src => src.ExpDates.OrderBy(e => e.ExpDate)));
 
             CreateMap<Item, ItemMiniResDto>()
-                .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price ?? new ItemPrice()))
                 .ForMember(dest => dest.ExpDates, opt => opt.MapFrom(src => src.ExpDates.OrderBy(e => e.ExpDate)))
-                .ForMember(dest => dest.AllowsDecimalQuantities, opt => opt.MapFrom(src => src.Inventory != null && src.Inventory.AllowsDecimalQuantities))
-                .ForMember(dest => dest.UnitType, opt => opt.MapFrom(src => src.Inventory != null ? src.Inventory.UnitType : Models.Enums.UnitType.Each));
+                .ForMember(dest => dest.AllowsDecimalQuantities, opt => opt.MapFrom(src => src.AllowsDecimalQuantities))
+                .ForMember(dest => dest.UnitType, opt => opt.MapFrom(src => src.Units.Where(u => u.IsBaseUnit).Select(u => u.UnitType).FirstOrDefault() != Models.Enums.UnitType.None
+                    ? src.Units.Where(u => u.IsBaseUnit).Select(u => u.UnitType).FirstOrDefault()
+                    : (src.Units.OrderBy(u => u.QuantityInBaseUnits).Select(u => u.UnitType).FirstOrDefault() != Models.Enums.UnitType.None
+                        ? src.Units.OrderBy(u => u.QuantityInBaseUnits).Select(u => u.UnitType).FirstOrDefault()
+                        : Models.Enums.UnitType.Each)));
 
             // Map from ItemResDto -> ItemMiniResDto so services can map projected DTOs
             CreateMap<ItemResDto, ItemMiniResDto>()
@@ -62,9 +81,7 @@ namespace pos_service.Profiles
             CreateMap<ItemReqDto, Item>()
                 .ForMember(d => d.Id, opt => opt.Ignore())
                 .ForMember(d => d.SubId, opt => opt.Ignore())
-                .ForMember(d => d.Price, opt => opt.Ignore())
-                .ForMember(d => d.ExpDates, opt => opt.Ignore())
-                .ForMember(d => d.Inventory, opt => opt.Ignore());
+                .ForMember(d => d.ExpDates, opt => opt.Ignore());
 
             // Contact Mappings
             CreateMap<Contact, ContactResDto>();
@@ -88,10 +105,14 @@ namespace pos_service.Profiles
             CreateMap<UserReqDto, User>();
             CreateMap<UserLoginReqDto, User>();
 
-            // Order Maper
+            // Order Mapper
             CreateMap<Order, OrderResDto>()
                 .ForMember(dest => dest.MainStatus, opt => opt.MapFrom(src => src.MainStatus))
                 .ForMember(dest => dest.SubStatus, opt => opt.MapFrom(src => src.SubStatus))
+                .ForMember(dest => dest.ItemCount, opt => opt.MapFrom(src =>
+                    src.OrderItems != null && src.OrderItems.Any()
+                        ? (int)Math.Round(src.OrderItems.Where(oi => !oi.IsReturnItem && oi.Quantity > 0).Sum(oi => oi.Quantity))
+                        : src.ItemCount))
                 .ForMember(dest => dest.CashierName, opt => opt.MapFrom(src => src.Cashier != null ? src.Cashier.FullName : string.Empty))
                 .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Customer != null ? src.Customer.FullName  : string.Empty))
                 .ForMember(dest => dest.CustomerPhone, opt => opt.MapFrom(src => src.Customer != null ? src.Customer.PhoneNumber : string.Empty));
@@ -100,7 +121,12 @@ namespace pos_service.Profiles
             CreateMap<OrderReqDto, Order>();
             CreateMap<Order, OrderSummaryResDto>()
                 .ForMember(dest => dest.MainStatus, opt => opt.MapFrom(src => src.MainStatus))
-                .ForMember(dest => dest.SubStatus, opt => opt.MapFrom(src => src.SubStatus));
+                .ForMember(dest => dest.SubStatus, opt => opt.MapFrom(src => src.SubStatus))
+                .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Customer != null ? src.Customer.FullName : string.Empty))
+                .ForMember(dest => dest.ItemCount, opt => opt.MapFrom(src =>
+                    src.OrderItems != null && src.OrderItems.Any()
+                        ? (int)Math.Round(src.OrderItems.Where(oi => !oi.IsReturnItem && oi.Quantity > 0).Sum(oi => oi.Quantity))
+                        : src.ItemCount));
 
             // Order Maper
             CreateMap<OrderItem, OrderItemResDto>();

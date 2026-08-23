@@ -14,17 +14,19 @@ namespace pos_service.Services
 {
     public class OrderService : IOrderService
     {
-        private readonly IOrderRepository     _orderRepository;
-        private readonly IItemRepository      _itemRepository;
-        private readonly ICustomerRepository  _customerRepository;
-        private readonly ISettingService      _settingService;
-        private readonly ICacheService        _cache;
-        private readonly IMapper              _mapper;
-        private readonly ILogger<OrderService> _logger;
+        private readonly IOrderRepository          _orderRepository;
+        private readonly IItemRepository           _itemRepository;
+        private readonly IInventoryBatchRepository _batchRepository;
+        private readonly ICustomerRepository       _customerRepository;
+        private readonly ISettingService           _settingService;
+        private readonly ICacheService             _cache;
+        private readonly IMapper                   _mapper;
+        private readonly ILogger<OrderService>     _logger;
 
         public OrderService(
             IOrderRepository orderRepository, 
             IItemRepository itemRepository, 
+            IInventoryBatchRepository batchRepository,
             ICustomerRepository customerRepository,
             ISettingService settingService,
             ICacheService cache,
@@ -33,6 +35,7 @@ namespace pos_service.Services
         {
             _orderRepository     = orderRepository;
             _itemRepository      = itemRepository;
+            _batchRepository     = batchRepository;
             _customerRepository  = customerRepository;
             _settingService      = settingService;
             _cache               = cache;
@@ -54,10 +57,11 @@ namespace pos_service.Services
             var order = await _orderRepository.GetByIdAsync(orderId);
             if (order == null) throw new ArgumentException($"Order with ID {orderId} not found");
 
+            // Only orders in credit/loan status are eligible for debt settlement
             if (order.MainStatus != MainOrderStatus.Loan)
                 throw new InvalidOperationException("Only loan orders can accept settlement payments");
 
-            // Validate payment amount: must be positive and must not exceed the remaining due
+            // Validate payment amount against outstanding unpaid balance
             var due = order.NetAmount - order.AmountPaid;
             if (due <= 0)
                 throw new InvalidOperationException("Order is already fully settled");
@@ -66,11 +70,11 @@ namespace pos_service.Services
             if (amountPaid > due)
                 throw new InvalidOperationException($"AmountPaid ({amountPaid}) cannot be greater than remaining due amount ({due})");
 
-            // update financials
+            // Update cumulative payment and recalculate remaining balance
             order.AmountPaid += amountPaid;
             order.Balance = order.AmountPaid - order.NetAmount;
 
-            // create log
+            // Generate immutable audit log entry for this payment instalment
             var remaining = Math.Max(0, order.NetAmount - order.AmountPaid);
             var log = new LoanSettlementLog
             {
@@ -83,7 +87,7 @@ namespace pos_service.Services
                 Status           = remaining <= 0 ? LoanSettlementStatus.Completed : LoanSettlementStatus.PartiallySettled
             };
 
-            // If fully settled, update order main status to LoanSettled and balance to 0
+            // Transition order to LoanSettled status when debt is completely cleared
             if (remaining <= 0)
             {
                 order.MainStatus = MainOrderStatus.LoanSettled;
@@ -118,21 +122,25 @@ namespace pos_service.Services
             var itemsToUpdate   = new Dictionary<Item, decimal>();
             var itemReturnFlags = new Dictionary<Item, bool>();
 
+            var batchesToUpdate     = new List<InventoryBatch>();
+            var stockMovementsToAdd = new List<StockMovement>();
+
             foreach (var itemDto in orderDto.OrderItems)
             {
                 var item = await _itemRepository.GetByUuidAsync(itemDto.ItemUuid);
                 if (item == null)
                     throw new ArgumentException($"Item with UUID {itemDto.ItemUuid} not found");
 
-                var inventory = item.Inventory
-                    ?? throw new InvalidOperationException($"Inventory not configured for item {item.Uuid}");
+                var allowsDecimal = item.AllowsDecimalQuantities;
 
-                if (!inventory.AllowsDecimalQuantities && itemDto.Quantity % 1 != 0)
+                if (!allowsDecimal && itemDto.Quantity % 1 != 0)
                     throw new ArgumentException($"Item {item.PrintName} does not allow decimal quantities");
 
+                var availableStock = (await _batchRepository.GetActiveBatchesByItemUuidAsync(item.Uuid, false)).Sum(b => b.RemainingQuantity);
+
                 // Stock validation only for non-return items
-                if (!itemDto.IsReturnItem && !allowZeroStock && inventory.StockQuantity < itemDto.Quantity)
-                    throw new ArgumentException($"Insufficient stock for item {item.PrintName}. Available: {inventory.StockQuantity}, Requested: {itemDto.Quantity}");
+                if (!itemDto.IsReturnItem && !allowZeroStock && availableStock < itemDto.Quantity)
+                    throw new ArgumentException($"Insufficient stock for item {item.PrintName}. Available: {availableStock}, Requested: {itemDto.Quantity}");
 
                 // Validate ReturnedOrderItemUuid for return items
                 if (itemDto.IsReturnItem && string.IsNullOrWhiteSpace(itemDto.ReturnedOrderItemUuid))
@@ -146,16 +154,146 @@ namespace pos_service.Services
                 var salePrice     = itemDto.SalePrice;
                 var lineTotal     = itemDto.LineTotal;
 
+                // ═══ BATCH ALLOCATION & COST AT SALE RESOLUTION ═══
+                string? allocatedBatchUuid = null;
+                decimal costAtSale = 0m;
+
+                if (!itemDto.IsReturnItem)
+                {
+                    InventoryBatch? batch = null;
+
+                    // 1. Manual cashier override if specified
+                    if (!string.IsNullOrWhiteSpace(itemDto.BatchUuid))
+                    {
+                        batch = await _batchRepository.GetByUuidAsync(itemDto.BatchUuid);
+                    }
+
+                    // 2. Automatic FEFO fallback if no manual batch specified or found
+                    if (batch == null)
+                    {
+                        var fefoBatches = await _batchRepository.GetFefoBatchesAsync(item.Uuid, itemDto.Quantity);
+                        batch = fefoBatches.FirstOrDefault(b => b.RemainingQuantity > 0)
+                             ?? fefoBatches.FirstOrDefault();
+                    }
+
+                    if (batch == null)
+                    {
+                        var itemBatches = await _batchRepository.GetActiveBatchesByItemUuidAsync(item.Uuid, includeExpired: true);
+                        batch = itemBatches.FirstOrDefault();
+                    }
+
+                    if (batch != null)
+                    {
+                        allocatedBatchUuid = batch.Uuid;
+                        costAtSale         = batch.CostPrice;
+
+                        // Deduct batch remaining stock (clamped to 0)
+                        batch.RemainingQuantity = Math.Max(0m, batch.RemainingQuantity - itemDto.Quantity);
+                        if (batch.RemainingQuantity <= 0m)
+                        {
+                            batch.RemainingQuantity = 0m;
+                            if (!allowZeroStock)
+                            {
+                                batch.Status = BatchStatus.Depleted;
+                            }
+                        }
+
+                        if (!batchesToUpdate.Any(b => b.Id == batch.Id))
+                        {
+                            batchesToUpdate.Add(batch);
+                        }
+
+                        // Create Sale stock movement
+                        stockMovementsToAdd.Add(new StockMovement
+                        {
+                            Uuid          = Guid.NewGuid().ToString(),
+                            BatchUuid     = batch.Uuid,
+                            ItemUuid      = item.Uuid,
+                            MovementType  = StockMovementType.Sale,
+                            Quantity      = itemDto.Quantity,
+                            Direction     = StockMovementDirection.OUT,
+                            CostPrice     = batch.CostPrice,
+                            ReferenceType = "Order",
+                            Reason        = "POS sale item",
+                            CreatedAt     = DateTime.UtcNow,
+                            CreatedBy     = currentUser.Uuid
+                        });
+                    }
+                }
+                else
+                {
+                    // Return Item batch handling
+                    InventoryBatch? returnBatch = null;
+
+                    // 1. Explicit BatchUuid from request
+                    if (!string.IsNullOrWhiteSpace(itemDto.BatchUuid))
+                    {
+                        returnBatch = await _batchRepository.GetByUuidAsync(itemDto.BatchUuid);
+                    }
+
+                    // 2. Lookup original OrderItem's batch if not provided or not found
+                    if (returnBatch == null && !string.IsNullOrWhiteSpace(itemDto.ReturnedOrderItemUuid))
+                    {
+                        var originalOrderItem = await _orderRepository.GetOrderItemByUuidAsync(itemDto.ReturnedOrderItemUuid);
+                        if (originalOrderItem != null && !string.IsNullOrWhiteSpace(originalOrderItem.BatchUuid))
+                        {
+                            returnBatch = await _batchRepository.GetByUuidAsync(originalOrderItem.BatchUuid);
+                        }
+                    }
+
+                    // 3. Fallback to item's active or latest batch
+                    if (returnBatch == null)
+                    {
+                        var itemBatches = await _batchRepository.GetActiveBatchesByItemUuidAsync(item.Uuid, includeExpired: true);
+                        returnBatch = itemBatches.OrderByDescending(b => b.CreatedAt).FirstOrDefault();
+                    }
+
+                    if (returnBatch != null)
+                    {
+                        allocatedBatchUuid = returnBatch.Uuid;
+                        costAtSale         = returnBatch.CostPrice;
+
+                        returnBatch.RemainingQuantity += itemDto.Quantity;
+                        if (returnBatch.Status == BatchStatus.Depleted)
+                        {
+                            returnBatch.Status = BatchStatus.Active;
+                        }
+
+                        if (!batchesToUpdate.Any(b => b.Id == returnBatch.Id))
+                        {
+                            batchesToUpdate.Add(returnBatch);
+                        }
+
+                        // Create SaleReturn stock movement
+                        stockMovementsToAdd.Add(new StockMovement
+                        {
+                            Uuid          = Guid.NewGuid().ToString(),
+                            BatchUuid     = returnBatch.Uuid,
+                            ItemUuid      = item.Uuid,
+                            MovementType  = StockMovementType.SaleReturn,
+                            Quantity      = itemDto.Quantity,
+                            Direction     = StockMovementDirection.IN,
+                            CostPrice     = returnBatch.CostPrice,
+                            ReferenceType = "OrderReturn",
+                            ReferenceUuid = itemDto.ReturnedOrderItemUuid,
+                            Reason        = "Customer return item",
+                            CreatedAt     = DateTime.UtcNow,
+                            CreatedBy     = currentUser.Uuid
+                        });
+                    }
+                }
+
                 var orderItem = new OrderItem
                 {
                     Uuid                    = Guid.NewGuid().ToString(),
                     OriginalItemUuid        = item.Uuid,
-                    AllowsDecimalQuantities = inventory.AllowsDecimalQuantities,
+                    BatchUuid               = allocatedBatchUuid,
+                    AllowsDecimalQuantities = item.AllowsDecimalQuantities,
                     PrintName               = itemDto.PrintName,
                     Quantity                = itemDto.Quantity,
                     PriceAtSale             = salePrice,
                     MarkedPriceAtSale       = markedPrice,
-                    CostAtSale              = item.Price?.BuyingPrice ?? 0,
+                    CostAtSale              = costAtSale,
                     LineTotal               = lineTotal,
                     IsReturnItem            = itemDto.IsReturnItem,
                     Description             = itemDto.Description,
@@ -165,14 +303,16 @@ namespace pos_service.Services
                 orderItems.Add(orderItem);
 
                 // Only accumulate cost for profit calculation; trust frontend for gross/discount/net/itemCount
-                totalCost += itemDto.Quantity * (item.Price?.BuyingPrice ?? 0);
+                totalCost += itemDto.Quantity * costAtSale;
             }
 
-            // Use frontend-provided (required) order-level totals and item count
+            // Use frontend-provided (required) order-level totals and item count (sum of quantities)
             grossAmount   = orderDto.GrossAmount;
             totalDiscount = orderDto.TotalDiscount;
             var netAmount = orderDto.NetAmount;
-            itemCount     = orderDto.ItemCount;
+            itemCount     = orderDto.ItemCount > 0 
+                ? orderDto.ItemCount 
+                : (int)Math.Round(orderItems.Where(item => !item.IsReturnItem && item.Quantity > 0).Sum(item => item.Quantity));
             var balance   = orderDto.AmountPaid - netAmount;
 
             bool hasReturnItems = orderDto.OrderItems.Any(item => item.IsReturnItem);
@@ -202,6 +342,7 @@ namespace pos_service.Services
 
             var order = new Order
             {
+                Uuid          = Guid.NewGuid().ToString(),
                 OrderNumber   = await _orderRepository.GenerateOrderNumberAsync(),
                 MainStatus    = initialMainStatus,
                 SubStatus     = initialSubStatus,
@@ -217,7 +358,8 @@ namespace pos_service.Services
                 Description   = orderDto.Description,
                 CashierId     = currentUser.Id,
                 CustomerId    = orderDto.CustomerId,
-                OrderItems    = orderItems
+                OrderItems    = orderItems,
+                CreatedBy     = currentUser.Uuid
             };
 
             LoanSettlementLog? initialLog = null;
@@ -236,34 +378,6 @@ namespace pos_service.Services
                 };
             }
 
-            var inventoriesToUpdate = new List<Inventory>();
-            foreach (var (item, quantity) in itemsToUpdate)
-            {
-                bool isReturn = itemReturnFlags[item];
-                var inventory = item.Inventory
-                    ?? throw new InvalidOperationException($"Inventory not configured for item {item.Uuid}");
-
-                if (isReturn)
-                {
-                    // For return items, add the quantity back to stock
-                    inventory.StockQuantity += quantity;
-                }
-                else
-                {
-                    // For regular sales, deduct from stock
-                    if (allowZeroStock)
-                    {
-                        var deduct = Math.Min(inventory.StockQuantity, quantity);
-                        inventory.StockQuantity -= deduct;
-                    }
-                    else
-                    {
-                        inventory.StockQuantity -= quantity;
-                    }
-                }
-                inventoriesToUpdate.Add(inventory);
-            }
-
             Customer? customerToUpdate = null;
             // Update customer loyalty points based on the request DTO (earn/deduct per spec)
             if (order.CustomerId.HasValue)
@@ -275,11 +389,11 @@ namespace pos_service.Services
                     var points              = CalculateLoyaltyPointsFromReq(orderDto.OrderItems, suppressEarnForLoan);
                     customer.LoyaltyPoints  = Math.Max(0, customer.LoyaltyPoints + points);
 
-                    customerToUpdate = customer;
+                    customerToUpdate        = customer;
                 }
             }
 
-            var createdOrder = await _orderRepository.SaveCreateOrderAsync(order, initialLog, inventoriesToUpdate, customerToUpdate);
+            var createdOrder = await _orderRepository.SaveCreateOrderAsync(order, initialLog, customerToUpdate, batchesToUpdate, stockMovementsToAdd);
 
             // Clear items cache to reflect inventory changes
             _cache.Remove(ServiceCacheKey.Items);
@@ -358,7 +472,7 @@ namespace pos_service.Services
         /// <returns>The order details if found, otherwise null.</returns>
         public async Task<OrderResDto?> GetOrderByUuidAsync(string uuid, CurrentUser currentUser)
         {
-            var order = await _orderRepository.GetByUuidAsync(uuid);
+            var order    = await _orderRepository.GetByUuidAsync(uuid);
             return order == null ? null : _mapper.Map<OrderResDto>(order);
         }
 
@@ -405,28 +519,12 @@ namespace pos_service.Services
             if (existingOrder.MainStatus != MainOrderStatus.Pending)
                 throw new InvalidOperationException("Only pending orders can be modified");
 
-            var inventoriesToUpdate = new List<Inventory>();
-
             // Capture old order items for loyalty points adjustment, then restore quantities
             var oldOrderItemsSnapshot = existingOrder.OrderItems.Select(oi => new OrderItem
             {
                 LineTotal = oi.LineTotal,
                 IsReturnItem = oi.IsReturnItem
             }).ToList();
-
-            // Restore quantities from old order items
-            foreach (var oldItem in existingOrder.OrderItems)
-            {
-                var item = await _itemRepository.GetByUuidAsync(oldItem.OriginalItemUuid);
-                if (item != null)
-                {
-                    var inventory = item.Inventory
-                        ?? throw new InvalidOperationException($"Inventory not configured for item {item.Uuid}");
-
-                    inventory.StockQuantity += oldItem.Quantity;
-                    inventoriesToUpdate.Add(inventory);
-                }
-            }
 
             // Clear old items
             existingOrder.OrderItems.Clear();
@@ -436,27 +534,20 @@ namespace pos_service.Services
             decimal totalCost     = 0;
             int itemCount         = 0;
 
-            var itemsToUpdate = new Dictionary<Item, decimal>();
-            var itemReturnFlags = new Dictionary<Item, bool>();
-
             foreach (var itemDto in orderDto.OrderItems)
             {
                 var item = await _itemRepository.GetByUuidAsync(itemDto.ItemUuid);
                 if (item == null)
                     throw new ArgumentException($"Item with UUID {itemDto.ItemUuid} not found");
 
-                var inventory = item.Inventory
-                    ?? throw new InvalidOperationException($"Inventory not configured for item {item.Uuid}");
+                var availableStock = (await _batchRepository.GetActiveBatchesByItemUuidAsync(item.Uuid, false)).Sum(b => b.RemainingQuantity);
 
-                if (!inventory.AllowsDecimalQuantities && itemDto.Quantity % 1 != 0)
+                if (!item.AllowsDecimalQuantities && itemDto.Quantity % 1 != 0)
                     throw new ArgumentException($"Item {item.PrintName} does not allow decimal quantities");
 
                 // Check stock availability (respect AllowZeroStock setting)
-                if (!itemDto.IsReturnItem && !allowZeroStock && inventory.StockQuantity < itemDto.Quantity)
-                    throw new ArgumentException($"Insufficient stock for item {item.PrintName}. Available: {inventory.StockQuantity}, Requested: {itemDto.Quantity}");
-
-                itemsToUpdate[item]   = itemDto.Quantity;
-                itemReturnFlags[item] = itemDto.IsReturnItem;
+                if (!itemDto.IsReturnItem && !allowZeroStock && availableStock < itemDto.Quantity)
+                    throw new ArgumentException($"Insufficient stock for item {item.PrintName}. Available: {availableStock}, Requested: {itemDto.Quantity}");
 
                 var markedPrice = itemDto.MarkedPrice;
                 var salePrice   = itemDto.SalePrice;
@@ -466,48 +557,18 @@ namespace pos_service.Services
                 {
                     Uuid                    = Guid.NewGuid().ToString(),
                     OriginalItemUuid        = item.Uuid,
-                    AllowsDecimalQuantities = inventory.AllowsDecimalQuantities,
+                    AllowsDecimalQuantities = item.AllowsDecimalQuantities,
                     PrintName               = item.PrintName,
                     Quantity                = itemDto.Quantity,
                     PriceAtSale             = salePrice,
                     MarkedPriceAtSale       = markedPrice,
-                    CostAtSale              = item.Price?.BuyingPrice ?? 0,
+                    CostAtSale              = 0,
                     LineTotal               = lineTotal,
                     IsReturnItem            = itemDto.IsReturnItem,
                     Description             = itemDto.Description
                 };
 
                 existingOrder.OrderItems.Add(orderItem);
-
-                totalCost += itemDto.Quantity * (item.Price?.BuyingPrice ?? 0);
-            }
-
-            // Update item quantities
-            foreach (var (item, quantity) in itemsToUpdate)
-            {
-                var inventory = item.Inventory
-                    ?? throw new InvalidOperationException($"Inventory not configured for item {item.Uuid}");
-
-                var isReturn = itemReturnFlags[item];
-
-                if (isReturn)
-                {
-                    inventory.StockQuantity += quantity;
-                }
-                else
-                {
-                    if (allowZeroStock)
-                    {
-                        var deduct = Math.Min(inventory.StockQuantity, quantity);
-                        inventory.StockQuantity -= deduct;
-                    }
-                    else
-                    {
-                        inventory.StockQuantity -= quantity;
-                    }
-                }
-
-                inventoriesToUpdate.Add(inventory);
             }
 
             // Use frontend-provided (required) order totals
@@ -568,7 +629,7 @@ namespace pos_service.Services
                 }
             }
 
-            var updatedOrder = await _orderRepository.SaveUpdateOrderAsync(existingOrder, inventoriesToUpdate, customerToUpdate);
+            var updatedOrder = await _orderRepository.SaveUpdateOrderAsync(existingOrder, customerToUpdate);
 
             return _mapper.Map<OrderResDto>(updatedOrder);
         }
@@ -587,34 +648,13 @@ namespace pos_service.Services
             var order = await _orderRepository.GetByIdAsync(id, isActiveOnly);
             if (order == null) return false;
 
-            var inventoriesToUpdate = new List<Inventory>();
-
-            // Restore quantities from order items only when order is active and we care about stock
+            // Soft delete the order
             if (order.IsActive)
             {
-                var allowZeroStock = await _settingService.GetSettingValueAsync(SettingKey.AllowZeroStock, currentUser);
-
-                foreach (var orderItem in order.OrderItems)
-                {
-                    var item = await _itemRepository.GetByUuidAsync(orderItem.OriginalItemUuid);
-                    if (item != null)
-                    {
-                        var inventory = item.Inventory
-                            ?? throw new InvalidOperationException($"Inventory not configured for item {item.Uuid}");
-
-                        if (!allowZeroStock)
-                        {
-                            inventory.StockQuantity += orderItem.Quantity;
-                            inventoriesToUpdate.Add(inventory);
-                        }
-                    }
-                }
-
-                // Soft delete the order
                 order.IsActive = false;
             }
             
-            await _orderRepository.SaveDeleteOrderAsync(order, inventoriesToUpdate, isPermanent);
+            await _orderRepository.SaveDeleteOrderAsync(order, isPermanent);
 
             return true;
         }
@@ -635,66 +675,6 @@ namespace pos_service.Services
             if (order == null)
                 throw new ArgumentException($"Order with ID {id} not found");
 
-            var inventoriesToUpdate = new List<Inventory>();
-
-            // Handle status-specific logic
-            if (status == MainOrderStatus.Cancelled && order.MainStatus != MainOrderStatus.Cancelled)
-            {
-                // Restore stock when order is cancelled
-                foreach (var orderItem in order.OrderItems)
-                {
-                    var item = await _itemRepository.GetByUuidAsync(orderItem.OriginalItemUuid);
-                    if (item != null)
-                    {
-                        var inventory = item.Inventory
-                            ?? throw new InvalidOperationException($"Inventory not configured for item {item.Uuid}");
-
-                        if (!allowZeroStock)
-                        {
-                            inventory.StockQuantity += orderItem.Quantity;
-                            inventoriesToUpdate.Add(inventory);
-                        }
-                    }
-                }
-            }
-            if (order.MainStatus == pos_service.Models.Enums.MainOrderStatus.Cancelled && status != pos_service.Models.Enums.MainOrderStatus.Cancelled)
-            {
-                // Reduce stock when order is uncancelled
-                foreach (var orderItem in order.OrderItems)
-                {
-                    var item = await _itemRepository.GetByUuidAsync(orderItem.OriginalItemUuid);
-                    if (!allowZeroStock)
-                    {
-                        if (item != null)
-                        {
-                            var inventory = item.Inventory
-                                ?? throw new InvalidOperationException($"Inventory not configured for item {item.Uuid}");
-
-                            if (inventory.StockQuantity < orderItem.Quantity)
-                            {
-                                throw new InvalidOperationException($"Insufficient stock for item {item.PrintName}. Available: {inventory.StockQuantity}, Required: {orderItem.Quantity}");
-                            }
-
-                            inventory.StockQuantity -= orderItem.Quantity;
-                            inventoriesToUpdate.Add(inventory);
-                        }
-                    }
-                    else
-                    {
-                        // allowZeroStock: only deduct available quantity, never go below zero
-                        if (item != null)
-                        {
-                            var inventory = item.Inventory
-                                ?? throw new InvalidOperationException($"Inventory not configured for item {item.Uuid}");
-
-                            var deduct = Math.Min(inventory.StockQuantity, orderItem.Quantity);
-                            inventory.StockQuantity -= deduct;
-                            inventoriesToUpdate.Add(inventory);
-                        }
-                    }
-                }
-            }
-
             order.MainStatus = status;
 
             // When un-cancelling or updating main status, if there are return items keep SubStatus; otherwise clear when moving away
@@ -707,7 +687,7 @@ namespace pos_service.Services
                 order.SubStatus = null;
             }
 
-            var updatedOrder = await _orderRepository.SaveUpdateOrderStatusAsync(order, inventoriesToUpdate);
+            var updatedOrder = await _orderRepository.SaveUpdateOrderStatusAsync(order);
 
             return _mapper.Map<OrderResDto>(updatedOrder);
         }

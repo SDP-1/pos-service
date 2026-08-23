@@ -15,3 +15,7 @@ BEGIN
     GROUP BY o.PaymentMethod;
 END //
 DELIMITER ;
+
+-- Created on 2026-07-31
+-- Applied on dev 2026-07-31
+-- Applied on prod 2026-08-23

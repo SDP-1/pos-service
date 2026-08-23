@@ -25,3 +25,5 @@ CREATE OR REPLACE VIEW `view_returned_items_summary` AS
     WHERE
         (`return_item`.`IsReturnItem` = 1)
     GROUP BY `o`.`Id` , `o`.`OrderNumber` , `o`.`Uuid` , `original_item`.`Uuid` , `original_item`.`PrintName` , `original_item`.`Quantity` , `original_item`.`PriceAtSale`;
+
+-- Applied on prod

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using pos_service.Authorization;
 using pos_service.Controllers.Base;
@@ -281,6 +281,24 @@ namespace pos_service.Controllers
                 return NotFound($"No items found for supplier ID {supplierId}.");
             }
             return Ok(items);
+        }
+
+        /// <summary>
+        /// Permanently deletes a list of item expiry records by their unique identifiers.
+        /// </summary>
+        /// <param name="expiryUuids">The collection of expiry UUIDs to delete.</param>
+        /// <returns>An action result containing the number of deleted expiry records.</returns>
+        [HttpPost("expiries/delete")]
+        [Permission(PermissionType.ITEM_UPDATE)]
+        public async Task<ActionResult> DeleteExpiries([FromBody] List<string> expiryUuids)
+        {
+            if (expiryUuids == null || !expiryUuids.Any())
+            {
+                return BadRequest("At least one expiry UUID must be provided.");
+            }
+
+            var count = await _itemService.DeleteExpiriesAsync(expiryUuids, _currentUser);
+            return Ok(new { deletedCount = count });
         }
     }
 }

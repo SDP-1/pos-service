@@ -61,7 +61,7 @@ UPDATE `tbl_roles` SET `Name` = 'SuperAdmin' WHERE `Name` = 'SystemAdmin';
 
 -- Seed baseline initial records for existing item price records into tbl_item_price_audits
 INSERT INTO `tbl_item_price_audits` (
-  `ItemsId`, `ItemsSubId`, `ItemUuid`, `BuyingPrice`, `MarkedPrice`, `RetailPrice`, `WholesalePrice`, `RetailDiscountRatio`, `WholesaleDiscountRatio`, `ChangedAt`, `ChangedBy`, `ChangeType`
+  `ItemsId`, `ItemsSubId`, `ItemUuid`, `BuyingPrice`, `MarkedPrice`, `RetailPrice`, `WholesalePrice`, `RetailDiscountRatio`, `WholesaleDiscountRatio`, `ActionDate`, `ActionBy`, `Action`
 )
 SELECT 
   ip.`ItemsId`, ip.`ItemsSubId`, ip.`ItemUuid`, ip.`BuyingPrice`, ip.`MarkedPrice`, ip.`RetailPrice`, ip.`WholesalePrice`, ip.`RetailDiscountRatio`, ip.`WholesaleDiscountRatio`, NOW(), 'SYSTEM', 'INSERT'
@@ -110,4 +110,4 @@ UPDATE `tbl_settings` SET `Category` = 'SYSTEM' WHERE `Category` IS NULL OR `Cat
 ALTER TABLE `tbl_settings` MODIFY COLUMN `Category` VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL AFTER `SettingValue`;
 SET SQL_SAFE_UPDATES = 1;
 
-
+-- Applied on to prod 2026-08-22

@@ -116,10 +116,15 @@ namespace pos_service.Services
             item.AllowsDecimalQuantities = itemDto.AllowsDecimalQuantities;
 
             // Configure packaging units hierarchy and ensure base unit definition exists
-            var unitsToCreate = (itemDto.Units ?? Enumerable.Empty<InventoryUnitReqDto>()).ToList();
+            var unitsToCreate = (itemDto.Units != null && itemDto.Units.Count > 0)
+                ? itemDto.Units
+                : (itemDto.Inventory?.Units ?? new List<InventoryUnitReqDto>());
+
             var baseUnitType = itemDto.UnitType != UnitType.None
                 ? itemDto.UnitType
-                : (unitsToCreate.FirstOrDefault(u => u.IsBaseUnit || u.QuantityInBaseUnits == 1)?.UnitType ?? UnitType.Each);
+                : ((itemDto.Inventory?.UnitType ?? UnitType.None) != UnitType.None
+                    ? itemDto.Inventory!.UnitType
+                    : (unitsToCreate.FirstOrDefault(u => u.IsBaseUnit || u.QuantityInBaseUnits == 1)?.UnitType ?? (item.AllowsDecimalQuantities ? UnitType.Kilogram : UnitType.Each)));
 
             // Insert base unit definition if missing from the collection
             if (!unitsToCreate.Any(u => u.IsBaseUnit || (u.UnitType == baseUnitType && u.QuantityInBaseUnits == 1)))
@@ -150,13 +155,14 @@ namespace pos_service.Services
             // Seed initial opening batch and stock movement ledger entry for this new item
             try
             {
+                var initialStockQuantity = itemDto.StockQuantity > 0 ? itemDto.StockQuantity : (itemDto.Inventory?.StockQuantity ?? 0);
                 var initialBatch = new InventoryBatch
                 {
                     Uuid                   = Guid.NewGuid().ToString(),
                     ItemUuid               = item.Uuid,
-                    BatchNumber            = $"BATCH-INIT-{item.Id:D5}",
-                    ReceivedQuantity       = itemDto.StockQuantity,
-                    RemainingQuantity      = itemDto.StockQuantity,
+                    BatchNumber            = $"BATCH-INIT-{item.Id:D5}-{item.SubId:D3}",
+                    ReceivedQuantity       = initialStockQuantity,
+                    RemainingQuantity      = initialStockQuantity,
                     CostPrice              = itemDto.Price?.BuyingPrice ?? 0,
                     MarkedPrice            = itemDto.Price?.MarkedPrice ?? 0,
                     RetailPrice            = itemDto.Price?.RetailPrice ?? 0,
@@ -164,24 +170,30 @@ namespace pos_service.Services
                     RetailDiscountRatio    = itemDto.Price?.RetailDiscountRatio ?? 0,
                     WholesaleDiscountRatio = itemDto.Price?.WholesaleDiscountRatio ?? 0,
                     Reference              = "Initial Opening Lot",
-                    SupplierUuid           = item.ItemSuppliers.FirstOrDefault()?.Supplier?.Uuid,
+                    SupplierUuid           = null,
                     Status                 = BatchStatus.Active,
-                    CreatedBy              = item.CreatedBy,
+                    CreatedBy              = currentUser.Uuid,
                     IsActive               = true
                 };
 
-                var initialMovement = new StockMovement
+                StockMovement? initialMovement = null;
+                if (initialStockQuantity > 0)
                 {
-                    Uuid          = Guid.NewGuid().ToString(),
-                    ItemUuid      = item.Uuid,
-                    MovementType  = StockMovementType.OPENING_STOCK,
-                    Quantity      = itemDto.StockQuantity,
-                    Direction     = StockMovementDirection.IN,
-                    CostPrice     = itemDto.Price?.BuyingPrice ?? 0,
-                    Reason        = "Initial opening stock lot created with item",
-                    CreatedAt     = DateTime.UtcNow,
-                    CreatedBy     = item.CreatedBy
-                };
+                    initialMovement = new StockMovement
+                    {
+                        Uuid          = Guid.NewGuid().ToString(),
+                        BatchUuid     = initialBatch.Uuid,
+                        ItemUuid      = item.Uuid,
+                        MovementType  = StockMovementType.OPENING_STOCK,
+                        Quantity      = initialStockQuantity,
+                        Direction     = StockMovementDirection.IN,
+                        CostPrice     = itemDto.Price?.BuyingPrice ?? 0,
+                        ReferenceType = StockMovementReferenceType.OPENING_STOCK,
+                        Reason        = "Initial opening stock lot created with item",
+                        CreatedAt     = DateTime.UtcNow,
+                        CreatedBy     = currentUser.Uuid
+                    };
+                }
 
                 await _batchRepository.AddBatchAsync(initialBatch, initialMovement);
             }
@@ -192,7 +204,7 @@ namespace pos_service.Services
 
             InvalidateCache();
 
-            return _mapper.Map<ItemResDto>(item);
+            return await _itemRepository.GetByIdAsync(idToUse, subIdToUse) ?? _mapper.Map<ItemResDto>(item);
         }
 
         /// <summary>
@@ -222,10 +234,15 @@ namespace pos_service.Services
 
             itemToUpdate.AllowsDecimalQuantities = itemDto.AllowsDecimalQuantities;
 
-            var unitsToUpdate = (itemDto.Units ?? Enumerable.Empty<InventoryUnitReqDto>()).ToList();
+            var unitsToUpdate = (itemDto.Units != null && itemDto.Units.Count > 0)
+                ? itemDto.Units
+                : (itemDto.Inventory?.Units ?? new List<InventoryUnitReqDto>());
+
             var updateBaseUnitType = itemDto.UnitType != UnitType.None
                 ? itemDto.UnitType
-                : (unitsToUpdate.FirstOrDefault(u => u.IsBaseUnit || u.QuantityInBaseUnits == 1)?.UnitType ?? UnitType.Each);
+                : ((itemDto.Inventory?.UnitType ?? UnitType.None) != UnitType.None
+                    ? itemDto.Inventory!.UnitType
+                    : (unitsToUpdate.FirstOrDefault(u => u.IsBaseUnit || u.QuantityInBaseUnits == 1)?.UnitType ?? (itemToUpdate.AllowsDecimalQuantities ? UnitType.Kilogram : UnitType.Each)));
 
             if (!unitsToUpdate.Any(u => u.IsBaseUnit || (u.UnitType == updateBaseUnitType && u.QuantityInBaseUnits == 1)))
             {
@@ -267,7 +284,7 @@ namespace pos_service.Services
                         primaryBatch.WholesalePrice         = itemDto.Price.WholesalePrice;
                         primaryBatch.RetailDiscountRatio    = itemDto.Price.RetailDiscountRatio;
                         primaryBatch.WholesaleDiscountRatio = itemDto.Price.WholesaleDiscountRatio;
-                        primaryBatch.UpdatedBy              = currentUser?.Uuid;
+                        primaryBatch.UpdatedBy              = currentUser.Uuid;
                         primaryBatch.UpdatedAt              = DateTime.UtcNow;
                         await _batchRepository.UpdateBatchAsync(primaryBatch);
                     }
@@ -289,7 +306,7 @@ namespace pos_service.Services
                             Reference              = "Default Batch",
                             SupplierUuid           = itemToUpdate.ItemSuppliers.FirstOrDefault()?.Supplier?.Uuid,
                             Status                 = BatchStatus.Active,
-                            CreatedBy              = currentUser?.Uuid ?? itemToUpdate.CreatedBy,
+                            CreatedBy              = currentUser.Uuid,
                             IsActive               = true
                         };
                         await _batchRepository.AddBatchAsync(newDefaultBatch);
@@ -303,7 +320,7 @@ namespace pos_service.Services
 
             InvalidateCache();
 
-            return _mapper.Map<ItemResDto>(itemToUpdate);
+            return await _itemRepository.GetByIdAsync(id, subId) ?? _mapper.Map<ItemResDto>(itemToUpdate);
         }
 
         /// <summary>

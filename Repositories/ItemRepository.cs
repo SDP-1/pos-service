@@ -325,6 +325,7 @@ namespace pos_service.Repositories
                         PrintName               = i.PrintName,
                         BarCode                 = i.BarCode,
                         Description             = i.Description,
+                        AllowsDecimalQuantities = i.AllowsDecimalQuantities,
 
                         Inventory = new InventoryResDto
                         {

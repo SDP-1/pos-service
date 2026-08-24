@@ -479,35 +479,6 @@ namespace pos_service.Data
                       .OnDelete(DeleteBehavior.SetNull);
             });
 
-            // --- StockMovement Configuration ---
-            modelBuilder.Entity<StockMovement>(entity =>
-            {
-                entity.HasAlternateKey(sm => sm.Uuid);
-                entity.Property(sm => sm.MovementType).HasConversion<string>().HasMaxLength(30);
-                entity.Property(sm => sm.Direction).HasConversion<string>().HasMaxLength(3);
-                entity.Property(sm => sm.Quantity).HasColumnType("decimal(18,3)");
-                entity.Property(sm => sm.CostPrice).HasColumnType("decimal(18,2)");
-
-                entity.HasOne(sm => sm.Batch)
-                      .WithMany(b => b.StockMovements)
-                      .HasForeignKey(sm => sm.BatchUuid)
-                      .HasPrincipalKey(b => b.Uuid)
-                      .OnDelete(DeleteBehavior.Cascade);
-
-                entity.HasOne(sm => sm.Item)
-                      .WithMany()
-                      .HasForeignKey(sm => sm.ItemUuid)
-                      .HasPrincipalKey(i => i.Uuid)
-                      .OnDelete(DeleteBehavior.Cascade);
-
-                entity.HasOne(sm => sm.CreatedByUser)
-                      .WithMany()
-                      .HasForeignKey(sm => sm.CreatedBy)
-                      .HasPrincipalKey(u => u.Uuid)
-                      .IsRequired(false)
-                      .OnDelete(DeleteBehavior.SetNull);
-            });
-
             // --- InventoryBatchLog Configuration ---
             modelBuilder.Entity<InventoryBatchLog>(entity =>
             {
@@ -567,7 +538,7 @@ namespace pos_service.Data
                       .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasOne(sm => sm.Batch)
-                      .WithMany()
+                      .WithMany(b => b.StockMovements)
                       .HasForeignKey(sm => sm.BatchUuid)
                       .HasPrincipalKey(b => b.Uuid)
                       .OnDelete(DeleteBehavior.Cascade);
@@ -628,14 +599,13 @@ namespace pos_service.Data
             {
                 entity.HasKey(a => a.Id);
                 entity.Property(a => a.Id).HasColumnName("LogId");
-                entity.Property(a => a.PrintName).HasMaxLength(255).IsRequired();
+                entity.Property(a => a.PrintName).HasMaxLength(40).IsRequired();
                 entity.Property(a => a.PriceAtSale).HasColumnType("decimal(18,2)");
+                entity.Property(a => a.MarkedPriceAtSale).HasColumnType("decimal(18,2)");
                 entity.Property(a => a.CostAtSale).HasColumnType("decimal(18,2)");
                 entity.Property(a => a.Quantity).HasColumnType("decimal(18,3)");
-                entity.Property(a => a.Discount).HasColumnType("decimal(18,2)");
                 entity.Property(a => a.LineTotal).HasColumnType("decimal(18,2)");
-                entity.Property(a => a.TotalProfit).HasColumnType("decimal(18,2)");
-                entity.Property(a => a.UnitType).HasMaxLength(50);
+                entity.Property(a => a.Description).HasMaxLength(500);
                 entity.Property(a => a.Action).HasMaxLength(10).IsRequired();
 
                 entity.HasOne(a => a.ActionByUser)

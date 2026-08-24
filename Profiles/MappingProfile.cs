@@ -73,7 +73,7 @@ namespace pos_service.Profiles
 
             // Map from ItemResDto -> ItemMiniResDto so services can map projected DTOs
             CreateMap<ItemResDto, ItemMiniResDto>()
-                .ForMember(dest => dest.AllowsDecimalQuantities, opt => opt.MapFrom(src => src.Inventory != null && src.Inventory.AllowsDecimalQuantities))
+                .ForMember(dest => dest.AllowsDecimalQuantities, opt => opt.MapFrom(src => src.AllowsDecimalQuantities))
                 .ForMember(dest => dest.UnitType, opt => opt.MapFrom(src => src.Inventory != null ? src.Inventory.UnitType : Models.Enums.UnitType.Each));
 
             // Map ItemReqDto -> Item but do not overwrite primary key properties when mapping
@@ -81,6 +81,7 @@ namespace pos_service.Profiles
             CreateMap<ItemReqDto, Item>()
                 .ForMember(d => d.Id, opt => opt.Ignore())
                 .ForMember(d => d.SubId, opt => opt.Ignore())
+                .ForMember(d => d.AllowsDecimalQuantities, opt => opt.MapFrom(src => src.AllowsDecimalQuantities))
                 .ForMember(d => d.ExpDates, opt => opt.Ignore());
 
             // Contact Mappings

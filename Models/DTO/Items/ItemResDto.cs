@@ -40,6 +40,12 @@ namespace pos_service.Models.DTO.Items
         public string? Description               { get; set; }
 
         /// <summary>
+        /// Whether this item allows fractional / decimal quantities at point of sale.
+        /// Direct property of the Item.
+        /// </summary>
+        public bool AllowsDecimalQuantities      { get; set; } = false;
+
+        /// <summary>
         /// Inventory stock and packaging hierarchy details.
         /// </summary>
         public InventoryResDto? Inventory        { get; set; }

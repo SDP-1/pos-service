@@ -214,3 +214,5 @@ END$$
 DELIMITER ;
 
 SET SQL_SAFE_UPDATES = 1;
+
+-- Applied on Prod 2026-08-24
